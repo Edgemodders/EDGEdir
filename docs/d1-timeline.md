@@ -4,9 +4,25 @@ title: D1 Timeline
 
 # <span class="y">D1</span> Timeline
 
-**Status: plan agreed with the owner on 2026-11-16. D1.1 Document is built (2026-11-16, 16 unit tests). D1.2 Editor shell is next.**
+**Status: built on 2026-11-16 (EDGEdir 0.0.2), waiting for the owner's hand test** ([Tests](testing.html#d1-timeline)). The plan was agreed with the owner the same day.
 
 D1 is the first phase of the [design](design.html): the scene document, its editor, New Scene and the Desk. It needs no other tool: no REDcode, no REDnode, no game. Clips are plain blocks with a name and a typed-in length. Real animations come in D2, the 3D preview in D3.
+
+## What is built
+
+| Part | Where |
+|---|---|
+| The scene document and every edit, as pure functions | `src/doc.ts`, `test/doc.test.ts` (16 tests) |
+| The custom editor `edgedir.scene` for `*.edgedir`, and the whole-document edit loop | `src/editor.ts` |
+| The page: lanes, clip editing, transport, inspector | `webview/editor.ts`, `media/editor.css` |
+| The Desk's folders | `src/desk.ts`, `test/desk.test.ts` (4 tests) |
+| The Desk view, with Recent | `src/deskView.ts` |
+| New Scene, Rename, Delete, Reveal, Remove from Recent | `src/extension.ts`, `package.json` |
+| The page in a plain browser, for looking at it without F5 | `tools/page-harness.mjs` writes `dist/harness.html` |
+
+Checked without VS Code, in the browser harness on 2026-11-16: the page draws; a clip moves, and stays put when another is in the way; an edge trims and snaps; split, copy, paste and delete by key; a locked track refuses; Add Track from the menu; a double-click on a lane adds a clip; play follows the real clock; a file that is not a scene shows its message and the scene comes back when it is fixed. Not checked there, so for the hand test: everything VS Code does (open, undo, redo, save, the text editor beside it, a window reload) and the Desk.
+
+Keys in the lanes: Space plays and stops; Delete removes; S splits at the playhead; Ctrl+C, X, V and D copy, cut, paste and duplicate; Ctrl+A selects every clip; the arrows step a frame (Shift: ten, Ctrl: to the next clip edge); Home and End; + and - zoom; Escape clears the selection. Ctrl+wheel zooms at the pointer; Shift+wheel scrolls along the timeline. Alt held during a drag turns snap off.
 
 ## What D1 decides
 
@@ -63,7 +79,9 @@ The kind word is `act`, because EDGEbuilder's Library already uses `scene` (the 
 
 Real animations and their lengths, the actor picker, the Animations view (D2). The 3D preview (D3). Transition methods and sequences (D4). The game (D5). The Library and Project views, Move to Project and Add to Library (D7). MCP tools (D8).
 
-## Hand test (to be written out in Tests when D1 is built)
+## Hand test
+
+The steps to run are in [Tests](testing.html#d1-timeline). The plan's outline was:
 
 | Step | Do | Expect |
 |---|---|---|

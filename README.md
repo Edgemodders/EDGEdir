@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://edgemodders.github.io/EDGEdir/"><img src="docs/assets/brand/badges/docs.svg" alt="docs: read the docs"></a>
-  <img src="docs/assets/brand/badges/status.svg" alt="status: scaffold">
+  <img src="docs/assets/brand/badges/status.svg" alt="status: D1 timeline">
   <img src="docs/assets/brand/badges/game.svg" alt="game: Cyberpunk 2077">
   <img src="docs/assets/brand/badges/vscode.svg" alt="runs in: VS Code">
   <a href="LICENSE"><img src="docs/assets/brand/badges/license.svg" alt="license: MIT"></a>
@@ -15,7 +15,7 @@ A director's tool for Cyberpunk 2077, as a VS Code extension in the EDGE family:
 **[Docs](https://edgemodders.github.io/EDGEdir/)** &middot; [Changelog](CHANGELOG.md) &middot; [Tests](docs/testing.md)
 
 > [!NOTE]
-> **Status: scaffold, 2026-11-16.** The repo, the build, the release workflow, the brand, the docs site and an empty extension with its activity bar icon and three views (Desk, Library, Animations) are in place. The design comes next. Nothing is released yet.
+> **Status: D1 Timeline, 2026-11-16.** The design is agreed ([docs/design.md](docs/design.md)). The first phase is built and waits for its hand test: the scene editor (a timeline of tracks and clips for `.edgedir` files) and the Desk. Clips are named blocks for now; real animations, the 3D preview and play in the game come in later phases. Nothing is released yet.
 
 ## Repo layout
 

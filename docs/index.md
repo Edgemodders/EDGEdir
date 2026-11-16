@@ -1,6 +1,6 @@
 # EDGE<span class="y">dir</span> docs
 
-EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design and stitch animations and acting sequences for NPCs, and play them on characters in the running game. It is at its start: the repo, the build and an empty extension are in place, and the design comes next.
+EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design and stitch animations and acting sequences for NPCs, and play them on characters in the running game. It is at its start: the design is agreed, and the first phase, the timeline editor and the Desk, is built and waits for its hand test.
 
 | Document | What it covers |
 |---|---|
@@ -19,7 +19,7 @@ As of 2026-11-16. Each phase will end with a hand test by the owner, and an in-g
 | Scaffold | Built 2026-11-16: the repo, the release workflow, the brand, the docs site, and an empty extension with its activity bar icon and three views |
 | Design | Done 2026-11-16: draft 1 agreed by the owner |
 | D0 Spikes | Not started: a written workspot in the game, game clips in a webview, setting the weather |
-| D1 Timeline | Plan agreed 2026-11-16. Building: D1.1, the scene document and its edits, is done (unit tests); the editor and the Desk come next |
+| D1 Timeline | Built 2026-11-16 (EDGEdir 0.0.2): the scene document, the timeline editor and the Desk. Waiting for the owner's hand test |
 | D2 to D9 | Later: cast and clips, preview, transitions and sequences, play in game, audio camera and weather, pack and Library, script video and MCP, the AI track |
 
 EDGEdir is not affiliated with CD Projekt RED. Source code and issues: [github.com/Edgemodders/EDGEdir](https://github.com/Edgemodders/EDGEdir)

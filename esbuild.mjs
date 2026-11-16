@@ -1,5 +1,5 @@
-// Bundles the extension (CommonJS, VS Code's module loader); the editor page's script joins it in
-// E1. `node esbuild.mjs --watch` rebuilds on change; `--tests` bundles test/*.test.ts for `node --test "dist-test/*.test.cjs"`; `--production`
+// Bundles the extension (CommonJS, VS Code's module loader) and the scene editor's page (a browser
+// script). `node esbuild.mjs --watch` rebuilds on change; `--tests` bundles test/*.test.ts for `node --test "dist-test/*.test.cjs"`; `--production`
 // (vsce's prepublish) minifies, with no source maps.
 import * as esbuild from "esbuild";
 import * as fs from "node:fs";
@@ -31,6 +31,15 @@ const testBuild = {
   logLevel: "warning",
 };
 
+const page = {
+  ...common,
+  platform: "browser",
+  format: "iife",
+  target: "es2022",
+  entryPoints: ["webview/editor.ts"],
+  outfile: "dist/editor.js",
+};
+
 if (tests) await esbuild.build(testBuild);
-else if (watch) await Promise.all([extension].map(async (o) => (await esbuild.context(o)).watch()));
-else await Promise.all([extension].map((o) => esbuild.build(o)));
+else if (watch) await Promise.all([extension, page].map(async (o) => (await esbuild.context(o)).watch()));
+else await Promise.all([extension, page].map((o) => esbuild.build(o)));

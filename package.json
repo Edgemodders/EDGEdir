@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -68,17 +68,134 @@
     "viewsWelcome": [
       {
         "view": "edgedir.desk",
-        "contents": "Sequences you are working on will wait here until they go into a project. EDGEdir is being designed.\n[About EDGEdir](https://edgemodders.github.io/EDGEdir/)"
+        "contents": "Scenes you are working on wait here until they go into a project or the Library.\n[New Scene](command:edgedir.newScene)\n[About EDGEdir](https://edgemodders.github.io/EDGEdir/)"
       },
       {
         "view": "edgedir.library",
-        "contents": "Sequences you keep for good will wait here, in the EDGE Library: one folder of your own that every EDGE tool shares.\n[About the EDGE Library](https://edgemodders.ai/wiki/library.html)"
+        "contents": "Scenes and sequences you keep for good will wait here, in the EDGE Library: one folder of your own that every EDGE tool shares. Not built yet.\n[About the EDGE Library](https://edgemodders.ai/wiki/library.html)"
       },
       {
         "view": "edgedir.animations",
-        "contents": "The game's animations and workspots will be listed here. EDGEdir is being designed."
+        "contents": "The game's animations, and the ones you made in EDGEfab, will be listed here to drag onto a character's track. Not built yet."
       }
-    ]
+    ],
+    "customEditors": [
+      {
+        "viewType": "edgedir.scene",
+        "displayName": "EDGEdir Scene Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.edgedir"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "languages": [
+      {
+        "id": "json",
+        "extensions": [
+          ".edgedir"
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "edgedir.newScene",
+        "title": "New Scene",
+        "category": "EDGEdir",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edgedir.refreshDesk",
+        "title": "Refresh the Desk",
+        "category": "EDGEdir",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "edgedir.openScene",
+        "title": "Open Scene",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.renameScene",
+        "title": "Rename...",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.deleteScene",
+        "title": "Delete",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.revealScene",
+        "title": "Reveal in File Explorer",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.forgetRecent",
+        "title": "Remove from Recent",
+        "category": "EDGEdir"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "edgedir.newScene",
+          "when": "view == edgedir.desk",
+          "group": "navigation@1"
+        },
+        {
+          "command": "edgedir.refreshDesk",
+          "when": "view == edgedir.desk",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "edgedir.renameScene",
+          "when": "view == edgedir.desk && viewItem == deskScene",
+          "group": "1@1"
+        },
+        {
+          "command": "edgedir.revealScene",
+          "when": "view == edgedir.desk && viewItem =~ /Scene$/",
+          "group": "1@2"
+        },
+        {
+          "command": "edgedir.deleteScene",
+          "when": "view == edgedir.desk && viewItem == deskScene",
+          "group": "2@1"
+        },
+        {
+          "command": "edgedir.forgetRecent",
+          "when": "view == edgedir.desk && viewItem == recentScene",
+          "group": "2@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "edgedir.openScene",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.renameScene",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.deleteScene",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.revealScene",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.forgetRecent",
+          "when": "false"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "node esbuild.mjs",

@@ -7,6 +7,7 @@ docs/**
 !docs/assets/brand/icon.png
 nexus/**
 src/**
+webview/**
 test/**
 
 tools/**
