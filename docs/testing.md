@@ -4,7 +4,7 @@ title: Tests
 
 # <span class="y">Tests</span>
 
-Every test run on EDGEdir: how to run it again, what to expect, and what it showed. Each phase will end with a hand test by the owner; new tests are added here when they are first run, and their later runs' results too.
+Every test run on EDGEdir: how to run it again, what to expect, and what it showed. Each phase ends with a hand test, run in full by script or by the owner, and spot tests of its main features by the owner ([the release gate](#the-release-gate)); new tests are added here when they are first run, and their later runs' results too.
 
 Last updated 2026-11-16.
 
@@ -18,12 +18,43 @@ Last updated 2026-11-16.
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
 | [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
 
-## Waiting for a hand test
+## The release gate
 
-Every hand test has passed a round run by script in another session (2026-11-16). Still open:
+The owner's rule, set on 2026-11-16. A release needs both:
 
-- **The owner's word** on whether rounds run by script, with nobody watching, count for the release gate; or the owner's own run of any of them.
-- **One fix in EDGEdir 0.0.8**, not run in VS Code yet: a change the inspector refuses puts its box back to the scene's value. The fixes of 0.0.7 passed their own round by script.
+| What | Who | Counts when |
+|---|---|---|
+| Every hand test of the changes since the last release, in full | A Claude session by script (real mouse and key events in a VS Code window), or the owner | Every step passed in its latest round |
+| The [spot tests](#spot-tests-for-the-owner) of the major features changed since the last release | The owner, by hand | Each one passed |
+
+The rounds by script are there so that work does not wait for the owner's testing. They do not replace the owner's look at the main features.
+
+## Waiting for a test
+
+Every hand test has passed a round run by script in another session (2026-11-16). Still open before a release:
+
+- **The owner's spot tests** S1 to S7 below: none run yet.
+- **One fix in EDGEdir 0.0.8**, not run in VS Code yet, by script or by hand: a change the inspector refuses puts its box back to the scene's value (spot test S5 covers it). The fixes of 0.0.7 passed their own round by script.
+
+## Spot tests for the owner
+
+One short test per major feature, about 15 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
+
+**Before you start:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
+
+| Spot | Feature | Do | Expect | From |
+|---|---|---|---|---|
+| S1 | The timeline | In the Desk, **New Scene** `Spot`. **Add Track**: Actor, then Audio. Add two clips to the Actor lane. Drag one, drag an edge, put the playhead in one and press **S**. Press Ctrl+Z three times | Clips move, snap and never overlap; the edge trims by frames; S cuts in two; each Ctrl+Z takes one change back | D1, 1 to 7, 14 |
+| S2 | Play, save, the Desk | Press Space, then Space again. Ctrl+S, close the tab, click `Spot` in the Desk | The playhead runs in real time and stops. The scene opens as it was left | D1, 11, 15 |
+| S3 | The game's animations | Open the **Animations** view, **Read the Game**. When the status bar's count is done, open **Game** down to an animation file and open it. Search `sit chair` | About 14,000 files in folders; a file opens to its animations with their lengths; the search lists animations with both words | Part 1, 1 to 4; part 2, 1 to 3 |
+| S4 | The actor picker | Click the Actor lane's head, **Choose Actor...**, type `judy`, pick Judy Álvarez and an appearance. On a second Actor track choose **V (the player), feminine body** | The track takes the actor's name and the inspector shows Record, Appearance and Rig (`woman_base`). V needs no appearance; V is not offered on the other track | Part 1, 6, 7, 10, 11 |
+| S5 | Animations on a track | Select Judy's track, turn on **Only What Fits the Selected Actor**, click the **+** on an animation. On the clip set Speed to 2, then Loops to 3. Add a second clip right after it, then set the first one's Loops to 9 | The clip lands at the playhead, as long as the animation, and is selected. It gets half as long, then three times that, with marks where it starts again. Loops 9 is refused with a message and the box goes back to 3 | Part 2, 4, 5, 9; the fix of 0.0.8 |
+| S6 | The rig rule | **Change Actor...** on Judy's track to a man. Then save, close and reopen the scene | Every clip is hatched red and the inspector says Unfit and why; nothing is removed. Reopened, it is the same | Part 2, 13, 16 |
+| S7 | A made animation | Run `node tools/made-anim-sample.mjs`, click **Refresh** in the Animations view, click the **+** on `Sample wave`. Then run it with `--remove` | A **Library** group with `Sample wave`, 2.40 s; the clip `sample_wave` lands on the track as a made animation. After the remove and a Refresh the group is gone and the clip stays | Part 3, 1 to 3, 6 |
+
+| Round | Date | Spots | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
 
 ## Type check, build and unit tests
 

@@ -1,6 +1,6 @@
 # EDGE<span class="y">dir</span> docs
 
-EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design and stitch animations and acting sequences for NPCs, and play them on characters in the running game. It is at its start: the design is agreed, and the first phase, the timeline editor and the Desk, is built and waits for its hand test.
+EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design and stitch animations and acting sequences for NPCs, and play them on characters in the running game. It is at its start: the design is agreed, and the first phase, the timeline editor and the Desk, is built, and so is the second, the cast and real animations on the lanes. Both passed their hand tests by script and wait for the owner's spot tests.
 
 | Document | What it covers |
 |---|---|
@@ -15,7 +15,7 @@ EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design
 
 ## Roadmap status
 
-As of 2026-11-16. Each phase will end with a hand test by the owner, and an in-game test where it changes the game.
+As of 2026-11-16. Each phase ends with a hand test, run in full by script or by the owner, and the owner's spot tests of its main features ([Tests](testing.md#the-release-gate)), and an in-game test where it changes the game.
 
 | Phase | Status |
 |---|---|
