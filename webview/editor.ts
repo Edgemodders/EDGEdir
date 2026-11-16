@@ -184,6 +184,8 @@ function attempt<T>(edit: (d: SceneDoc) => T): T | undefined {
 function change(edit: (d: SceneDoc) => SceneDoc) {
   const next = attempt(edit);
   if (next) commit(next);
+  // Refused: the inspector's box goes back to what the scene has, not what was typed.
+  else drawInspector();
 }
 
 // ---- drawing -------------------------------------------------------------------------------------
