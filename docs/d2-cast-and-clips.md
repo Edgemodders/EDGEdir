@@ -4,7 +4,7 @@ title: D2 Cast and clips
 
 # <span class="y">D2</span> Cast and clips
 
-**Status: plan agreed with the owner on 2026-11-16. Building D2.1 to D2.4; D2.5 on waits for REDbridge's next release.**
+**Status: plan agreed with the owner on 2026-11-16. D2.1 to D2.4 are built (EDGEdir 0.0.4) and wait for a hand test ([Tests](testing.html#d2-cast-part-1)). D2.5 on waits for REDbridge's next release.**
 
 D2 is the second phase of the [design](design.html). It brings real things onto the timeline: an actor on each actor track, picked from the game's characters with V among them, and the game's animations as clips with their true lengths. It still shows no 3D picture (D3) and plays nothing in the game (D5).
 
@@ -45,7 +45,7 @@ The names in the example are examples; the picker reads the real ones.
 
 **The list** is made as EDGEbuilder's is: every `Character` record with an entity and a readable name (6,591 on game 2.5, by EDGEbuilder's test), kept in EDGEdir's storage on the PC per game version, never committed. The picker is a search box over it, with V at the top.
 
-**The rig** is read from the actor's entity: its `entAnimatedComponent`'s `rig`. Which component is the body's when an entity has several (body, face, deformations) is **unverified**; D2.3 settles it on a handful of characters and writes down the rule.
+**The rig** is read from the actor's entity: its `entAnimatedComponent`'s `rig`. The body's is the component named `root` (found on the real game, below).
 
 ### V
 
@@ -55,7 +55,7 @@ The owner's ask (2026-11-16): the player character is one of the actors.
 |---|---|
 | In the picker | Two entries at the top: **V (the player), feminine body** and **V (the player), masculine body**. A scene's V has one body in the editor, because the rig decides which animations fit |
 | In the document | `"actor": { "player": "wa" }` or `"ma"`, with `entity` and `rig` as for anyone |
-| Entity and rig | The game's third-person player entities (`player_wa_tpp.ent`, `player_ma_tpp.ent`) and the rig they name. Whether V's rig takes the same animations as the woman's and man's base rigs is **unverified**; D2.3 reads both and says |
+| Entity and rig | The game's third-person player entities (`player_wa_tpp.ent`, `player_ma_tpp.ent`) and the rig they name. Read on 2.5: they name the same rigs as the game's other women and men, so those animations fit V |
 | Looks | V's own face and clothes are in the save, not in the game's files. D3's preview shows the default body. In the game it is the modder's V |
 | The wrong body | A scene made for one body, played by a V of the other: D5 says so at Play. Making a scene fit both bodies is not in D2 |
 | At most one | A scene has at most one V. A second track cannot pick V |
@@ -153,16 +153,52 @@ interface AnimationInfo {
 
 It reads only; nothing in it changes a scene. This shape goes to EDGEfab #7 for its comments before D2.8 is built.
 
+## What is built
+
+EDGEdir 0.0.4, 2026-11-16: D2.1 to D2.4, and the actor's part of the document.
+
+| Part | Where |
+|---|---|
+| REDbridge's client, its types and the game finder, copied unchanged from REDcode with a note of the commit | `src/core/bridgeClient.ts`, `types.ts`, `gameFinder.ts` |
+| Where the game and the bridge are (adapted from EDGEquest's) | `src/core/config.ts`; the settings `edgedir.gamePath`, `edgedir.bridgePath`, `edgedir.dotnetRoot` |
+| The cast: the character list, V's two entries, search, the file on the PC | `src/core/cast.ts` |
+| An entity's body rig, appearances and animation sets | `src/core/entity.ts` |
+| The set level of the index, by folder, with search | `src/core/animSets.ts` |
+| The bridge for the extension, the state the view shows, reading with progress | `src/game.ts` |
+| The actor picker | `src/actorPicker.ts` |
+| The Animations view | `src/animationsView.ts` |
+| The actor in the document (`setActor`, one V) and on the page (lane head, inspector, **Choose Actor**) | `src/doc.ts`, `webview/editor.ts`, `src/editor.ts` |
+| Unit tests, with made-up records and files | `test/cast.test.ts` (5 tests) |
+
+What is read from the game is kept in `%LOCALAPPDATA%\EDGEdir\cache` (`cast\<game>.json`, `anims\<game>.sets.json`), filed under the game's archive and file counts, so a patch reads it again. The first read is the modder's click on **Read the Game**; later sessions read it without asking.
+
+### Found on the real game (2.5, REDbridge 0.13.0, 2026-11-16)
+
+The core was run against the game from a script, outside VS Code.
+
+| Asked | Found |
+|---|---|
+| The cast | 6,586 people, 2,672 with a name. Read in 13 s |
+| Which component is the body's | The `entAnimatedComponent` named `root`. The others are deformations rigs. Of 108 entities sampled across the cast, 2 had no rig by this rule and 2 could not be read (not looked into yet) |
+| V's rig | The feminine third-person body names the same rig as the game's other women (`woman_base`), the masculine one the same as other men (`man_base`). So their animations fit V with the strict rule, and nothing special is needed |
+| Other rigs seen | A bigger man's (`man_big`), a massive one's (`man_massive`), and vehicles' (some `Character` records are flying cars) |
+| The sets an entity carries | Read as planned from the body's component: about 33 for a person, 3 for V's third-person body. The appearance's own file may add more; not read yet |
+| The animation files | 14,016: 5,577 under `base\animations`, 7,408 under `base\localization` (these are lip sync, one per voiced line set), 987 in Phantom Liberty, a few elsewhere |
+| How long the file list takes | **116 s**, once per game version. REDbridge's file list has no filter by ending, so every game file's name is paged through (592,071 names). Asked for on REDbridge #17: a filter, or the list from `anims.info` |
+| An entity's JSON | 1.5 to 2.2 MB, read in well under a second |
+
+Not checked yet: anything in VS Code (the picker, the view, the progress note, the settings). The page's new lane head and inspector lines were type checked, not looked at. All of it is in the hand test.
+
 ## Steps
 
 Each step is one or more small commits with its unit tests. The hand test comes after the last.
 
 | Step | Builds | Needs |
 |---|---|---|
-| D2.1 Bridge | REDcode's bridge client, copied unchanged with a note of where from; finding the game and the bridge; a status line in the Animations view | 0.13.0 |
-| D2.2 Cast | The character list and its file on the PC; the picker with search; V's two entries; **Choose Actor** on a track and in the inspector; the track head shows the actor | 0.13.0 |
-| D2.3 Rigs | An actor's entity, rig and appearances read from the game; the rule for which component is the body's; V's rig beside the base rigs; the sets an entity carries | 0.13.0 |
-| D2.4 Sets | The set level of the index; the Animations view's Game group down to sets | 0.13.0 |
+| D2.1 Bridge (built) | REDcode's bridge client, copied unchanged with a note of where from; finding the game and the bridge; a status line in the Animations view | 0.13.0 |
+| D2.2 Cast (built) | The character list and its file on the PC; the picker with search; V's two entries; **Choose Actor** on a track and in the inspector; the track head shows the actor | 0.13.0 |
+| D2.3 Rigs (built) | An actor's entity, rig and appearances read from the game; the rule for which component is the body's; V's rig beside the base rigs; the sets an entity carries | 0.13.0 |
+| D2.4 Sets (built) | The set level of the index; the Animations view's Game group down to sets | 0.13.0 |
 | D2.5 Clips | The clip level; search; the two filters | `anims.info` |
 | D2.6 On the lane | The clip's `anim`, `in`, `out`, `speed`, `loops` in the document module and the page; Add to Track and the drag; the unfit mark; swapping an actor | D2.5 for real clips; unit tests need nothing |
 | D2.7 Made animations | The Library and Project groups, read from EDGEfab's agreed shape | A hand-made item; EDGEfab's first real one later |

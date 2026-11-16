@@ -12,12 +12,14 @@ Last updated 2026-11-16.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1 | 2026-11-16 | Pass, 23 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 28 tests |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | Round 1 by script: 22 of 22 pass (EDGEdir 0.0.2). The fixes in 0.0.3 and the owner's own run are open |
+| [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | Not run yet | Waiting (EDGEdir 0.0.4). The core passed a scripted run against the real game |
 
 ## Waiting for a hand test
 
 - [D1 Timeline](#d1-timeline), EDGEdir 0.0.3: the owner's own run, or the owner's word that round 1 by script is enough; steps 4, 5 and 22a are new in 0.0.3.
+- [D2 Cast, part 1](#d2-cast-part-1), EDGEdir 0.0.4.
 
 ## Type check, build and unit tests
 
@@ -74,3 +76,32 @@ What round 1 found, and what was done:
 | Step 21: opened with File, Open File the copy opens in the scene editor. Passed on the command line at launch it opened as JSON text and was not under Recent. Unverified whether that is only because an extension loaded by a development path loads late | Open. Step 23 checks it with an installed build |
 | Step 4: the inspector's Start kept its old value during a drag | Fixed in 0.0.3: Start, Length and Frames follow the drag. Not run yet |
 | With the editor at half width the toolbar wraps to two rows | Left as it is |
+
+## D2 Cast, part 1
+
+EDGEdir 0.0.4, built 2026-11-16. Not run yet. It covers D2.1 to D2.4: the game's files, the actor picker with V, and the Animations view's file list.
+
+**Before you start:** the game installed (not running), and REDbridge 0.13.0, which comes with REDcode. Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). To see the first read, delete `%LOCALAPPDATA%\EDGEdir\cache` if it is there.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Click the EDGEdir icon and open the **Animations** view | It says the game's animations are listed here, with **Read the Game** |
+| 2 | Click **Read the Game** | A note at the bottom right, "EDGEdir is reading the game": first the characters (about 15 s), then the animation files (about 2 minutes, counting game files). Then the view shows **Game** with about 14,000 animation files |
+| 3 | Open **Game**, then `base`, then `animations`, and a folder below | Folders with their counts, then animation files by name |
+| 4 | Click the search button in the view's title, type two words from a name you saw | A line with the count, then the matching files, each with its folder. The clear button brings the folders back |
+| 5 | Right-click an animation file: **Copy Game Path**. Paste somewhere | The file's game path, ending `.anims` |
+| 6 | New Scene `Cast test`. **Add Track**, Actor. Click its head | The lane head says `ACTOR · nobody yet`. The inspector says nobody acts on the track, with **Choose Actor...** |
+| 7 | **Choose Actor...**, type `judy`, pick Judy Álvarez, then an appearance | A search box over the characters with V's two entries on top. Then the appearances, with "Any: the game picks" first. The track is renamed to the actor, the head says who, and the inspector shows Record, Appearance and Rig (`woman_base`) |
+| 8 | Add two clips to the track. **Change Actor...** and pick another woman | The clips stay. The name and the inspector follow |
+| 9 | Press Ctrl+Z, then Ctrl+Y | The actor goes back to the one before, and forward again, in one step each |
+| 10 | Add a second actor track. Choose **V (the player), feminine body** | The head says `V, feminine body`, the rig is `woman_base`, and a line says it is your own V in the game. No appearance is asked for |
+| 11 | On the first track, **Change Actor...** | V's two entries are not offered |
+| 12 | On V's track, **Change Actor...**, pick the masculine body | It changes; the rig is `man_base` |
+| 13 | **Change Actor...**, pick **Nobody** | The track has nobody; its clips and its name stay as they are |
+| 14 | Save, close the window opened by F5, press F5 again, open `Cast test` from the Desk | The actors are as saved. The Animations view fills by itself, without **Read the Game** and without the two-minute wait |
+| 15 | In settings set `edgedir.bridgePath` to a file that is not there and clear REDcode's bridge path if set (or run with REDcode disabled), then **Developer: Reload Window** | The Animations view says REDbridge was not found, with its two links. The scene still opens and edits. Choosing an actor offers V only, and says the characters could not be read. Put the setting back after |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
+
