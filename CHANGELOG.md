@@ -14,4 +14,4 @@ How to keep it (the Edgemodders convention):
 
 - The EDGEdir side bar with its own icon and three views, Desk, Library and Animations (Library and Animations are empty until their phases).
 - The scene editor: a `.edgedir` file opens as a timeline with tracks (actor, audio, camera, weather, script, video, AI) and clips. Clips are named blocks for now: add, move, trim by the edge, split, copy and paste, with snap to frames and to other clips, zoom, a playhead with play and loop, and an inspector. Undo, redo and save are VS Code's own.
-- New Scene and the Desk: scenes are made on the Desk and listed there, with Rename, Delete (to the Recycle Bin) and Reveal in File Explorer. Scenes opened from elsewhere are listed under Recent.
+- New Scene and the Desk: scenes are made on the Desk and listed there, with Rename, Delete (to the Recycle Bin) and Reveal in File Explorer. Scenes opened from elsewhere are listed under Recent. On a drive with no Recycle Bin, Delete asks again before it deletes the scene for good.

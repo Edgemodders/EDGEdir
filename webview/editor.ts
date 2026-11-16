@@ -495,7 +495,8 @@ function drawInspector() {
   const focus = document.activeElement?.id;
   box.textContent = "";
   if (!doc) return;
-  const d = doc;
+  // During a drag the fields follow the clip as it would land.
+  const d = drag?.preview ?? doc;
   const fps = d.fps;
   if (sel.size === 1) {
     const found = findClip(d, [...sel][0]);
@@ -813,6 +814,7 @@ function moveDrag(ev: MouseEvent, grabbed: Clip) {
       drag!.snapLine = undefined;
     }
     draw();
+    drawInspector();
   };
   during(move, () => (canvas.style.cursor = "default"));
 }
@@ -827,6 +829,7 @@ function trimDrag(ev: MouseEvent, clip: Clip, edge: "start" | "end") {
     drag!.preview = trimClip(base, clip.id, edge, t);
     drag!.snapLine = edges.includes(t) ? t : undefined;
     draw();
+    drawInspector();
   };
   during(move, () => {});
 }

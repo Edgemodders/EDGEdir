@@ -116,10 +116,25 @@ export function activate(context: vscode.ExtensionContext): void {
       const go = await vscode.window.showWarningMessage(`Delete the scene "${scene.name}" from the Desk?`, { modal: true, detail: "Its folder goes to the Recycle Bin, so it can be brought back from there." }, "Delete");
       if (go !== "Delete") return;
       if (!(await closeTabs(scene, "delete"))) return;
+      const folder = vscode.Uri.file(scene.folder);
       try {
-        await vscode.workspace.fs.delete(vscode.Uri.file(scene.folder), { recursive: true, useTrash: true });
+        await vscode.workspace.fs.delete(folder, { recursive: true, useTrash: true });
       } catch (e) {
-        fail("Delete Scene", e);
+        // A drive with no Recycle Bin (a network or subst drive): ask again before deleting for good.
+        const gone = await vscode.window.showWarningMessage(
+          `"${scene.name}" could not be moved to the Recycle Bin. Delete it for good?`,
+          { modal: true, detail: `This cannot be undone. Some drives, such as network drives, have no Recycle Bin.
+
+${(e as Error).message}` },
+          "Delete for Good",
+        );
+        if (gone === "Delete for Good") {
+          try {
+            await vscode.workspace.fs.delete(folder, { recursive: true, useTrash: false });
+          } catch (e2) {
+            fail("Delete Scene", e2);
+          }
+        }
       }
       desk.refresh();
     }),

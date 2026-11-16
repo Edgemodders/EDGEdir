@@ -13,11 +13,11 @@ Last updated 2026-11-16.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1 | 2026-11-16 | Pass, 23 tests |
-| [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | Not run yet | Waiting (EDGEdir 0.0.2) |
+| [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | Round 1 by script: 22 of 22 pass (EDGEdir 0.0.2). The fixes in 0.0.3 and the owner's own run are open |
 
 ## Waiting for a hand test
 
-- [D1 Timeline](#d1-timeline), EDGEdir 0.0.2.
+- [D1 Timeline](#d1-timeline), EDGEdir 0.0.3: the owner's own run, or the owner's word that round 1 by script is enough; steps 4, 5 and 22a are new in 0.0.3.
 
 ## Type check, build and unit tests
 
@@ -31,7 +31,7 @@ The **Check** workflow runs the same on every push to `main`. The tests are pure
 
 ## D1 Timeline
 
-EDGEdir 0.0.2, built 2026-11-16. Not run yet.
+EDGEdir 0.0.3, built 2026-11-16. Round 1 ran on 0.0.2.
 
 **Before you start:** open the EDGEdir folder in VS Code, run `npm run build`, then press F5 (**Run EDGEdir**). The steps are done in the window that opens. No game and no other EDGE tool is needed.
 
@@ -59,7 +59,18 @@ EDGEdir 0.0.2, built 2026-11-16. Not run yet.
 | 20 | Right-click `Test two`: **Reveal in File Explorer** | Explorer shows `Test two.edgedir` in `%LOCALAPPDATA%\EDGEdir\desk\Test two.act.asset\source\raw\edgedir` |
 | 21 | Copy that `.edgedir` file to your Desktop and open the copy in VS Code (File, Open File) | It opens in the scene editor. The Desk lists it under **Recent** |
 | 22 | Right-click `Test two` in the Desk: **Delete**, and confirm | The scene leaves the Desk, its tab closes, and its folder is in the Recycle Bin |
+| 22a | Only if the Desk is on a drive with no Recycle Bin (a network or `subst` drive): **Delete**, and confirm | A second question says the scene could not go to the Recycle Bin and asks to delete it for good. **Delete for Good** removes it; Cancel keeps it on the Desk |
+| 23 | With an installed build (not F5): double-click a `.edgedir` file in File Explorer, or pass it to VS Code on the command line | It opens in the scene editor, not as text, and the Desk lists it under **Recent** |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet |
+| 1 | 2026-11-16 | 1 to 22, on 0.0.2 at `0ab6667` | **Pass, 22 of 22**, run by the EDGEweb session by script at the owner's request: real mouse and key events in a trial EDGEkit 1.140.6 window with only EDGEdir loaded and a scratch Desk; read from the page, the saved file and screenshots. Nobody watched it live. Step 21's copy went to a scratch folder, not the Desktop |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 22: with the Desk on a `subst` drive, Delete failed ("Failed to move ... to the recycle bin") and the scene stayed. On its real `C:` path the step passed | Fixed in 0.0.3: Delete asks again, then deletes for good. Step 22a. Not run yet |
+| Step 21: opened with File, Open File the copy opens in the scene editor. Passed on the command line at launch it opened as JSON text and was not under Recent. Unverified whether that is only because an extension loaded by a development path loads late | Open. Step 23 checks it with an installed build |
+| Step 4: the inspector's Start kept its old value during a drag | Fixed in 0.0.3: Start, Length and Frames follow the drag. Not run yet |
+| With the editor at half width the toolbar wraps to two rows | Left as it is |
