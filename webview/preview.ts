@@ -30,6 +30,10 @@ export interface Preview {
 interface Loaded {
   state: "asked" | "ready" | "failed";
   error?: string;
+  /** What was asked for, to ask again. */
+  what: { body?: BodyWant; clip?: ClipWant };
+  /** Whether it was asked for a second time by itself. */
+  retried?: boolean;
   notes: string[];
   scene?: THREE.Object3D;
   clip?: THREE.AnimationClip;
@@ -114,13 +118,28 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
   let doc: SceneDoc | null = null;
   let time = 0;
   let selected = "";
-  let framed = false;
+  /** The modder moved the view: it is theirs now, and new bodies no longer fit it again. */
+  let touched = false;
+  controls.addEventListener("start", () => (touched = true));
+  let retryTimer = 0;
+
+  /** Asks again for every file that failed: the bridge may be there now. */
+  function retry(auto = false) {
+    for (const [key, f] of files) {
+      if (f.state !== "failed" || (auto && f.retried)) continue;
+      f.state = "asked";
+      f.error = undefined;
+      f.retried = true;
+      send({ type: "want", key, ...f.what });
+    }
+    apply();
+  }
 
   /** Asks the host for a file once; the answer comes to `got`. */
   function want(key: string, what: { body?: BodyWant; clip?: ClipWant }): Loaded {
     let f = files.get(key);
     if (!f) {
-      f = { state: "asked", notes: [] };
+      f = { state: "asked", notes: [], what };
       files.set(key, f);
       send({ type: "want", key, ...what });
     }
@@ -153,9 +172,15 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
     } catch (e) {
       f.state = "failed";
       f.error = e instanceof Error ? e.message : String(e);
+      // Once more by itself after a moment: a bridge that was starting is up by then. After that, Frame asks again.
+      if (!f.retried) {
+        clearTimeout(retryTimer);
+        retryTimer = window.setTimeout(() => retry(true), 5000);
+      }
     }
     apply();
-    if (!framed && [...standing.values()].some((s) => s.root)) frame();
+    // Each new body fits the view again, until the modder moves it.
+    if (f.scene && !touched) frame();
   }
 
   function remove(id: string) {
@@ -214,6 +239,9 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
   /** Everything the scene asks for at this time: bodies on their marks, in their poses, and the note. */
   function apply() {
     const lines: string[] = [];
+    /** What could not be loaded, by reason: one reason is said once, however many files it stopped. */
+    const failed = new Map<string, string[]>();
+    const fail = (reason: string | undefined, what: string) => failed.set(reason ?? "", [...(failed.get(reason ?? "") ?? []), what]);
     let loading = 0;
     const tracks = doc ? bodies(doc) : [];
     for (const id of [...standing.keys()]) if (!tracks.some((t) => t.id === id)) remove(id);
@@ -234,7 +262,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       s.group.rotation.y = (mark.yaw * Math.PI) / 180;
       s.ring.material = track.id === selected ? ringSelected : ringMaterial;
       if (file.state === "asked") loading++;
-      if (file.state === "failed") lines.push(`${who}: no body (${file.error})`);
+      if (file.state === "failed") fail(file.error, `${who}'s body`);
       if (track.actor?.player && file.state === "ready") lines.push("V: the game's base body, without a head, stands in for your V");
 
       const pose = poseAt(track, time);
@@ -248,24 +276,25 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       const clip = files.get(clipKey(cw));
       if (clip?.state === "ready") show(s, clip.clip, pose.t, cw.name);
       // Not here yet: the body keeps the pose it has.
-      else if (clip?.state === "failed") lines.push(`${who}: "${cw.name}" cannot be shown (${clip.error})`);
+      else if (clip?.state === "failed") fail(clip.error, `"${cw.name}"`);
       else loading++;
     }
+    for (const [reason, what] of failed) lines.unshift(`Not loaded: ${what.length > 3 ? `${what.slice(0, 3).join(", ")} and ${what.length - 3} more` : what.join(", ")}. ${reason}. Frame tries again`);
     if (loading) lines.unshift(`Loading ${loading} file${loading === 1 ? "" : "s"} from the game…`);
     if (doc && !tracks.length) lines.push(doc.tracks.some((t) => t.kind === "actor") ? "Choose an actor on an actor track, and its body stands here." : "Add an actor track and choose an actor, and its body stands here.");
     noteEl.textContent = lines.join("  ·  ");
-    noteEl.title = [...new Set(tracks.flatMap((t) => { const w = bodyWant(t.actor); return w ? (files.get(bodyKey(w))?.notes ?? []).map((n) => `${t.actor?.name ?? t.name}: ${n}`) : []; }))].join("\n");
+    noteEl.title = [...lines, ...new Set(tracks.flatMap((t) => { const w = bodyWant(t.actor); return w ? (files.get(bodyKey(w))?.notes ?? []).map((n) => `${t.actor?.name ?? t.name}: ${n}`) : []; }))].join("\n");
     draw();
   }
 
   function frame() {
     const box = new THREE.Box3();
     for (const s of standing.values()) {
-      box.expandByPoint(new THREE.Vector3(s.group.position.x - 0.5, 0, s.group.position.z - 0.5));
-      box.expandByPoint(new THREE.Vector3(s.group.position.x + 0.5, Height, s.group.position.z + 0.5));
+      // Room for arms out and for a clip that lies down.
+      box.expandByPoint(new THREE.Vector3(s.group.position.x - 0.9, -0.1, s.group.position.z - 0.9));
+      box.expandByPoint(new THREE.Vector3(s.group.position.x + 0.9, Height, s.group.position.z + 0.9));
     }
     if (box.isEmpty()) box.set(new THREE.Vector3(-0.5, 0, -0.5), new THREE.Vector3(0.5, Height, 0.5));
-    else framed = true;
     const centre = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
     const fov = (Math.min(camera.fov, camera.fov * camera.aspect) * Math.PI) / 360;
@@ -285,7 +314,10 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       apply();
     },
     got: (m) => void got(m),
-    frame,
+    frame() {
+      retry();
+      frame();
+    },
     state: () => ({
       bodies: [...standing.values()].filter((s) => s.root).length,
       waiting: [...files.values()].filter((f) => f.state === "asked").length,

@@ -40,7 +40,7 @@ header .status.bad { color: var(--red); }
 .mono { font-family: var(--mono); font-size: 12px; }
 
 /* The 3D preview (D3): the canvas fills it; a line of notes lies along the bottom. */
-#viewport { flex: none; height: 260px; min-height: 28px; position: relative; overflow: hidden;
+#viewport { flex: none; height: min(260px, 45vh); min-height: 28px; max-height: calc(100vh - 130px); position: relative; overflow: hidden;
   background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--line) 55%, transparent), transparent 70%); }
 #stage { position: absolute; inset: 0; }
 #stage canvas { display: block; width: 100%; height: 100%; outline: none; }

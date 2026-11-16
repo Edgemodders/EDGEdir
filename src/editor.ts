@@ -204,7 +204,7 @@ export const PageBody = `<header>
 <section id="viewport" aria-label="Preview">
   <div id="stage"></div>
   <p id="previewNote" role="status"></p>
-  <button id="frame" title="Fit the view to every actor">Frame</button>
+  <button id="frame" title="Fit the view to every actor, and ask again for anything that could not be loaded">Frame</button>
 </section>
 <div id="splitter" role="separator" aria-orientation="horizontal" tabindex="0" title="Drag to resize the preview"></div>
 <div class="toolbar">

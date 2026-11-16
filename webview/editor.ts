@@ -773,7 +773,7 @@ $("splitter").addEventListener("mousedown", (ev) => {
   const startY = ev.clientY;
   const startH = viewport.offsetHeight;
   const move = (e: MouseEvent) => {
-    viewport.style.height = `${Math.max(28, Math.min(window.innerHeight - 220, startH + e.clientY - startY))}px`;
+    viewport.style.height = `${Math.max(28, Math.min(window.innerHeight - 130, startH + e.clientY - startY))}px`;
     draw();
   };
   const up = () => {
