@@ -4,7 +4,7 @@ title: D1 Timeline
 
 # <span class="y">D1</span> Timeline
 
-**Status: plan, agreed with the owner on 2026-11-16. Nothing is built yet.**
+**Status: plan agreed with the owner on 2026-11-16. D1.1 Document is built (2026-11-16, 16 unit tests). D1.2 Editor shell is next.**
 
 D1 is the first phase of the [design](design.html): the scene document, its editor, New Scene and the Desk. It needs no other tool: no REDcode, no REDnode, no game. Clips are plain blocks with a name and a typed-in length. Real animations come in D2, the 3D preview in D3.
 

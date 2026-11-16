@@ -19,7 +19,7 @@ As of 2026-11-16. Each phase will end with a hand test by the owner, and an in-g
 | Scaffold | Built 2026-11-16: the repo, the release workflow, the brand, the docs site, and an empty extension with its activity bar icon and three views |
 | Design | Done 2026-11-16: draft 1 agreed by the owner |
 | D0 Spikes | Not started: a written workspot in the game, game clips in a webview, setting the weather |
-| D1 Timeline | Plan agreed 2026-11-16. Building: the scene document, the timeline editor and the Desk |
+| D1 Timeline | Plan agreed 2026-11-16. Building: D1.1, the scene document and its edits, is done (unit tests); the editor and the Desk come next |
 | D2 to D9 | Later: cast and clips, preview, transitions and sequences, play in game, audio camera and weather, pack and Library, script video and MCP, the AI track |
 
 EDGEdir is not affiliated with CD Projekt RED. Source code and issues: [github.com/Edgemodders/EDGEdir](https://github.com/Edgemodders/EDGEdir)
