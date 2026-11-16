@@ -9,7 +9,9 @@ import { BridgeClient } from "./core/bridgeClient";
 import { Cast } from "./core/cast";
 import { defaultCacheDir, resolveBridge, resolveGame, type GameChoice } from "./core/config";
 import { readEntity, type EntityFacts } from "./core/entity";
-import { libraryAnims, libraryRoot, projectAnims, type MadeAnim } from "./core/made";
+import { findMade, libraryAnims, libraryRoot, projectAnims, type MadeAnim } from "./core/made";
+import { PreviewStore, type PreviewFile } from "./core/preview";
+import type { BodyWant, ClipWant } from "./pose";
 
 /** What the Animations view's welcome text is chosen by (package.json, `edgedir.state`). */
 export type GameState = "starting" | "noGame" | "noBridge" | "loading" | "ready" | "failed";
@@ -43,6 +45,10 @@ export class Game {
   readonly sets = new AnimSets(defaultCacheDir());
   /** The animations inside each set. Filled in the background; empty with a REDbridge that has no `anims.info`. */
   readonly index = new AnimIndex(defaultCacheDir());
+  /** The 3D preview's bodies and animations, exported once each (D3). */
+  readonly preview = new PreviewStore(defaultCacheDir());
+  /** The game that is read, as `gameKey` names it; empty until it is known. */
+  private key = "";
   /** Where reading the animations stands, in a sentence, for the view. */
   clipsNote = "The animations inside each file are not read yet.";
   private clipsRun: Promise<void> | undefined;
@@ -156,6 +162,7 @@ export class Game {
       this.where = `${game.path} (${game.from}), through ${found.from}`;
       this.set("loading");
       const key = gameKey(await found.bridge.info());
+      this.key = key;
       const todo: [string, () => Promise<void>][] = [];
       if (rebuild || !this.cast.load(key)) todo.push(["the characters", () => this.cast.build(found.bridge, key, (t) => report?.report({ message: t }))]);
       if (rebuild || !this.sets.load(key)) todo.push(["the animation files", () => this.sets.build(found.bridge, key, (t) => report?.report({ message: t }))]);
@@ -237,6 +244,35 @@ export class Game {
     const facts = readEntity(result.json);
     this.entities.set(key, facts);
     return facts;
+  }
+
+  /** The bridge and the game's key, for the preview. Throws with a message fit to show in the viewport. */
+  private async forPreview(): Promise<{ bridge: BridgeClient; key: string }> {
+    if (this.loading) await this.loading;
+    const bridge = await this.bridge();
+    this.key ||= gameKey(await bridge.info());
+    return { bridge, key: this.key };
+  }
+
+  /** An actor's body for the preview: found on the PC, or exported now (a few seconds). */
+  async previewBody(want: BodyWant): Promise<PreviewFile> {
+    const { bridge, key } = await this.forPreview();
+    const made = await this.preview.body(bridge, key, want, async () => (want.entity ? (await this.entity(want.entity)).appearances[0] : undefined));
+    if (!made.cached) this.log(`Preview: exported ${want.player ? `V's body (${want.player})` : `${want.entity} (${want.appearance ?? "first appearance"})`}`);
+    return made;
+  }
+
+  /** An animation for the preview: a game one exported by itself, or a made one from its own file. */
+  async previewClip(want: ClipWant): Promise<PreviewFile> {
+    if (want.id) {
+      const { project, library } = this.made();
+      const item = findMade(want.id, project, library);
+      if (!item) throw new Error(`The made animation ${want.name} is not in the open project or the Library any more`);
+      if (!item.file) throw new Error(`The made animation ${want.name} has no clip file`);
+      return this.preview.made(want.id, item.file);
+    }
+    const { bridge, key } = await this.forPreview();
+    return this.preview.clip(bridge, key, want);
   }
 
   showLog(): void {

@@ -28,6 +28,8 @@ import {
   trimClip,
   playOf,
   setPlay,
+  markOf,
+  setMark,
   unfit,
   type Actor,
   type Clip,
@@ -35,6 +37,7 @@ import {
   type Track,
   type TrackKind,
 } from "../src/doc";
+import { mountPreview } from "./preview";
 
 interface ViewState {
   scratch?: { base: string; doc: string };
@@ -80,6 +83,11 @@ function keepView() {
   vscode.setState({ ...(vscode.getState() ?? {}), view: { start: viewStart, spp, preview: $("viewport").offsetHeight, snap: snapOn, loop: looping } });
 }
 
+// The 3D preview above the timeline (D3). It follows the document, the playhead and the selection.
+const preview = mountPreview($("stage"), $("previewNote"), send);
+$("frame").addEventListener("click", () => preview.frame());
+(window as unknown as { edgedirPreview: unknown }).edgedirPreview = preview;
+
 // ---- messages from the host ----------------------------------------------------------------------
 
 /** The first document since the page loaded: where unsaved edits lost to a window reload are put back. */
@@ -107,6 +115,7 @@ window.addEventListener("message", (e) => {
   if (m.type === "invalid") {
     doc = null;
     stopPlay();
+    preview.sync(null, 0, "");
     $("invalidText").textContent = m.text;
     $("invalid").hidden = false;
     $("work").hidden = true;
@@ -121,6 +130,7 @@ window.addEventListener("message", (e) => {
     applyPendingSelect();
     return;
   }
+  if (m.type === "got") return preview.got(m);
   if (m.type !== "doc") return;
   const text = JSON.stringify(m.doc);
   if (firstDoc) {
@@ -264,6 +274,8 @@ function box(c: Clip, lane: number) {
 }
 
 function draw() {
+  // The preview shows the scene as a drag would leave it, at the playhead.
+  preview.sync(drag?.preview ?? doc, playhead, selTrack);
   const k = colours();
   const w = width();
   const tracks = shown();
@@ -628,7 +640,19 @@ function drawInspector() {
           if (a.record) box.append(fact("Record", a.record));
           if (a.record) box.append(fact("Appearance", a.appearance ?? "Any: the game picks"));
           box.append(fact("Rig", a.rig ? rigName(a.rig) : "Not read yet"));
-          if (a.player) box.append(note("In the game this is your own V. The preview will show the default body."));
+          if (a.player) box.append(note("In the game this is your own V. The preview shows the game's base body, without a head."));
+          // The mark: where the actor stands in the scene, and which way it faces.
+          const mark = markOf(d, track.id);
+          const markInput = (id: string, key: "x" | "y" | "yaw", step: number) => {
+            const i = numberInput(id, mark[key], step, (v) => change((x) => setMark(x, track.id, { [key]: v })));
+            i.removeAttribute("min");
+            return i;
+          };
+          box.append(
+            field("Right (m)", markInput("f-markx", "x", 0.1)),
+            field("Forward (m)", markInput("f-marky", "y", 0.1)),
+            field("Turn (°)", markInput("f-markyaw", "yaw", 15)),
+          );
         } else box.append(note("Nobody acts on this track yet."));
         box.append(action(a ? "Change Actor..." : "Choose Actor...", "Pick one of the game's characters, or V, for this track. Its clips stay", () => vscode.postMessage({ type: "chooseActor", track: track.id })));
       }

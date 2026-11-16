@@ -78,7 +78,11 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     return true;
   };
 
-  const scenes = new SceneEditorProvider(context, (uri) => void desk.opened(uri), chooseActor);
+  const scenes = new SceneEditorProvider(context, (uri) => void desk.opened(uri), chooseActor, {
+    root: game.preview.root,
+    body: (want) => game.previewBody(want),
+    clip: (want) => game.previewClip(want),
+  });
   /** The scene in front as a document, or undefined when its text is not a scene just now. */
   const frontDoc = (): SceneDoc | undefined => {
     try {

@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -422,10 +422,12 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/three": "^0.170.0",
     "@types/vscode": "1.90.0",
     "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",
     "ovsx": "^1.3.0",
+    "three": "^0.170.0",
     "typescript": "~5.9.3"
   },
   "dependencies": {

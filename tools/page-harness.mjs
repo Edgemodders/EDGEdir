@@ -34,6 +34,11 @@ const sample = {
   ],
 };
 
+// The 3D preview's files: real ones from this PC's game when tools/preview-sample.ts was run (its
+// scene is shown instead of the made-up one), else none, and the viewport says so.
+const preview = fs.existsSync("dist/preview-sample/sample.json") ? JSON.parse(fs.readFileSync("dist/preview-sample/sample.json", "utf8")) : { files: {} };
+const scene = preview.doc ?? sample;
+
 fs.writeFileSync(
   "dist/harness.html",
   `<!DOCTYPE html>
@@ -43,13 +48,15 @@ fs.writeFileSync(
 ${body}
 <script>
   // The stand-in host: keeps the document, echoes each edit back, and counts them.
-  let state; window.harness = { doc: ${JSON.stringify(sample)}, edits: 0, messages: [] };
+  let state; window.harness = { doc: ${JSON.stringify(scene)}, edits: 0, messages: [] };
+  const files = ${JSON.stringify(preview.files)};
   const toPage = (m) => window.postMessage(m, "*");
   window.acquireVsCodeApi = () => ({
     getState: () => state, setState: (s) => { state = s; },
     postMessage: (m) => {
       window.harness.messages.push(m.type);
       if (m.type === "ready") toPage({ type: "doc", doc: window.harness.doc, dirty: false });
+      if (m.type === "want") toPage({ type: "got", key: m.key, ...(files[m.key] ?? { error: "the harness has no file for it (run tools/preview-sample.ts)" }) });
       if (m.type === "edit") { window.harness.doc = m.doc; window.harness.edits++; toPage({ type: "doc", doc: m.doc, dirty: true }); }
     },
   });

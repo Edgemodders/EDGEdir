@@ -4,7 +4,17 @@
 // The pattern is EDGEwave's (src/editor.ts at f39a787), copied, without its audio.
 import * as fs from "node:fs";
 import * as vscode from "vscode";
+import type { PreviewFile } from "./core/preview";
 import { formatDoc, parseDoc, type SceneDoc } from "./doc";
+import type { BodyWant, ClipWant } from "./pose";
+
+/** Where the 3D preview's files come from: the game, through the extension. */
+export interface PreviewSource {
+  /** The one folder outside the extension the page may read. */
+  root: string;
+  body(want: BodyWant): Promise<PreviewFile>;
+  clip(want: ClipWant): Promise<PreviewFile>;
+}
 
 export const ViewType = "edgedir.scene";
 
@@ -18,7 +28,9 @@ type FromPage =
   /** Choose who acts on an actor track (D2): the host shows the picker and writes the change. */
   | { type: "chooseActor"; track: string }
   /** The selected track and the playhead, when either changes: where Add to Track puts a clip. */
-  | { type: "cursor"; track: string; playhead: number };
+  | { type: "cursor"; track: string; playhead: number }
+  /** The 3D preview asks for a body or an animation (D3); the answer is `got`, with the same key. */
+  | { type: "want"; key: string; body?: BodyWant; clip?: ClipWant };
 
 /** A scene open in the editor, with where its page's cursor is. */
 export interface OpenScene {
@@ -60,6 +72,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly opened: (uri: vscode.Uri) => void,
     /** Shows the actor picker for a track and writes the choice into the document. */
     private readonly chooseActor: (document: vscode.TextDocument, trackId: string) => Promise<void>,
+    private readonly preview: PreviewSource,
   ) {}
 
   resolveCustomTextEditor(document: vscode.TextDocument, panel: vscode.WebviewPanel): void {
@@ -67,7 +80,8 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     const webview = panel.webview;
     const dist = vscode.Uri.joinPath(this.context.extensionUri, "dist");
     const media = vscode.Uri.joinPath(this.context.extensionUri, "media");
-    webview.options = { enableScripts: true, localResourceRoots: [dist, media] };
+    // The page reads the extension's own dist and media, and the preview's folder on the PC. Nothing else.
+    webview.options = { enableScripts: true, localResourceRoots: [dist, media, vscode.Uri.file(this.preview.root)] };
     webview.html = this.html(webview, dist, media);
 
     const post = (m: unknown) => void webview.postMessage(m);
@@ -135,6 +149,16 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         case "chooseActor":
           await this.chooseActor(document, m.track);
           return;
+        case "want": {
+          try {
+            const found = m.body ? await this.preview.body(m.body) : m.clip ? await this.preview.clip(m.clip) : undefined;
+            if (!found) return;
+            post({ type: "got", key: m.key, url: webview.asWebviewUri(vscode.Uri.file(found.file)).toString(), notes: found.notes });
+          } catch (e) {
+            post({ type: "got", key: m.key, error: e instanceof Error ? e.message : String(e) });
+          }
+          return;
+        }
         case "cursor": {
           const other = scene.track !== m.track;
           scene.track = m.track;
@@ -155,7 +179,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="${css}">
 <title>EDGEdir scene</title>
@@ -178,7 +202,9 @@ export const PageBody = `<header>
   <span class="status" id="status" role="status"></span>
 </header>
 <section id="viewport" aria-label="Preview">
-  <p>The 3D preview of the cast comes in a later phase (D3). The timeline below is the scene.</p>
+  <div id="stage"></div>
+  <p id="previewNote" role="status"></p>
+  <button id="frame" title="Fit the view to every actor">Frame</button>
 </section>
 <div id="splitter" role="separator" aria-orientation="horizontal" tabindex="0" title="Drag to resize the preview"></div>
 <div class="toolbar">

@@ -69,7 +69,16 @@ export interface Actor {
   /** The entity file and the body's rig, read from the game when the actor was picked. */
   entity?: string;
   rig?: string;
+  /** Where the actor stands (D3). Absent: placed by the track's order. */
+  at?: Mark;
   [more: string]: unknown;
+}
+
+/** Where an actor stands and which way it faces: metres from the scene's origin, and degrees. */
+export interface Mark {
+  x: number;
+  y: number;
+  yaw: number;
 }
 
 export interface Track {
@@ -392,11 +401,44 @@ export function setActor(doc: SceneDoc, trackId: string, actor: Actor | undefine
     const next = { ...t };
     const plain = t.name === TrackKindNames.actor || (t.name.startsWith(`${TrackKindNames.actor} `) && /^\d+$/.test(t.name.slice(TrackKindNames.actor.length + 1))) || (!!t.actor?.name && t.name === t.actor.name);
     if (actor) {
-      next.actor = actor;
+      // The mark is the track's place in the scene: a new actor stands where the last one stood.
+      next.actor = t.actor?.at && !actor.at ? { ...actor, at: t.actor.at } : actor;
       if (plain && actor.name) next.name = actor.name;
     } else delete next.actor;
     return next;
   });
+}
+
+// ---- Marks (D3) ----
+
+/** How far apart actors without a mark of their own stand. */
+export const MarkGap = 0.8;
+/** How far from the scene's origin a mark can be. */
+export const MarkReach = 1000;
+
+/** Where a track's actor stands: its own mark, or a place by the track's order among the actor tracks. */
+export function markOf(doc: SceneDoc, trackId: string): Mark {
+  const at = findTrack(doc, trackId)?.actor?.at as Partial<Mark> | undefined;
+  if (at && typeof at === "object" && isNumber(at.x) && isNumber(at.y)) return { x: at.x, y: at.y, yaw: isNumber(at.yaw) ? at.yaw : 0 };
+  const order = doc.tracks.filter((t) => t.kind === "actor").findIndex((t) => t.id === trackId);
+  return { x: round(Math.max(0, order) * MarkGap), y: 0, yaw: 0 };
+}
+
+/** Moves or turns a track's actor. What is not named stays; the yaw is kept from 0 up to 360. */
+export function setMark(doc: SceneDoc, trackId: string, change: Partial<Mark>): SceneDoc {
+  const track = findTrack(doc, trackId);
+  if (!track) throw new EditError("That track is no longer in the scene");
+  if (!track.actor) throw new EditError("Choose an actor first: a mark is where an actor stands");
+  const at = { ...markOf(doc, trackId) };
+  for (const key of ["x", "y", "yaw"] as const) {
+    const v = change[key];
+    if (v === undefined) continue;
+    if (!isNumber(v)) throw new EditError("That is not a number");
+    at[key] = v;
+  }
+  if (Math.abs(at.x) > MarkReach || Math.abs(at.y) > MarkReach) throw new EditError(`A mark is within ${MarkReach} m of the scene's origin`);
+  const mark: Mark = { x: round(at.x), y: round(at.y), yaw: round(((at.yaw % 360) + 360) % 360) };
+  return changeTrack(doc, trackId, (t) => ({ ...t, actor: { ...t.actor, at: mark } }));
 }
 
 /** A new track at the end, named after its kind and numbered when the name is taken. */
