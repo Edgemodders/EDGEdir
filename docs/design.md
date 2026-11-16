@@ -340,6 +340,18 @@ Filed on 2026-11-16: REDnode #46 (the written-workspot spike and the weather), R
 
 So the first route, cues from a package, holds. A clip that moves its actor needs the scene to move the person; that is D5's to plan.
 
+**REDnode's `world.writeWorkspot` passed in the game the same day** (REDnode 0.66.9, in its next build; the shape is on REDnode #46):
+
+| Point | What it means for EDGEdir |
+|---|---|
+| The call | `world.writeWorkspot(name, { rig, clips: [{ set, anim, name, loop }] })` writes one workspot and answers its path for `world.spawn` and its entries. `world.jumpWorkspot(id, name)` jumps at once. So EDGEdir writes no game files for an actor: its package passes each actor track's animations |
+| Quest clips | Solved: the engine finds a workspot's animation setup by a hash, and the call makes a new one. Quest clips and gameplay clips jump at once and loop |
+| The brief T pose | It comes at each person's first play. So D5 starts every actor once while out of view, before the scene shows them |
+| A jump before the person is in the workspot | `world.jumpWorkspot` answers false. Call `world.useWorkspot` first |
+| Trim, speed, loops | A workspot's entry has none. D5 cuts a clip short with a timed jump (`out`), and repeats one by jumping to it again. `in` (starting inside an animation) and `speed` have no route yet: until one is found they are for the preview, and Play says so |
+| Root motion | Confirmed as not applied: the actor moved 0.00 m. The scene moves the person |
+| Needs | The `bridge` and `archives` permissions for EDGEdir's package |
+
 | To | Need | For phase |
 |---|---|---|
 | REDnode | The A2 test's result, and a spike on a written `.workspot` (shared with its own "second spike") | D0 |
