@@ -4,7 +4,7 @@ title: D3 Preview
 
 # <span class="y">D3</span> Preview
 
-**Status: agreed by the owner on 2026-11-16 (all four questions as recommended) and built the same day, EDGEdir 0.0.9.** It was looked at in a plain browser with real bodies and animations from the game; it has not been run in VS Code yet ([Tests](testing.html), "D3 Preview"). What is built, and what differs from the plan, is at the end.
+**Status: agreed by the owner on 2026-11-16 (all four questions as recommended) and built the same day (EDGEdir 0.0.9; now 0.0.10).** Its hand test passed a round by script in VS Code on 2026-11-16, 17 of 17 ([Tests](testing.html), "D3 Preview"); 0.0.10 has four fixes from that round's notes, not run yet. What is built, and what differs from the plan, is at the end.
 
 D3 is the third phase of the [design](design.html). It fills the empty area above the timeline with a 3D view: each actor's body, playing the clip under the playhead. It needs the game's files and REDbridge 0.14.0, not the game running. Nothing in D3 plays in the game (D5).
 
@@ -116,7 +116,9 @@ What differs from the plan, or was settled in building:
 | A moment beyond the file | The moment shown is held inside the exported animation's own length |
 | The viewport's height | 260 px at first (it was 96); the splitter's place is kept as before |
 
-## Unverified until run in VS Code
+## Unverified
+
+The round by script on 2026-11-16 settled two of these: the page loads the preview's files inside VS Code, and V's masculine base body exports and shows. Three bodies stood and played; how smooth it is with more was not judged.
 
 - That four or five bodies of 500 joints each play smoothly in the editor's page. Two did in a browser.
 - That the page may load files from the preview's folder through VS Code's own file addresses (`localResourceRoots`, and `connect-src` in the page's content rules). It is how VS Code documents it; the browser harness loads the files another way, so the hand test is the first check.

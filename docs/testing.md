@@ -17,7 +17,7 @@ Last updated 2026-11-16.
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
 | [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
-| [D3 Preview](#d3-preview) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D3 | | Not run yet (0.0.9) |
+| [D3 Preview](#d3-preview) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D3 | 2026-11-16 | By script: 17 of 17 pass (0.0.9, REDbridge 0.14.0) |
 
 ## The release gate
 
@@ -32,11 +32,11 @@ The rounds by script are there so that work does not wait for the owner's testin
 
 ## Waiting for a test
 
-Every hand test of D1 and D2 has passed a round run by script in another session (2026-11-16). Still open before a release:
+Every hand test (D1, D2, D3) has passed a round run by script in another session (2026-11-16). Still open before a release:
 
-- **D3 Preview**, 17 steps, on EDGEdir 0.0.9: not run yet, by script or by hand. It is the first run of the preview inside VS Code; so far it was looked at in a plain browser.
+- **Four fixes in EDGEdir 0.0.10** from D3's round, not run in VS Code yet: listed under that test's round.
 - **The owner's spot tests** S1 to S8 below: none run yet.
-- **One fix in EDGEdir 0.0.8**, not run in VS Code yet, by script or by hand: a change the inspector refuses puts its box back to the scene's value (spot test S5 covers it). The fixes of 0.0.7 passed their own round by script.
+- The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
 ## Spot tests for the owner
 
@@ -226,7 +226,7 @@ EDGEdir 0.0.8 (first built as 0.0.6). It covers D2.7. EDGEfab stores no animatio
 
 ## D3 Preview
 
-EDGEdir 0.0.9, built 2026-11-16. Not run yet. It covers D3: the 3D view above the timeline.
+EDGEdir 0.0.10 (first built as 0.0.9, 2026-11-16). It covers D3: the 3D view above the timeline.
 
 **Before you start:** the game installed (not running) and REDbridge 0.14.0. Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). Let **Read the Game** finish first (parts 1 and 2), so the Animations view has animations to add. To see the first export, delete `%LOCALAPPDATA%\EDGEdir\cache\preview` if it is there.
 
@@ -247,9 +247,21 @@ EDGEdir 0.0.9, built 2026-11-16. Not run yet. It covers D3: the 3D view above th
 | 13 | On the first track, turn the fits filter off and add an animation whose rig is `man_base`. Put the playhead in that clip | The clip is hatched red. The body does not play it, and the line says it is passed over, made for another rig |
 | 14 | Click **M** on the second track | Its body is gone from the view. Click **M** again: it is back |
 | 15 | Hover the line of notes at the bottom of the view | A tooltip says what each body is: its appearance, how many meshes and joints, and what was left out |
-| 16 | Save. Close the scene's tab and open it from the Desk | The bodies are back within a second or two, without the wait of step 2, and in the pose under the playhead |
+| 16 | Save. Close the scene's tab and open it from the Desk | The bodies are back within a second or two, without the wait of step 2. The playhead is at the start again, and the bodies are in the pose there |
 | 17 | In settings set `edgedir.bridgePath` to a file that is not there and clear REDcode's bridge path if set, **Developer: Reload Window**, and open a scene with an actor whose body was never shown (or delete the `preview` folder first) | The view says there is no body, and why (REDbridge was not found). The timeline works as before. Put the setting back after |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet |
+| 1 | 2026-11-16 | 1 to 17, on 0.0.9 at `16b9c2f`, REDbridge 0.14.0 | **Pass, 17 of 17**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk and cache, the real game folder read only; judged from `edgedirPreview.state()`, the inspector, the saved file and screenshots; nobody watched it live, so how smooth play and orbit are is not judged). The page loads the bodies inside VS Code with no content-rule or fetch errors. The first body stood about 7 s after its appearance was picked (12.2 MB); a reopened scene had three bodies standing in 480 ms. V's masculine base body also passed (an extra try). The fix of 0.0.8 passed: Loops typed with no room is refused and the box goes back |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 9: in a short editor (480 px, with the bottom panel open) the splitter could not be dragged down at all: the cap equalled the view's first height | Fixed in 0.0.10: the view starts at 260 px or 45% of the editor, whichever is less, and can be dragged to 130 px from the bottom. Not run yet |
+| A file that failed was never asked for again while the tab stayed open. Seen once, after the bridge's setting changed just before a reload: the view kept "no body" for minutes though the bridge was up. Closing and opening the scene brought the bodies | Fixed in 0.0.10: a failed file is asked for once more by itself after 5 s, and **Frame** asks again for everything that failed. Not run yet |
+| With no REDbridge the line gave the same reason five times, cut off after the first | Fixed in 0.0.10: one reason is said once, with what it stopped ("Not loaded: Judy Álvarez's body, ... REDbridge was not found ... Frame tries again"), and the tooltip has the whole line. Not run yet |
+| The view fitted the first body only: a second actor's ring was cut off until Frame, and a clip that lies down dropped under the edge | Fixed in 0.0.10: each new body fits the view again until the view is moved by hand, and the fit leaves room for arms out and for lying down. Not run yet |
+| Step 16: a reopened scene has the playhead at 0 and the view at its first height, not as left | Left: neither is kept with the scene yet. The step now says so |
+| Bodies 0.8 m apart pass through each other in the arms-out rest pose | Left as it is: a mark moves them apart |
+| Step 15: the tooltip was read from the page, not seen drawn | Nothing: a script cannot see a native tooltip |
