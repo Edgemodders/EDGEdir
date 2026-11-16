@@ -1,0 +1,141 @@
+<!doctype html>
+<!-- Source for the README banner, the GitHub social preview and the Nexus picture.
+     Rendered to PNG by tools/brand/render.ps1 with headless Chrome:
+       brand.html?banner  -> 1280 x 320
+       brand.html?social  -> 1280 x 640
+       brand.html?nexus   -> 1280 x 640, the social layout 55 px lower, with room at the top for the
+                             EDGEmodders header the owner adds by hand -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EDGEdir brand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@500;600&family=JetBrains+Mono:wght@400;500&display=block" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090d;
+  --panel: #10131b;
+  --line: #262c3d;
+  --fg: #e3e6ee;
+  --dim: #8a93a8;
+  --yellow: #fcee0a;
+  --cyan: #19f3ff;
+  --green: #5dffa1;
+  --red: #ff3b5c;
+  --display: "Chakra Petch", sans-serif;
+  --body: "Rajdhani", sans-serif;
+  --mono: "JetBrains Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+.frame {
+  position: relative; overflow: hidden;
+  width: 1280px; height: 320px; padding: 44px 56px;
+  display: grid; grid-template-columns: 1fr 400px; gap: 40px; align-items: center;
+  background:
+    radial-gradient(ellipse at 18% 120%, rgba(252,238,10,.10), transparent 55%),
+    linear-gradient(rgba(25,243,255,.06) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(25,243,255,.06) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--bg);
+}
+.social .frame, .nexus .frame { height: 640px; padding: 72px 80px; grid-template-columns: 1fr 470px; gap: 56px; align-content: center; }
+.nexus .frame { padding-top: 127px; padding-bottom: 17px; }
+
+.frame > * { min-width: 0; }
+/* corner brackets */
+.frame::before, .frame::after {
+  content: ""; position: absolute; width: 36px; height: 36px; border: 2px solid var(--yellow);
+}
+.frame::before { top: 16px; left: 16px; border-right: 0; border-bottom: 0; }
+.frame::after { bottom: 16px; right: 16px; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--mono); font-size: 15px; letter-spacing: .22em; text-transform: uppercase; color: var(--cyan); }
+h1 {
+  margin: 10px 0 12px; font-family: var(--display); font-weight: 700; text-transform: uppercase;
+  font-size: 92px; line-height: .9; letter-spacing: .02em;
+}
+h1 span { color: var(--yellow); }
+.tag { font-family: var(--body); font-weight: 500; font-size: 26px; color: #c3c9d8; margin: 0; max-width: 44ch; text-wrap: balance; }
+.rule { height: 3px; width: 100%; max-width: 560px; margin-top: 22px; background: linear-gradient(90deg, var(--yellow) 0 72px, var(--line) 72px); }
+.social h1, .nexus h1 { font-size: 112px; }
+.social .eyebrow, .nexus .eyebrow { font-size: 17px; }
+.social .tag, .nexus .tag { font-size: 32px; }
+
+/* A sequence in the director: a time ruler, one track per character with its clips, keyframes, a
+   playhead, and one clip just stitched in between two others. */
+.seq {
+  background: rgba(16,19,27,.92); border: 1px solid var(--line); padding: 14px 16px;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim);
+  position: relative;
+}
+.seq .title { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.seq .title b { font-family: var(--display); font-size: 22px; letter-spacing: .04em; color: var(--fg); text-transform: uppercase; }
+.seq .title small { color: var(--cyan); font-size: 11px; }
+.ruler { display: grid; grid-template-columns: 74px 1fr; margin-bottom: 4px; }
+.ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--dim); border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+.track { display: grid; grid-template-columns: 74px 1fr; align-items: center; height: 30px; border-bottom: 1px solid rgba(38,44,61,.6); }
+.track > span { color: var(--fg); font-size: 11px; letter-spacing: .08em; }
+.lane { position: relative; height: 20px; }
+.clip { position: absolute; top: 0; height: 20px; padding: 0 6px 0 11px; font-size: 10px; line-height: 20px; white-space: nowrap; overflow: hidden;
+  color: var(--bg); background: var(--cyan); clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
+.clip.loop { background: rgba(25,243,255,.35); color: var(--fg); }
+.clip.new { background: var(--yellow); }
+.key { position: absolute; top: 6px; width: 8px; height: 8px; background: var(--fg); transform: rotate(45deg); }
+.playhead { position: absolute; top: 34px; bottom: 10px; width: 2px; background: var(--yellow); box-shadow: 0 0 8px rgba(252,238,10,.6); }
+.playhead::before { content: ""; position: absolute; top: -6px; left: -5px; border: 6px solid transparent; border-top-color: var(--yellow); }
+.social .seq, .nexus .seq { font-size: 14px; padding: 18px 20px; }
+.social .seq .title b, .nexus .seq .title b { font-size: 28px; }
+.social .track, .nexus .track { height: 38px; }
+.social .lane, .nexus .lane, .social .clip, .nexus .clip { height: 24px; line-height: 24px; }
+.social .clip, .nexus .clip { font-size: 12px; }
+.social .key, .nexus .key { top: 8px; }
+.social .track > span, .nexus .track > span { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div>
+    <div class="eyebrow">// EDGE platform &middot; Animation director</div>
+    <h1>EDGE<span>dir</span></h1>
+    <p class="tag">Design and stitch animations and acting sequences for the game&rsquo;s characters, then play them in the running game.</p>
+    <div class="rule"></div>
+  </div>
+  <div class="seq">
+    <div class="title"><b>Arrival</b><small>Scene 1 &middot; 12.0 s</small></div>
+    <div class="ruler"><span></span><div class="ticks"><span>0</span><span>3</span><span>6</span><span>9</span><span>12</span></div></div>
+    <div class="track"><span>Medic</span><div class="lane">
+      <div class="clip" style="left:0;width:30%">walk in</div>
+      <div class="clip new" style="left:31%;width:24%">+ kneel</div>
+      <div class="clip loop" style="left:56%;width:44%">treat &middot; loop</div>
+      <div class="key" style="left:30%"></div><div class="key" style="left:55%"></div>
+    </div></div>
+    <div class="track"><span>Soldier</span><div class="lane">
+      <div class="clip" style="left:4%;width:34%">exit av</div>
+      <div class="clip loop" style="left:39%;width:61%">aim &middot; loop</div>
+      <div class="key" style="left:38%"></div>
+    </div></div>
+    <div class="track"><span>Crowd</span><div class="lane">
+      <div class="clip loop" style="left:0;width:48%">idle &middot; loop</div>
+      <div class="clip" style="left:49%;width:26%">step back</div>
+      <div class="key" style="left:48%"></div><div class="key" style="left:75%"></div>
+    </div></div>
+    <div class="playhead" style="left:calc(74px + 16px + (100% - 74px - 32px) * .44)"></div>
+  </div>
+</div>
+<script>
+  if (location.search.includes("social")) document.body.classList.add("social");
+  if (location.search.includes("nexus")) document.body.classList.add("nexus");
+  // The taller pictures add a fourth track.
+  const big = document.body.classList.contains("social") || document.body.classList.contains("nexus");
+  if (big) {
+    const seq = document.querySelector(".seq");
+    const track = document.createElement("div");
+    track.className = "track";
+    track.innerHTML = '<span>Driver</span><div class="lane"><div class="clip loop" style="left:0;width:62%">wait &middot; loop</div><div class="clip" style="left:63%;width:37%">wave</div><div class="key" style="left:62%"></div></div>';
+    seq.insertBefore(track, document.querySelector(".playhead"));
+  }
+</script>
+</body>
+</html>
