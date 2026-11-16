@@ -4,7 +4,7 @@ title: D3 Preview
 
 # <span class="y">D3</span> Preview
 
-**Status: plan, written 2026-11-16, for the owner's review. Nothing of D3 is built.** A spike measured what it rests on (below).
+**Status: agreed by the owner on 2026-11-16 (all four questions as recommended) and built the same day, EDGEdir 0.0.9.** It was looked at in a plain browser with real bodies and animations from the game; it has not been run in VS Code yet ([Tests](testing.html), "D3 Preview"). What is built, and what differs from the plan, is at the end.
 
 D3 is the third phase of the [design](design.html). It fills the empty area above the timeline with a 3D view: each actor's body, playing the clip under the playhead. It needs the game's files and REDbridge 0.14.0, not the game running. Nothing in D3 plays in the game (D5).
 
@@ -57,6 +57,8 @@ Run on 2026-11-16 against game 2.5 with a build of REDbridge's main (the code of
 
 ## Questions for the owner
 
+All four answered on 2026-11-16: as recommended.
+
 | # | Question | Recommendation |
 |---|---|---|
 | 1 | Grey bodies first, textured later? | **Yes.** Shape and movement are what a director needs first, and it is what REDcode shows. Textured bodies need the game's layered materials drawn, which EDGEmat knows about: a request to plan, not a D3 step |
@@ -89,11 +91,36 @@ Written out in [Tests](testing.html) when D3 is built. It needs the game install
 8. A clip made for another rig: the body holds its pose and the viewport says so.
 9. Close and reopen the scene: the bodies come back at once, from the PC's folder.
 
-## Unverified until built
+## What is built
 
-- That four or five bodies of 500 joints each play smoothly in the editor's page. REDcode plays one.
-- That the page may load files from a folder outside the extension through VS Code's own file addresses. It is how VS Code documents it; EDGEdir has not done it yet.
-- The base body's files for each of V's rigs: taken from REDcode's code, to be tried in D3.1.
+| Part | Where | What it does |
+|---|---|---|
+| D3.1 Exports | `src/core/preview.ts` | `PreviewStore`: a body (`{ appearance, meshMaterials: false }`) or one animation (`{ animations: [name], rootMotion: false }`) exported once through `project.export` into `%LOCALAPPDATA%\EDGEdir\cache\preview\<game>\<hash>.glb`, with what the bridge left out kept beside it. One export at a time, through a work folder that is emptied after. V is the base body of V's rig (`baseBodyFor`). A made animation's own file is copied into `preview\made` |
+| D3.2 Viewport | `webview/preview.ts`, `media/editor.css` | three.js 0.170 in the page (the page's script is 617 KB minified): a grid of metre squares, the scene's origin as a yellow ring, orbit, pan and zoom, **Frame**. It draws only when something changed |
+| D3.3 Bodies | the same | Each actor track with an actor, not muted, gets its own copy of its body, in one grey material, on its mark, with a ring at its feet (cyan for the selected track). The page asks the host for a file by a key (`want`), and the host answers with an address in the preview's folder (`got`) |
+| D3.4 Poses | `src/pose.ts` | `poseAt(track, time)`: the clip, the moment in it, whether it is in a gap, and a clip passed over. `clipsNear` names the clips that start within 3 s, which are loaded ahead |
+| D3.5 Marks | `src/doc.ts` | `markOf` and `setMark`; the inspector's **Right (m)**, **Forward (m)** and **Turn (°)** on an actor track. A new actor on a track stands where the last one stood |
+| D3.6 The rest | `src/game.ts`, `src/editor.ts` | `previewBody` and `previewClip`; a made animation found by its id, project first; the viewport's line of notes: files loading, V's stand-in, a clip passed over, a body or clip that could not be loaded and why (no game, no REDbridge) |
+
+Checked: 7 unit tests (`test/preview.test.ts`: the pose, the marks, the store with a stand-in bridge). Against the real game, by `tools/preview-sample.ts`: a main character's body in 2.0 s (11.7 MB, 17 meshes on 547 joints, the far proxy mesh left out), V's feminine base body in 0.4 s (2.1 MB), four clips in 0.1 to 0.3 s each. In a plain browser with those files (`tools/page-harness.mjs`): two bodies stand on their marks, take the pose under the playhead, play in time and loop in a gap; a mark changed in the document moves and turns its actor; a clip for another rig leaves the body in its rest pose with the note.
+
+What differs from the plan, or was settled in building:
+
+| Point | As built |
+|---|---|
+| An unfit clip | The plan said the body holds its pose. As built, the last clip that fits goes on looping under it, as in a gap, and the note names the clip passed over. With no clip before it, the rest pose |
+| A muted actor track | Shows no body |
+| Which way an actor faces | Turn 0 faces the game's forward (away from the first view); Turn 180 faces the view. **Unverified against the game** until D5 plays a scene there: the turn's direction may need flipping |
+| A body's rest pose | Arms out, as the files have it, before the first clip |
+| The view | It starts behind the actors, looking forward, so the game's right is the screen's right. It is not kept when the scene is closed |
+| A moment beyond the file | The moment shown is held inside the exported animation's own length |
+| The viewport's height | 260 px at first (it was 96); the splitter's place is kept as before |
+
+## Unverified until run in VS Code
+
+- That four or five bodies of 500 joints each play smoothly in the editor's page. Two did in a browser.
+- That the page may load files from the preview's folder through VS Code's own file addresses (`localResourceRoots`, and `connect-src` in the page's content rules). It is how VS Code documents it; the browser harness loads the files another way, so the hand test is the first check.
+- The masculine base body. The feminine one was exported and shown; the masculine one's file names are REDcode's, not run here.
 
 ## Out of D3
 

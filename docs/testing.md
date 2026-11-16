@@ -12,11 +12,12 @@ Last updated 2026-11-16.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 40 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 47 tests |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
 | [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
+| [D3 Preview](#d3-preview) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D3 | | Not run yet (0.0.9) |
 
 ## The release gate
 
@@ -31,14 +32,15 @@ The rounds by script are there so that work does not wait for the owner's testin
 
 ## Waiting for a test
 
-Every hand test has passed a round run by script in another session (2026-11-16). Still open before a release:
+Every hand test of D1 and D2 has passed a round run by script in another session (2026-11-16). Still open before a release:
 
-- **The owner's spot tests** S1 to S7 below: none run yet.
+- **D3 Preview**, 17 steps, on EDGEdir 0.0.9: not run yet, by script or by hand. It is the first run of the preview inside VS Code; so far it was looked at in a plain browser.
+- **The owner's spot tests** S1 to S8 below: none run yet.
 - **One fix in EDGEdir 0.0.8**, not run in VS Code yet, by script or by hand: a change the inspector refuses puts its box back to the scene's value (spot test S5 covers it). The fixes of 0.0.7 passed their own round by script.
 
 ## Spot tests for the owner
 
-One short test per major feature, about 15 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
+One short test per major feature, about 20 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
 
 **Before you start:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
 
@@ -51,6 +53,7 @@ One short test per major feature, about 15 minutes in all. Each one names the fu
 | S5 | Animations on a track | Select Judy's track, turn on **Only What Fits the Selected Actor**, click the **+** on an animation. On the clip set Speed to 2, then Loops to 3. Add a second clip right after it, then set the first one's Loops to 9 | The clip lands at the playhead, as long as the animation, and is selected. It gets half as long, then three times that, with marks where it starts again. Loops 9 is refused with a message and the box goes back to 3 | Part 2, 4, 5, 9; the fix of 0.0.8 |
 | S6 | The rig rule | **Change Actor...** on Judy's track to a man. Then save, close and reopen the scene | Every clip is hatched red and the inspector says Unfit and why; nothing is removed. Reopened, it is the same | Part 2, 13, 16 |
 | S7 | A made animation | Run `node tools/made-anim-sample.mjs`, click **Refresh** in the Animations view, click the **+** on `Sample wave`. Then run it with `--remove` | A **Library** group with `Sample wave`, 2.40 s; the clip `sample_wave` lands on the track as a made animation. After the remove and a Refresh the group is gone and the clip stays | Part 3, 1 to 3, 6 |
+| S8 | The 3D preview | Open the scene of S4 to S6 with Judy's track set back to Judy. Drag the playhead through her clips, then press Space. Select V's track and set **Turn (°)** to 180. Drag in the view, then click **Frame** | Two grey bodies stand side by side above the timeline; V's has no head and the line says it stands in for your V. Judy takes the pose under the playhead and plays in time. V turns round. The view orbits, and Frame fits both | D3, 2 to 8, 12 |
 
 | Round | Date | Spots | Result |
 |---|---|---|---|
@@ -64,7 +67,7 @@ npm run build
 npm test
 ```
 
-The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename.
+The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
 
 ## D1 Timeline
 
@@ -221,3 +224,32 @@ EDGEdir 0.0.8 (first built as 0.0.6). It covers D2.7. EDGEfab stores no animatio
 |---|---|---|---|
 | 1 | 2026-11-16 | 1 to 6, on 0.0.6 at `17ee24d` | **Pass, 6 of 6**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk, cache and Library, the real game folder read only; nobody watched it live) |
 
+## D3 Preview
+
+EDGEdir 0.0.9, built 2026-11-16. Not run yet. It covers D3: the 3D view above the timeline.
+
+**Before you start:** the game installed (not running) and REDbridge 0.14.0. Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). Let **Read the Game** finish first (parts 1 and 2), so the Animations view has animations to add. To see the first export, delete `%LOCALAPPDATA%\EDGEdir\cache\preview` if it is there.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | New Scene `Preview test`. Look at the area above the timeline | A dark view with a grid and a small yellow ring at its middle, a **Frame** button at the top right, and a line saying to add an actor track and choose an actor |
+| 2 | **Add Track**, Actor. **Choose Actor...**, pick Judy Álvarez and an appearance | The line says a file is loading from the game. In a few seconds a grey body stands on the grid, arms out, with a cyan ring at its feet, and the view fits it |
+| 3 | With her track selected, turn on **Only What Fits the Selected Actor** in the Animations view and add two animations with the **+**, one after the other | Clips on the lane. With the playhead in the first, the body is in that animation's pose |
+| 4 | Drag the playhead along the ruler, through both clips | The body takes the pose under the playhead, and changes animation where the second clip starts |
+| 5 | Press Home, then Space. Press Space again | The body plays in time with the playhead and stops with it |
+| 6 | Add a second Actor track and choose another character | A second body stands 0.8 m to the right of the first. The ring of the selected track is cyan, the other grey |
+| 7 | Select the second track. In the inspector set **Right (m)** to 2, **Forward (m)** to 1 and **Turn (°)** to 180 | The body moves right and away, and turns to face the other way. Ctrl+Z takes each back |
+| 8 | Drag in the view with the left button, with the right button, and turn the wheel. Click **Frame** | The view orbits, pans and zooms. Frame fits both bodies again |
+| 9 | Drag the splitter under the view down and up | The view gets taller and shorter, and the bodies keep their shape (not stretched) |
+| 10 | Move the second clip of the first track a few seconds to the right, and put the playhead in the gap. Press Space | In the gap the body goes on with the first clip, looping, until the second clip starts |
+| 11 | Select a clip and set **Speed** to 2, then **Loops** to 2; drag the playhead through it. Drag its right edge shorter | The body moves twice as fast, and runs the part twice. The preview follows the trim |
+| 12 | Add a third Actor track and choose **V (the player), feminine body** | A grey body without a head, and the line says the game's base body stands in for your V. Add an animation to it: it plays |
+| 13 | On the first track, turn the fits filter off and add an animation whose rig is `man_base`. Put the playhead in that clip | The clip is hatched red. The body does not play it, and the line says it is passed over, made for another rig |
+| 14 | Click **M** on the second track | Its body is gone from the view. Click **M** again: it is back |
+| 15 | Hover the line of notes at the bottom of the view | A tooltip says what each body is: its appearance, how many meshes and joints, and what was left out |
+| 16 | Save. Close the scene's tab and open it from the Desk | The bodies are back within a second or two, without the wait of step 2, and in the pose under the playhead |
+| 17 | In settings set `edgedir.bridgePath` to a file that is not there and clear REDcode's bridge path if set, **Developer: Reload Window**, and open a scene with an actor whose body was never shown (or delete the `preview` folder first) | The view says there is no body, and why (REDbridge was not found). The timeline works as before. Put the setting back after |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
