@@ -4,7 +4,7 @@ title: D2 Cast and clips
 
 # <span class="y">D2</span> Cast and clips
 
-**Status: plan agreed with the owner on 2026-11-16. D2.1 to D2.4 are built (EDGEdir 0.0.4) and wait for a hand test ([Tests](testing.html#d2-cast-part-1)). D2.5 on waits for REDbridge's next release.**
+**Status: plan agreed with the owner on 2026-11-16. D2.1 to D2.6 are built (EDGEdir 0.0.5) and wait for their hand tests ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2)). Part 2 needs REDbridge's next release, which is built on its main and not released. D2.7 and D2.8 are next.**
 
 D2 is the second phase of the [design](design.html). It brings real things onto the timeline: an actor on each actor track, picked from the game's characters with V among them, and the game's animations as clips with their true lengths. It still shows no 3D picture (D3) and plays nothing in the game (D5).
 
@@ -189,6 +189,38 @@ The core was run against the game from a script, outside VS Code.
 
 Not checked yet: anything in VS Code (the picker, the view, the progress note, the settings). The page's new lane head and inspector lines were type checked, not looked at. All of it is in the hand test.
 
+### D2.5 and D2.6 (EDGEdir 0.0.5, 2026-11-16)
+
+| Part | Where |
+|---|---|
+| The clip level of the index: read in pages, saved as it goes, picked up where it stopped; search by words, rig and set | `src/core/animIndex.ts` |
+| The file list through REDbridge's new filter, with the slow way kept for 0.13.0 | `src/core/animSets.ts` |
+| Reading the animations in the background, with a note in the status bar | `src/game.ts` |
+| The view: the animations inside each file, search over them, **Fits** and **the actor's own files**, **Add to Track** | `src/animationsView.ts`, `src/extension.ts` |
+| A clip's animation and how it plays (`anim`, `in`, `out`, `speed`, `loops`), trim and split inside the animation, the unfit rule | `src/doc.ts` (`addAnimClip`, `setPlay`, `playOf`, `unfit`) |
+| The page: the unfit hatch, loop marks, the inspector's fields; the host knows the selected track and the playhead | `webview/editor.ts`, `src/editor.ts` |
+| Unit tests | `test/anim.test.ts` (9 tests) |
+
+Found on the real game with a build of REDbridge's main (`efa9e17`, not released), from a script outside VS Code:
+
+| Asked | Found |
+|---|---|
+| The file list with the filter | 14,016 files in under a second (116 s without it) |
+| The animations | 146,814 in 14,016 files, none failed, in 3.5 minutes; 8.2 MB on disk; loaded again in 0.1 s |
+| A search | 3 to 23 ms over everything |
+| Rigs | The game's ordinary women and men have about 16,000 animations each. V's first-person animations are made for other rigs (`player_woman_skeleton`, `player_man_skeleton`), so by the strict rule they do not fit V's third-person body; whether they would play on it is **unverified** and not needed yet |
+| V's own files | 3 files, 31 animations: V's third-person entity lists little. Fits is the useful filter for V |
+
+Checked in the browser harness (2026-11-16): the hatch, the loop marks and the inspector draw; a looping clip's start refuses with its reason; its end edge sets the loops; a clip's start edge trims into its animation.
+
+What differs from the plan:
+
+- **Dragging an animation onto a lane is not built.** Whether a drag from a view reaches the editor's page is still unverified, and it needs VS Code to try. **Add to Track** is the way, as a button on each animation and in its menu.
+- Dragging the end of a clip past its animation's end does not add loops. Loops are set in the inspector; a clip that already loops changes its loops by its end edge.
+- The view's filter for the actor's own files reads the entity's file only, not its appearance's.
+
+Not checked yet: anything in VS Code. It is in the hand test.
+
 ## Steps
 
 Each step is one or more small commits with its unit tests. The hand test comes after the last.
@@ -199,8 +231,8 @@ Each step is one or more small commits with its unit tests. The hand test comes 
 | D2.2 Cast (built) | The character list and its file on the PC; the picker with search; V's two entries; **Choose Actor** on a track and in the inspector; the track head shows the actor | 0.13.0 |
 | D2.3 Rigs (built) | An actor's entity, rig and appearances read from the game; the rule for which component is the body's; V's rig beside the base rigs; the sets an entity carries | 0.13.0 |
 | D2.4 Sets (built) | The set level of the index; the Animations view's Game group down to sets | 0.13.0 |
-| D2.5 Clips | The clip level; search; the two filters | `anims.info` |
-| D2.6 On the lane | The clip's `anim`, `in`, `out`, `speed`, `loops` in the document module and the page; Add to Track and the drag; the unfit mark; swapping an actor | D2.5 for real clips; unit tests need nothing |
+| D2.5 Clips (built) | The clip level; search; the two filters | `anims.info` |
+| D2.6 On the lane (built, without the drag) | The clip's `anim`, `in`, `out`, `speed`, `loops` in the document module and the page; Add to Track and the drag; the unfit mark; swapping an actor | D2.5 for real clips; unit tests need nothing |
 | D2.7 Made animations | The Library and Project groups, read from EDGEfab's agreed shape | A hand-made item; EDGEfab's first real one later |
 | D2.8 API | The extension API above, and `docs/api.md` | EDGEfab's comments on #7 |
 

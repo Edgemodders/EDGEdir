@@ -15,7 +15,7 @@ A director's tool for Cyberpunk 2077, as a VS Code extension in the EDGE family:
 **[Docs](https://edgemodders.github.io/EDGEdir/)** &middot; [Changelog](CHANGELOG.md) &middot; [Tests](docs/testing.md)
 
 > [!NOTE]
-> **Status: D2 Cast and clips, 2026-11-16.** The design is agreed ([docs/design.md](docs/design.md)). Built and waiting for hand tests: the scene editor (a timeline of tracks and clips for `.edgedir` files), the Desk, the actor picker (the game's characters, and V) and the Animations view's list of the game's animation files. Clips are named blocks for now; real animations on the lanes, the 3D preview and play in the game come later. Nothing is released yet.
+> **Status: D2 Cast and clips, 2026-11-16.** The design is agreed ([docs/design.md](docs/design.md)). Built and waiting for hand tests: the scene editor (a timeline of tracks and clips for `.edgedir` files), the Desk, the actor picker (the game's characters, and V), the Animations view (the game's animations, with search) and real animations as clips on the lanes. The 3D preview and play in the game come later. Nothing is released yet.
 
 ## Repo layout
 

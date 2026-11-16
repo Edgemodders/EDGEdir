@@ -12,14 +12,16 @@ Last updated 2026-11-16.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 28 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 37 tests |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | Round 1 by script: 22 of 22 pass (EDGEdir 0.0.2). The fixes in 0.0.3 and the owner's own run are open |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | Not run yet | Waiting (EDGEdir 0.0.4). The core passed a scripted run against the real game |
+| [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge's next release | D2.5, D2.6 | Not run yet | Waiting (EDGEdir 0.0.5) for REDbridge's release. The core passed a scripted run against the real game with a build of REDbridge's main |
 
 ## Waiting for a hand test
 
 - [D1 Timeline](#d1-timeline), EDGEdir 0.0.3: the owner's own run, or the owner's word that round 1 by script is enough; steps 4, 5 and 22a are new in 0.0.3.
-- [D2 Cast, part 1](#d2-cast-part-1), EDGEdir 0.0.4.
+- [D2 Cast, part 1](#d2-cast-part-1), EDGEdir 0.0.5 (built on 0.0.4; nothing in it changed).
+- [D2 Clips, part 2](#d2-clips-part-2), EDGEdir 0.0.5, once REDbridge's next release is out.
 
 ## Type check, build and unit tests
 
@@ -86,7 +88,7 @@ EDGEdir 0.0.4, built 2026-11-16. Not run yet. It covers D2.1 to D2.4: the game's
 | Step | Do | Expect |
 |---|---|---|
 | 1 | Click the EDGEdir icon and open the **Animations** view | It says the game's animations are listed here, with **Read the Game** |
-| 2 | Click **Read the Game** | A note at the bottom right, "EDGEdir is reading the game": first the characters (about 15 s), then the animation files (about 2 minutes, counting game files). Then the view shows **Game** with about 14,000 animation files |
+| 2 | Click **Read the Game** | A note at the bottom right, "EDGEdir is reading the game": first the characters (about 15 s), then the animation files (about 2 minutes with REDbridge 0.13.0, counting game files; a second or two with the release after it). Then the view shows **Game** with about 14,000 animation files |
 | 3 | Open **Game**, then `base`, then `animations`, and a folder below | Folders with their counts, then animation files by name |
 | 4 | Click the search button in the view's title, type two words from a name you saw | A line with the count, then the matching files, each with its folder. The clear button brings the folders back |
 | 5 | Right-click an animation file: **Copy Game Path**. Paste somewhere | The file's game path, ending `.anims` |
@@ -100,6 +102,36 @@ EDGEdir 0.0.4, built 2026-11-16. Not run yet. It covers D2.1 to D2.4: the game's
 | 13 | **Change Actor...**, pick **Nobody** | The track has nobody; its clips and its name stay as they are |
 | 14 | Save, close the window opened by F5, press F5 again, open `Cast test` from the Desk | The actors are as saved. The Animations view fills by itself, without **Read the Game** and without the two-minute wait |
 | 15 | In settings set `edgedir.bridgePath` to a file that is not there and clear REDcode's bridge path if set (or run with REDcode disabled), then **Developer: Reload Window** | The Animations view says REDbridge was not found, with its two links. The scene still opens and edits. Choosing an actor offers V only, and says the characters could not be read. Put the setting back after |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
+
+## D2 Clips, part 2
+
+EDGEdir 0.0.5, built 2026-11-16. Not run yet. It covers D2.5 and D2.6: the animations inside each file, search and filters, and real clips on the lanes.
+
+**Before you start:** as for part 1, and **the REDbridge release after 0.13.0** (it has `anims.info`). With 0.13.0 the view lists files only, and steps 2 on cannot be done. Run part 1 first, or at least its steps 1 and 2.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Open the Animations view after **Read the Game** | The status bar says "EDGEdir: Animations: ... of 14,016 files read", counting up for about four minutes. The **Game** line's count of animations grows. The view can be used meanwhile |
+| 2 | When it is done, open `base`, `animations`, a folder, and an animation file | The file shows its count and rig, and opens to its animations, each with its length. Hover one: its frames, file and rig |
+| 3 | Search `sit chair` | A count, then animations whose name or file has both words, each with its file's name |
+| 4 | New Scene `Clip test`, add an Actor track, choose Judy Álvarez. In the Animations view click the person button in the title (**Only What Fits the Selected Actor**) | The count drops to the animations made for `woman_base`, and the line says they fit Judy |
+| 5 | Click the **+** on an animation in the list | A clip with the animation's name lands on Judy's track at the playhead, as long as the animation. The inspector shows In, Out, Speed, Loops, and the animation's file, length and rig |
+| 6 | Press End, add a second animation | It lands after the first, at its own length |
+| 7 | Drag the first clip's right edge left, then right as far as it goes | It gets shorter; back out it stops at the animation's full length, or at the next clip |
+| 8 | Drag the first clip's left edge right | The clip starts later and In is above 0: the animation's start is cut, its end stays in place |
+| 9 | On the last clip set Speed to 2, then Loops to 3 | The clip is half as long, then three times that, with two small marks where it starts again |
+| 10 | Drag that clip's right edge left by about a third. Then try its left edge | Loops becomes 2. The left edge does not move, and the top right says to set Loops to 1 |
+| 11 | Put the playhead inside the first clip, select it, press S | Two clips; the second's In is the first's Out |
+| 12 | Turn the fits filter off, search `walk`, and add an animation whose rig is `man_base` (hover to see) | A warning says which rig it is made for. The clip is on the track, hatched red, and the inspector says Unfit and why |
+| 13 | **Change Actor...** to another woman, then to a man | With the woman every clip is as before. With the man the red hatch moves to the other clips; nothing is removed |
+| 14 | Choose V, feminine body, on a new actor track, select it, turn the fits filter on | The same `woman_base` animations are offered for V |
+| 15 | In the view's `...` menu turn on **Only the Selected Actor's Own Files** with Judy's track selected | Only animations from the files Judy's entity lists |
+| 16 | Press Ctrl+Z a few times, then save, close and reopen the scene | Each change goes back. Reopened, the clips, their lengths and the red hatch are as saved |
+| 17 | Close the window opened by F5 during step 1's reading on a fresh cache, and open it again | Reading goes on from where it stopped, not from the start |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
