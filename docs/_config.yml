@@ -22,6 +22,10 @@ defaults:
 nav:
   - title: Docs
     url: /
+  - title: Design
+    url: /design.html
+  - title: D1 Timeline
+    url: /d1-timeline.html
   - title: Tests
     url: /testing.html
   - title: Dev setup
