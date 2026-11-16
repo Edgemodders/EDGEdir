@@ -15,7 +15,7 @@ EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design
 
 ## Roadmap status
 
-As of 2026-11-16. Each phase ends with a hand test, run in full by script or by the owner, and the owner's spot tests of its main features ([Tests](testing.md#the-release-gate)), and an in-game test where it changes the game.
+As of 2026-11-16. Each phase ends with a hand test, run in full by script or by the owner, and the owner's spot tests of its main features ([Tests](testing.html#the-release-gate)), and an in-game test where it changes the game.
 
 | Phase | Status |
 |---|---|
