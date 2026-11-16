@@ -24,10 +24,15 @@ export async function pickActor(game: Game, doc: SceneDoc, track: Track): Promis
     for (const body of ["wa", "ma"] as const) rows.push({ label: `$(account) ${Players[body].name}`, description: "The player character", entry: Players[body] });
   for (const e of game.cast.entries) rows.push({ label: castLabel(e), description: e.record, entry: e });
 
+  const vOffered = !taken || taken.id === track.id;
+  if (!rows.length) {
+    void vscode.window.showWarningMessage(`EDGEdir: the game's characters could not be read (see the Animations view), and V is already on the track "${taken?.name}". There is nobody to choose just now.`);
+    return undefined;
+  }
   const note =
     game.state === "ready"
       ? `${game.cast.entries.length.toLocaleString()} characters from your game. Type a name`
-      : "The game's characters could not be read (see the Animations view). V can still be chosen";
+      : `The game's characters could not be read (see the Animations view).${vOffered ? " V can still be chosen" : ""}`;
   const row = await vscode.window.showQuickPick(rows, { title: `Who acts on "${track.name}"?`, placeHolder: note, matchOnDescription: true });
   if (!row) return undefined;
   if (row.nobody) return null;

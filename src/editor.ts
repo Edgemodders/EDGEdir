@@ -43,6 +43,11 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
   /** The scene in front, its selected track or its playhead changed. */
   readonly onDidChangeCurrent = this.moved.event;
 
+  /** Selects a clip on a scene's pages, as a click on it would. */
+  select(document: vscode.TextDocument, clipId: string): void {
+    for (const [panel, scene] of this.scenes) if (scene.document === document) void panel.webview.postMessage({ type: "select", clip: clipId });
+  }
+
   /** The scene in front, or the one that was last when another kind of editor or a view has the focus. */
   current(): OpenScene | undefined {
     const front = [...this.scenes.keys()].find((p) => p.active) ?? this.last;

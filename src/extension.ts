@@ -158,6 +158,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
           made = result.id;
           return result.doc;
         });
+        scenes.select(front.document, made);
         const now = frontDoc();
         const track = now && findTrack(now, picked.id);
         const clip = track?.clips.find((c) => c.id === made);
@@ -229,6 +230,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       if (!scene) return;
       const go = await vscode.window.showWarningMessage(`Delete the scene "${scene.name}" from the Desk?`, { modal: true, detail: "Its folder goes to the Recycle Bin, so it can be brought back from there." }, "Delete");
       if (go !== "Delete") return;
+      const wasOpen = tabsOf(scene.folder).length > 0;
       if (!(await closeTabs(scene, "delete"))) return;
       const folder = vscode.Uri.file(scene.folder);
       try {
@@ -248,7 +250,7 @@ ${(e as Error).message}` },
           } catch (e2) {
             fail("Delete Scene", e2);
           }
-        }
+        } else if (wasOpen) await openScene(vscode.Uri.file(scene.file)); // Kept after all: its tab comes back.
       }
       desk.refresh();
     }),

@@ -54,7 +54,10 @@ export function castEntry(item: TweakRecords["items"][number]): CastEntry | unde
   const f = item.flats ?? {};
   const entity = typeof f.entityTemplatePath === "string" ? f.entityTemplatePath : "";
   if (!entity) return undefined;
-  const name = textOf(f.fullDisplayName) || textOf(f.displayName);
+  let name = textOf(f.fullDisplayName) || textOf(f.displayName);
+  // The game's stand-ins for a missing name, and "V" on photo mode's copies of other people: such a
+  // row is listed by its record's own name, so nobody but the player reads as V.
+  if (/^(!OBSOLETE|\[No Data\]|V)$/i.test(name.trim())) name = "";
   const look = typeof f.appearanceName === "string" && f.appearanceName !== "None" ? f.appearanceName : "";
   return { record, entity, ...(name && !/^LocKey#/i.test(name) ? { name } : {}), ...(look ? { appearance: look } : {}) };
 }

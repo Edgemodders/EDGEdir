@@ -55,7 +55,7 @@ export function isNoSuchMethod(e: unknown): boolean {
 }
 
 const PageSize = 500;
-const SaveEvery = 4;
+const SaveEvery = 1;
 
 // On disk a clip is [name, seconds, frames, fps, flags] and a set [path, rig's index, clips]: the
 // whole game is some 150,000 clips, and names repeat less than the field names would.

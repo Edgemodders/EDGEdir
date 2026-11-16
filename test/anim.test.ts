@@ -59,12 +59,14 @@ test("a read that stops is picked up where it stopped; a bridge without anims.in
   const dir = temp();
   const index = new AnimIndex(dir);
   await assert.rejects(index.build(bridge(2, 2), "1-1"), /went away/);
-  // What the first page gave was not saved by the failed run, so save it as a closing window would not: read again.
-  const b = bridge();
+  // Each page is saved as it comes, so the page read before the bridge went away is on disk.
   const fresh = new AnimIndex(dir);
-  assert.equal(fresh.load("1-1"), false);
-  await fresh.build(b, "1-1", { stop: () => b.offsets.length >= 1 });
-  assert.deepEqual([fresh.done, fresh.complete], [2, false]);
+  assert.equal(fresh.load("1-1"), true);
+  assert.deepEqual([fresh.done, fresh.complete, fresh.clips], [2, false, 4]);
+  // A run that is told to stop reads nothing more.
+  const b = bridge();
+  await fresh.build(b, "1-1", { stop: () => true });
+  assert.deepEqual([b.offsets, fresh.done], [[], 2]);
   // The next session loads the part and goes on from set 2.
   const next = new AnimIndex(dir);
   assert.equal(next.load("1-1"), true);
@@ -195,6 +197,12 @@ test("an edge trims the part played and stops at the animation's ends; a looping
   assert.deepEqual(at(looped), [2, 3, 0, 1, 3]);
   assert.deepEqual(at(trimClip(looped, a.id, "end", 7.2)), [2, 5, 0, 1, 5]);
   assert.deepEqual(at(trimClip(looped, a.id, "end", 2.1)), [2, 1, 0, 1, 1]);
+  // The nearest whole loop: just under two loops' length is two, not one.
+  assert.deepEqual(at(trimClip(looped, a.id, "end", 3.93)), [2, 2, 0, 1, 2]);
+  assert.deepEqual(at(trimClip(looped, a.id, "end", 4.4)), [2, 2, 0, 1, 2]);
+  // But never into the next clip: with one starting at 6.5 there is room for four loops, not five.
+  const tight = addAnimClip(looped, track, sit, 6.5).doc;
+  assert.deepEqual(at(trimClip(tight, a.id, "end", 6.9)), [2, 4, 0, 1, 4]);
   assert.throws(() => trimClip(looped, a.id, "start", 3), /Set Loops to 1/);
   // A clip with no animation trims as in D1.
   const block = addClip(doc, track, { start: 0, length: 1 });

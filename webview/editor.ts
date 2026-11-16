@@ -91,6 +91,17 @@ function keepScratch(text: string, dirty: boolean) {
   vscode.setState({ ...s, scratch: dirty ? { base: s.scratch?.base ?? text, doc: text } : { base: text, doc: text } });
 }
 
+let pendingSelect = "";
+function applyPendingSelect() {
+  if (!pendingSelect || !doc) return;
+  const found = findClip(doc, pendingSelect);
+  if (!found) return;
+  sel = new Set([pendingSelect]);
+  selTrack = found.track.id;
+  pendingSelect = "";
+  render();
+}
+
 window.addEventListener("message", (e) => {
   const m = e.data;
   if (m.type === "invalid") {
@@ -101,6 +112,13 @@ window.addEventListener("message", (e) => {
     $("work").hidden = true;
     $("title").textContent = "Not a scene";
     $("meta").textContent = "";
+    return;
+  }
+  if (m.type === "select") {
+    // The host put a clip on a track (Add to Track): show it as picked. The document with the clip
+    // may come a moment after this message, so the choice is kept until it does.
+    pendingSelect = String(m.clip);
+    applyPendingSelect();
     return;
   }
   if (m.type !== "doc") return;
@@ -129,6 +147,7 @@ window.addEventListener("message", (e) => {
   if (!findTrack(doc, selTrack)) selTrack = doc.tracks[0]?.id ?? "";
   if (!fitted && sceneLength(doc) > 0) fit();
   if (!before || JSON.stringify(before) !== text) render();
+  applyPendingSelect();
 });
 
 // ---- changes -------------------------------------------------------------------------------------

@@ -549,7 +549,10 @@ export function trimClip(doc: SceneDoc, clipId: string, edge: "start" | "end", t
     if (edge === "start") throw new EditError("Set Loops to 1 to trim this clip's start");
     // The end edge of a looping clip sets how many times it plays.
     const one = (p.out - p.in) / p.speed;
-    const loops = Math.max(1, Math.min(MaxLoops, Math.round((stop - clip.start) / one), Math.max(1, Math.floor((stop - clip.start + Eps) / one))));
+    // The nearest whole number of loops to where the edge was dragged, as far as the next clip lets it.
+    const room = Math.min(Infinity, ...others.filter((c) => c.start >= end - Eps).map((c) => c.start)) - clip.start;
+    const wanted = Math.round((Math.max(time, clip.start) - clip.start) / one);
+    const loops = Math.max(1, Math.min(MaxLoops, wanted, Math.max(1, Math.floor((room + Eps) / one))));
     next = withPlay(clip, { ...p, loops });
   } else if (p) {
     if (edge === "start") {

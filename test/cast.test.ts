@@ -25,6 +25,8 @@ test("a record becomes a cast entry only when it is a person who can be spawned"
   assert.deepEqual(castEntry(record("Character.Bo", { displayName: "Bo", entityTemplatePath: ent, appearanceName: "bo_coat" })), { record: "Character.Bo", entity: ent, name: "Bo", appearance: "bo_coat" });
   // A name the game did not resolve is no name.
   assert.equal(castEntry(record("Character.Cy", { displayName: { key: "LocKey#9", text: "LocKey#9" }, entityTemplatePath: ent }))?.name, undefined);
+  // Photo mode's copy of someone is named "V" by the game, and some records have a stand-in for a name: listed by their record.
+  for (const stand of ["V", "!OBSOLETE", "[No Data]"]) assert.equal(castEntry(record("Character.Ana_Puppet_Photomode", { displayName: stand, entityTemplatePath: ent }))?.name, undefined, stand);
   assert.equal(castEntry(record("Character.Ana_inline0", { entityTemplatePath: ent })), undefined);
   assert.equal(castEntry(record("Character.NoBody", { entityTemplatePath: "" })), undefined);
   assert.equal(castEntry(record("Items.Thing", { entityTemplatePath: ent })), undefined);
