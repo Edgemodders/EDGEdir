@@ -6,6 +6,7 @@ EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design
 |---|---|
 | [Design](design.html) | Draft 1, agreed 2026-11-16: the scene document, the timeline editor, the preview, how a scene reaches the game, and the phases |
 | [D1 Timeline](d1-timeline.html) | The first phase's plan, agreed 2026-11-16: the scene document, the timeline editor and the Desk |
+| [D2 Cast and clips](d2-cast-and-clips.html) | The second phase's plan, written 2026-11-16 for the owner's review: actors (V among them), the animation index, real clips |
 | [Tests](testing.html) | Every test, with its steps for running again |
 | [Dev setup](dev-setup.html) | Building, packaging and releasing EDGEdir |
 | [Changelog](changelog.html) | What changed in each release |

@@ -153,7 +153,7 @@ The owner's rule (2026-11-16): animations and actors are separate things while a
 | Thing | What it is | Owned by | Where it lives |
 |---|---|---|---|
 | Animation | One clip of movement on a named rig. It knows no character | The game, or EDGEfab for made ones (imported from a file, or made from video by an AI service) | The game's `.anims` files; EDGEfab's items in the EDGE Library and in the open REDcode project |
-| Actor | A character: a TweakDB record and an appearance, and through its body a rig | The game, picked in EDGEdir | Named in the scene document |
+| Actor | A character: a TweakDB record and an appearance, and through its body a rig. V, the player, is one of them (the owner, 2026-11-16), in one body per scene; see [D2](d2-cast-and-clips.html#v) | The game, picked in EDGEdir | Named in the scene document |
 | Assignment | A clip on an actor track: this animation, on this actor, from this time | EDGEdir | The scene document |
 | Binding | The actor's `.workspot` and anim sets, holding every animation the track uses | EDGEdir at pack time | The packed scene |
 
@@ -348,7 +348,7 @@ Each phase ends with a hand test by the owner, and an in-game test where it chan
 |---|---|---|
 | **D0 Spikes** | No features. (d) Setting and giving back the weather through REDnode. (a) A `.workspot` written through REDbridge with clips from two anim sets, on a spawned NPC: does it play, does a jump blend, what happens in a gap, how late are timed jumps. (b) A character GLB and two clips from another GLB playing in a three.js webview. (c) What EDGEfab and EDGEdir each own | The route for D3 and D5 is known, or changed |
 | **D1 Timeline** | The `.edgedir` document and its editor: tracks, clips as blocks with typed-in lengths, move, trim, snap, zoom, undo. New Scene, the Desk view and folder | A scene with three tracks is made, edited, closed and opened again from the Desk |
-| **D2 Cast and clips** | The Animations view and its index, with the game's animations, the Library's and the open project's; the actor picker; drag an animation to a lane with its true length; the rig check; swap a track's actor; trim, speed and loop | A named NPC has two real game clips in a row on its track; the track's actor is swapped for another of the same rig and keeps them; a clip for another rig is marked unfit |
+| **D2 Cast and clips** | The Animations view and its index, with the game's animations, the Library's and the open project's; the actor picker; drag an animation to a lane with its true length; the rig check; swap a track's actor; trim, speed and loop | A named NPC has two real game clips in a row on its track; the track's actor is swapped for another of the same rig and keeps them; a clip for another rig is marked unfit; V can be picked. Plan: [D2](d2-cast-and-clips.html) |
 | **D3 Preview** | The viewport: actors' bodies playing their tracks, scrub and play, marks and root motion paths | Two actors play their clips in the viewport, in time with the playhead |
 | **D4 Transitions and sequences** | Transition clips with Blend and Inertial, in the preview; the method field with AI listed as not available yet. Save as Sequence, sequences on the Desk, a sequence as a block on a lane | Two clips with a transition view as one movement; saved as a sequence, they go onto a second actor in another scene |
 | **D5 Play in game** | The cue sheet, the written workspots, the player package (route 1), **Play in game** | The D4 scene plays on real NPCs in front of V, and the tester notes how far it is from the preview |
