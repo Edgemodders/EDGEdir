@@ -4,7 +4,7 @@ title: D2 Cast and clips
 
 # <span class="y">D2</span> Cast and clips
 
-**Status: plan, written 2026-11-16, for the owner's review. Nothing of D2 is built.**
+**Status: plan agreed with the owner on 2026-11-16. Building D2.1 to D2.4; D2.5 on waits for REDbridge's next release.**
 
 D2 is the second phase of the [design](design.html). It brings real things onto the timeline: an actor on each actor track, picked from the game's characters with V among them, and the game's animations as clips with their true lengths. It still shows no 3D picture (D3) and plays nothing in the game (D5).
 

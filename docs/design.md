@@ -328,6 +328,18 @@ Routes 2 and 3 work together: one start per actor, on the same frame. A fourth r
 
 Filed on 2026-11-16: REDnode #46 (the written-workspot spike and the weather), REDbridge #17 (export of chosen clips; `anims.info` is in its #14), EDGEfab #7 (the split and the animation item; answered and accepted the same day, see "Animations and actors"). REDnode took #46 the same day: the spike is built and runs in the game after the A2 test. REDbridge #17 was taken too, to ship with `anims.info` before D2. The rest are filed when their phase is planned.
 
+**The written-workspot spike ran in the game on 2026-11-16** (REDnode #46, its Director spike; REDnode's results, not run by EDGEdir):
+
+| Asked | Found |
+|---|---|
+| Does a written workspot play as a track? | Yes, one per actor. Each clip is a sequence whose idle is the clip with `loopInfinitely` on, in a bare tree (the clips and a fast exit). Keeping the game's full tree lets its exits take over |
+| Does a jump blend? | Yes. `world.useWorkspot` starts it; a jump with `instant: true` goes at once with a smooth blend. `instant: false` waits for the playing clip's end, 20 s or more |
+| How late are timed jumps? | 0 to 13 ms, and two actors jump in the same frame |
+| Still open | Quest clips give a T pose that stays; a brief T pose at the first play; root motion moves nobody (0.00 m), so a walk needs the person moved by the scene |
+| REDnode proposes next | A short round on quest clips, then a REDnode call that writes the workspot (such as `world.writeWorkspot({ clips })`, shape to agree), so EDGEdir does not write game files itself |
+
+So the first route, cues from a package, holds. A clip that moves its actor needs the scene to move the person; that is D5's to plan.
+
 | To | Need | For phase |
 |---|---|---|
 | REDnode | The A2 test's result, and a spike on a written `.workspot` (shared with its own "second spike") | D0 |
