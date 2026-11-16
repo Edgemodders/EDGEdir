@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -76,7 +76,28 @@
       },
       {
         "view": "edgedir.animations",
-        "contents": "The game's animations, and the ones you made in EDGEfab, will be listed here to drag onto a character's track. Not built yet."
+        "when": "edgedir.state == starting",
+        "contents": "The game's animations are listed here, to put on a character's track. EDGEdir reads them from your game through REDbridge and keeps the list on this PC.\n[Read the Game](command:edgedir.readGame)"
+      },
+      {
+        "view": "edgedir.animations",
+        "when": "edgedir.state == loading",
+        "contents": "Reading the game..."
+      },
+      {
+        "view": "edgedir.animations",
+        "when": "edgedir.state == noGame",
+        "contents": "No Cyberpunk 2077 folder was found.\n[Set the Game Folder](command:workbench.action.openSettings?%22edgedir.gamePath%22)\n[Try Again](command:edgedir.readGame)"
+      },
+      {
+        "view": "edgedir.animations",
+        "when": "edgedir.state == noBridge",
+        "contents": "REDbridge was not found. EDGEdir reads the game's files through it. It comes with REDcode, or set where it is.\n[Set REDbridge's Path](command:workbench.action.openSettings?%22edgedir.bridgePath%22)\n[Try Again](command:edgedir.readGame)"
+      },
+      {
+        "view": "edgedir.animations",
+        "when": "edgedir.state == failed",
+        "contents": "The game could not be read.\n[Show Log](command:edgedir.showLog)\n[Try Again](command:edgedir.readGame)"
       }
     ],
     "customEditors": [
@@ -136,6 +157,40 @@
         "command": "edgedir.forgetRecent",
         "title": "Remove from Recent",
         "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.readGame",
+        "title": "Read the Game",
+        "category": "EDGEdir",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "edgedir.readGameAgain",
+        "title": "Read the Game Again",
+        "category": "EDGEdir",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "edgedir.showLog",
+        "title": "Show Log",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.searchAnimations",
+        "title": "Search Animations...",
+        "category": "EDGEdir",
+        "icon": "$(search)"
+      },
+      {
+        "command": "edgedir.clearAnimationSearch",
+        "title": "Clear the Search",
+        "category": "EDGEdir",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "edgedir.copyAnimPath",
+        "title": "Copy Game Path",
+        "category": "EDGEdir"
       }
     ],
     "menus": {
@@ -149,6 +204,26 @@
           "command": "edgedir.refreshDesk",
           "when": "view == edgedir.desk",
           "group": "navigation@2"
+        },
+        {
+          "command": "edgedir.searchAnimations",
+          "when": "view == edgedir.animations && edgedir.state == ready",
+          "group": "navigation@1"
+        },
+        {
+          "command": "edgedir.clearAnimationSearch",
+          "when": "view == edgedir.animations && edgedir.animSearch",
+          "group": "navigation@2"
+        },
+        {
+          "command": "edgedir.readGameAgain",
+          "when": "view == edgedir.animations && edgedir.state == ready",
+          "group": "overflow@1"
+        },
+        {
+          "command": "edgedir.showLog",
+          "when": "view == edgedir.animations",
+          "group": "overflow@2"
         }
       ],
       "view/item/context": [
@@ -171,6 +246,10 @@
           "command": "edgedir.forgetRecent",
           "when": "view == edgedir.desk && viewItem == recentScene",
           "group": "2@1"
+        },
+        {
+          "command": "edgedir.copyAnimPath",
+          "when": "view == edgedir.animations && viewItem == animSet"
         }
       ],
       "commandPalette": [
@@ -193,8 +272,39 @@
         {
           "command": "edgedir.forgetRecent",
           "when": "false"
+        },
+        {
+          "command": "edgedir.copyAnimPath",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.clearAnimationSearch",
+          "when": "edgedir.animSearch"
         }
       ]
+    },
+    "configuration": {
+      "title": "EDGEdir",
+      "properties": {
+        "edgedir.gamePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The Cyberpunk 2077 folder. Leave empty to use REDcode's or EDGEdeck's, or to let EDGEdir look for the game.",
+          "scope": "machine"
+        },
+        "edgedir.bridgePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "`REDbridge.exe`, or its folder. Leave empty to use REDcode's. EDGEdir reads the game's characters and animations through REDbridge.",
+          "scope": "machine"
+        },
+        "edgedir.dotnetRoot": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "The folder of a .NET runtime installed for one user, for REDbridge. Leave empty to use REDcode's setting or the system's .NET.",
+          "scope": "machine"
+        }
+      }
     }
   },
   "scripts": {
@@ -216,5 +326,8 @@
     "esbuild": "^0.28.2",
     "ovsx": "^1.3.0",
     "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "vscode-jsonrpc": "^9.0.3"
   }
 }

@@ -26,6 +26,7 @@ import {
   splitClip,
   toFrame,
   trimClip,
+  type Actor,
   type Clip,
   type SceneDoc,
   type Track,
@@ -347,6 +348,17 @@ const shown = (): Track[] => (drag?.preview ?? doc)?.tracks ?? [];
 
 // ---- lane heads ----------------------------------------------------------------------------------
 
+/** Who an actor is, in a few words. */
+function actorLabel(a: Actor): string {
+  if (a.player) return a.player === "wa" ? "V, feminine body" : "V, masculine body";
+  return a.name ?? a.record ?? "";
+}
+
+/** A rig's short name: `woman_base` for `...\woman_base.rig`. */
+function rigName(rig: string): string {
+  return (rig.replace(/\//g, "\\").split("\\").pop() ?? "").replace(/\.rig$/i, "");
+}
+
 function drawHeads() {
   const list = $("headList");
   list.textContent = "";
@@ -357,7 +369,8 @@ function drawHeads() {
     row.title = `${TrackKindNames[t.kind]} track. Drag up or down to reorder`;
     const tag = document.createElement("span");
     tag.className = "tag";
-    tag.textContent = TrackKindNames[t.kind];
+    // An actor track says who acts on it.
+    tag.textContent = t.kind === "actor" ? `${TrackKindNames[t.kind]} · ${t.actor ? actorLabel(t.actor) : "nobody yet"}` : TrackKindNames[t.kind];
     const name = document.createElement("span");
     name.className = "tname";
     name.textContent = t.name;
@@ -521,6 +534,19 @@ function drawInspector() {
         heading(`${TrackKindNames[track.kind]} track`),
         field("Name", textInput("f-name", track.name, (v) => change((x) => setTrack(x, track.id, { name: v })))),
         fact("Clips", String(track.clips.length)),
+      );
+      if (track.kind === "actor") {
+        const a = track.actor;
+        if (a) {
+          box.append(fact("Actor", actorLabel(a)));
+          if (a.record) box.append(fact("Record", a.record));
+          if (a.record) box.append(fact("Appearance", a.appearance ?? "Any: the game picks"));
+          box.append(fact("Rig", a.rig ? rigName(a.rig) : "Not read yet"));
+          if (a.player) box.append(note("In the game this is your own V. The preview will show the default body."));
+        } else box.append(note("Nobody acts on this track yet."));
+        box.append(action(a ? "Change Actor..." : "Choose Actor...", "Pick one of the game's characters, or V, for this track. Its clips stay", () => vscode.postMessage({ type: "chooseActor", track: track.id })));
+      }
+      box.append(
         action("Remove Track", "Take this track and its clips out of the scene. Undo brings it back", () => {
           sel = new Set();
           change((x) => removeTrack(x, track.id));

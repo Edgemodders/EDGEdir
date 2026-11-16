@@ -14,4 +14,7 @@ How to keep it (the Edgemodders convention):
 
 - The EDGEdir side bar with its own icon and three views, Desk, Library and Animations (Library and Animations are empty until their phases).
 - The scene editor: a `.edgedir` file opens as a timeline with tracks (actor, audio, camera, weather, script, video, AI) and clips. Clips are named blocks for now: add, move, trim by the edge, split, copy and paste, with snap to frames and to other clips, zoom, a playhead with play and loop, and an inspector. Undo, redo and save are VS Code's own.
+- Actors: an actor track gets its actor from a search over your game's characters (about 6,600), with V, the player, on top in either body. The track shows who acts on it; the inspector shows the record, the appearance and the rig. A scene has at most one V.
+- The Animations view lists your game's animation files (about 14,000) by folder, with a search by name. The animations inside each file come in a later build.
+- EDGEdir reads the game through REDbridge: REDcode's when REDcode is running, or its own (the settings `edgedir.gamePath`, `edgedir.bridgePath` and `edgedir.dotnetRoot`). What it reads is kept on your PC, so later sessions start at once.
 - New Scene and the Desk: scenes are made on the Desk and listed there, with Rename, Delete (to the Recycle Bin) and Reveal in File Explorer. Scenes opened from elsewhere are listed under Recent. On a drive with no Recycle Bin, Delete asks again before it deletes the scene for good.

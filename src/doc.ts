@@ -29,10 +29,28 @@ export interface Clip {
   [more: string]: unknown;
 }
 
+/** Who acts on an actor track (D2): one of the game's characters, or V, the player. */
+export interface Actor {
+  /** The TweakDB record, such as `Character.Judy`. Absent on V. */
+  record?: string;
+  /** V's body: feminine (`wa`) or masculine (`ma`). Absent on everyone else. */
+  player?: "wa" | "ma";
+  /** The name shown, as it was when the actor was picked. */
+  name?: string;
+  /** One of the entity's appearances; absent when the game picks. */
+  appearance?: string;
+  /** The entity file and the body's rig, read from the game when the actor was picked. */
+  entity?: string;
+  rig?: string;
+  [more: string]: unknown;
+}
+
 export interface Track {
   id: string;
   kind: TrackKind;
   name: string;
+  /** On an actor track: who acts. Absent until one is chosen. */
+  actor?: Actor;
   mute?: boolean;
   lock?: boolean;
   clips: Clip[];
@@ -105,6 +123,7 @@ export function parseDoc(text: string): SceneDoc {
     if (!TrackKinds.includes(t.kind)) throw new Error(`${what}'s kind is missing or not one of ${TrackKinds.join(", ")}`);
     if (typeof t.name !== "string") t.name = TrackKindNames[t.kind];
     if (!Array.isArray(t.clips)) throw new Error(`${what}'s clips are missing`);
+    if (t.actor !== undefined && (t.kind !== "actor" || !t.actor || typeof t.actor !== "object" || Array.isArray(t.actor))) throw new Error(`${what}'s actor is not one this version reads`);
     t.clips.forEach((c, j) => {
       const which = `${what}'s clip ${j + 1}`;
       if (!c || typeof c !== "object" || typeof c.id !== "string" || !c.id) throw new Error(`${which} has no id`);
@@ -235,6 +254,36 @@ function open(track: Track): Track {
 }
 
 const sorted = (clips: Clip[]) => [...clips].sort((a, b) => a.start - b.start);
+
+/** The track V acts on, if the scene has one. */
+export function playerTrack(doc: SceneDoc): Track | undefined {
+  return doc.tracks.find((t) => t.kind === "actor" && t.actor?.player);
+}
+
+/**
+ * Who acts on an actor track, or nobody (`undefined`). The clips stay. A scene has at most one V.
+ * A track still called by its kind, or by the actor it had, takes the new actor's name.
+ */
+export function setActor(doc: SceneDoc, trackId: string, actor: Actor | undefined): SceneDoc {
+  const track = findTrack(doc, trackId);
+  if (!track) throw new EditError("That track is no longer in the scene");
+  if (track.kind !== "actor") throw new EditError("Only an actor track has an actor");
+  if (actor) {
+    if (!actor.record && !actor.player) throw new EditError("An actor is one of the game's characters, or V");
+    if (actor.record && actor.player) throw new EditError("An actor is one of the game's characters or V, not both");
+    const other = playerTrack(doc);
+    if (actor.player && other && other.id !== trackId) throw new EditError(`V is already in this scene, on the track "${other.name}"`);
+  }
+  return changeTrack(doc, trackId, (t) => {
+    const next = { ...t };
+    const plain = t.name === TrackKindNames.actor || (t.name.startsWith(`${TrackKindNames.actor} `) && /^\d+$/.test(t.name.slice(TrackKindNames.actor.length + 1))) || (!!t.actor?.name && t.name === t.actor.name);
+    if (actor) {
+      next.actor = actor;
+      if (plain && actor.name) next.name = actor.name;
+    } else delete next.actor;
+    return next;
+  });
+}
 
 /** A new track at the end, named after its kind and numbered when the name is taken. */
 export function addTrack(doc: SceneDoc, kind: TrackKind, name?: string): SceneDoc {

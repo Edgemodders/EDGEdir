@@ -14,13 +14,26 @@ type FromPage =
   | { type: "edit"; doc: SceneDoc }
   /** Unsaved edits a window reload lost were put back. */
   | { type: "restored" }
-  | { type: "openText" };
+  | { type: "openText" }
+  /** Choose who acts on an actor track (D2): the host shows the picker and writes the change. */
+  | { type: "chooseActor"; track: string };
+
+/** Changes a scene document's text with one of src/doc.ts's edits. Undo takes it back as one step. */
+export async function applyEdit(document: vscode.TextDocument, change: (doc: SceneDoc) => SceneDoc): Promise<void> {
+  const text = formatDoc(change(parseDoc(document.getText())));
+  if (text === document.getText()) return;
+  const edit = new vscode.WorkspaceEdit();
+  edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), text);
+  await vscode.workspace.applyEdit(edit);
+}
 
 export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
     /** Called with each scene opened: the Desk's Recent. */
     private readonly opened: (uri: vscode.Uri) => void,
+    /** Shows the actor picker for a track and writes the choice into the document. */
+    private readonly chooseActor: (document: vscode.TextDocument, trackId: string) => Promise<void>,
   ) {}
 
   resolveCustomTextEditor(document: vscode.TextDocument, panel: vscode.WebviewPanel): void {
@@ -82,6 +95,9 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         case "openText":
           // Beside the scene, so a broken file can be fixed with the editor's message in view.
           await vscode.commands.executeCommand("vscode.openWith", document.uri, "default", vscode.ViewColumn.Beside);
+          return;
+        case "chooseActor":
+          await this.chooseActor(document, m.track);
           return;
       }
     });

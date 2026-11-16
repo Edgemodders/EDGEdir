@@ -1,10 +1,18 @@
 // EDGEdir's entry point. D1: the scene editor for `.edgedir` files (src/editor.ts) and the Desk
-// (src/desk.ts, src/deskView.ts). The Library and Animations views show their welcome text until
-// their phases fill them (docs/design.md, "Phases").
+// (src/desk.ts, src/deskView.ts). D2: the game's files (src/game.ts), the actor picker and the
+// Animations view. The Library view shows its welcome text until its phase fills it
+// (docs/design.md, "Phases").
+import * as fs from "node:fs";
+import * as path from "node:path";
 import * as vscode from "vscode";
+import { defaultCacheDir } from "./core/config";
 import { deskDir, fileName, newScene, renameScene, type DeskScene } from "./desk";
 import { DeskView, type DeskItem } from "./deskView";
-import { SceneEditorProvider, ViewType } from "./editor";
+import { pickActor } from "./actorPicker";
+import { AnimationsView, type AnimItem } from "./animationsView";
+import { EditError, findTrack, parseDoc, setActor } from "./doc";
+import { applyEdit, SceneEditorProvider, ViewType } from "./editor";
+import { Game } from "./game";
 
 /** An empty tree, so a view shows its welcome text until its phase fills it. */
 class Empty implements vscode.TreeDataProvider<never> {
@@ -34,6 +42,29 @@ const sceneOf = (item: unknown): DeskScene | undefined => (item && (item as Desk
 export function activate(context: vscode.ExtensionContext): void {
   const desk = new DeskView(context);
   const fail = (what: string, e: unknown) => void vscode.window.showErrorMessage(`EDGEdir, ${what}: ${(e as Error).message}`);
+  const game = new Game();
+  const animations = new AnimationsView(game);
+  context.subscriptions.push(game);
+  // The Animations view's welcome text follows this until the game is read.
+  void vscode.commands.executeCommand("setContext", "edgedir.state", "starting");
+  // Once the game has been read on this PC, later sessions read it without asking: the lists are on
+  // disk, so this only starts REDbridge. The first read is the modder's click (it takes a while).
+  if (fs.existsSync(path.join(defaultCacheDir(), "cast"))) void game.refresh();
+
+  /** The picker for one actor track; the choice is written into the scene as one undo step. */
+  const chooseActor = async (document: vscode.TextDocument, trackId: string): Promise<void> => {
+    try {
+      const doc = parseDoc(document.getText());
+      const track = findTrack(doc, trackId);
+      if (!track || track.kind !== "actor") return;
+      const actor = await pickActor(game, doc, track);
+      if (actor === undefined) return;
+      await applyEdit(document, (d) => setActor(d, trackId, actor ?? undefined));
+    } catch (e) {
+      if (e instanceof EditError) void vscode.window.showWarningMessage(`EDGEdir: ${e.message}`);
+      else fail("Choose Actor", e);
+    }
+  };
 
   /** Closes a scene's tabs before its folder changes; false when the modder keeps unsaved changes open. */
   const closeTabs = async (scene: DeskScene, why: string): Promise<boolean> => {
@@ -47,13 +78,30 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider(ViewType, new SceneEditorProvider(context, (uri) => void desk.opened(uri)), {
+    vscode.window.registerCustomEditorProvider(ViewType, new SceneEditorProvider(context, (uri) => void desk.opened(uri), chooseActor), {
       // The page keeps its place, zoom and selection while its tab is in the background.
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.window.registerTreeDataProvider("edgedir.desk", desk),
     vscode.window.registerTreeDataProvider("edgedir.library", new Empty()),
-    vscode.window.registerTreeDataProvider("edgedir.animations", new Empty()),
+    vscode.window.registerTreeDataProvider("edgedir.animations", animations),
+
+    vscode.commands.registerCommand("edgedir.readGame", () => game.refresh()),
+    vscode.commands.registerCommand("edgedir.readGameAgain", () => game.refresh(true)),
+    vscode.commands.registerCommand("edgedir.showLog", () => game.showLog()),
+    vscode.commands.registerCommand("edgedir.searchAnimations", async () => {
+      const text = await vscode.window.showInputBox({
+        title: "Search Animations",
+        prompt: "Words from an animation file's name or folder. Every word must be there.",
+        placeHolder: "judy sit",
+        value: animations.search,
+      });
+      if (text !== undefined) animations.setSearch(text);
+    }),
+    vscode.commands.registerCommand("edgedir.clearAnimationSearch", () => animations.setSearch("")),
+    vscode.commands.registerCommand("edgedir.copyAnimPath", (item: AnimItem | undefined) => {
+      if (item?.kind === "set") return vscode.env.clipboard.writeText(item.path);
+    }),
 
     vscode.commands.registerCommand("edgedir.newScene", async () => {
       const name = await vscode.window.showInputBox({
