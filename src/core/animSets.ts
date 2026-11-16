@@ -57,7 +57,7 @@ export class AnimSets {
   }
 
   /**
-   * Reads the game's `.anims` files in pages. A REDbridge after 0.13.0 filters the list by ending,
+   * Reads the game's `.anims` files in pages. REDbridge 0.14.0 and later filters the list by ending,
    * which takes seconds. An older one ignores the filter, so every game file's name is paged through
    * and the `.anims` ones kept, which takes about two minutes. A search by name cannot be used: it
    * returns at most 5,000 files and the game has more sets than that.

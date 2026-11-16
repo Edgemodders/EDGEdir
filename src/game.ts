@@ -210,7 +210,7 @@ export class Game {
           }),
         );
         if (!ok) {
-          this.clipsNote = "This REDbridge cannot list the animations inside a file (it needs the release after 0.13.0). The files are listed; their animations are not.";
+          this.clipsNote = "This REDbridge cannot list the animations inside a file (it needs REDbridge 0.14.0 or newer; REDcode's Install REDbridge fetches it). The files are listed; their animations are not.";
           this.log(this.clipsNote);
         } else {
           this.clipsNote = `${this.index.clips.toLocaleString()} animations in ${this.index.setsRead.toLocaleString()} files${this.index.failed ? `; ${this.index.failed} files could not be read` : ""}.`;

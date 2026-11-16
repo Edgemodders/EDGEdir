@@ -4,7 +4,7 @@ title: D2 Cast and clips
 
 # <span class="y">D2</span> Cast and clips
 
-**Status: plan agreed with the owner on 2026-11-16. Every step is built (EDGEdir 0.0.6) and waits for its hand test ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2), [part 3](testing.html#d2-made-animations-part-3)). Part 2 needs REDbridge's next release, which is built on its main and not released.**
+**Status: plan agreed with the owner on 2026-11-16. Every step is built (EDGEdir 0.0.6) and waits for its hand test ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2), [part 3](testing.html#d2-made-animations-part-3)). Part 2 needs REDbridge 0.14.0, released on 2026-11-16.**
 
 D2 is the second phase of the [design](design.html). It brings real things onto the timeline: an actor on each actor track, picked from the game's characters with V among them, and the game's animations as clips with their true lengths. It still shows no 3D picture (D3) and plays nothing in the game (D5).
 
@@ -17,7 +17,7 @@ A named NPC has two real game clips in a row on its track. The track's actor is 
 | From | What | State on 2026-11-16 |
 |---|---|---|
 | REDbridge 0.13.0, through REDcode or by itself | `tweakdb.records` for the characters, `archive.list` for the game's `.anims` files, `cr2w.toJson` to read an entity | Released. D2.1 to D2.4 need nothing more |
-| REDbridge's next release | `anims.info` (#14): a set's clip names, frame counts, rates, type, root motion and rig, for many files in one call | Taken, not released. D2.5 on waits for it. The owner starts that release |
+| REDbridge 0.14.0 | `anims.info` (#14): a set's clip names, frame counts, rates, type, root motion and rig, for many files in one call | Released on 2026-11-16, with `archive.list`'s `extension` and `project.export`'s `options.animations` (#17) |
 | EDGEfab | A made animation as an `anim` item (EDGEfab #7) | Agreed, not built. D2.7 is built against its agreed shape with a hand-made item, and tried for real when EDGEfab stores one |
 | REDnode | Nothing in D2. V in the game is a request for D5 (below) | |
 

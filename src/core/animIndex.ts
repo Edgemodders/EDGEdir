@@ -1,5 +1,5 @@
 // The clip level of the animation index (D2.5): each game `.anims` file's rig and animations, read
-// with REDbridge's `anims.info` (its release after 0.13.0) and kept as JSON on the PC, never
+// with REDbridge's `anims.info` (0.14.0 and later) and kept as JSON on the PC, never
 // committed. Reading the whole game takes minutes, so it is read in pages, saved as it goes, and
 // picked up where it stopped. No VS Code imports. docs/d2-cast-and-clips.md, "The animations".
 import * as fs from "node:fs";
