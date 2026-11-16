@@ -197,7 +197,21 @@ Two limits to say plainly:
 - A Desk is one tool's own, by the Library's rules. EDGEdir sees an EDGEfab animation only once it is in the Library or in the open project, not while it is on EDGEfab's Desk.
 - A made animation plays in EDGEdir's preview as soon as it is in the Library. It plays in the game only once REDbridge can import animation frames (#14). Until then a scene that uses one says so at Play and Pack. The game's own animations are not held back by this.
 
-What EDGEdir needs from an EDGEfab animation item, as a request to EDGEfab:
+EDGEfab's answer (EDGEfab #7, 2026-11-16; its plan's "Animations: the split with EDGEdir"), which EDGEdir accepted as it is:
+
+| Point | EDGEfab's shape |
+|---|---|
+| Kind | `anim`: `<name>.anim.asset`, one clip per item. A group (a sit's start, loop and end) is several items in one folder |
+| In a project | `source/raw/<mod>/anims/<name>/<name>.glb`, beside its record `<name>.edgefab.json` (`kind: "anim"`, `id`). The record is the note EDGEdir finds it by |
+| The id | `asset.json`'s `id`, kept in the Library item, in `source/library.json` after a Library copy, and in the record |
+| The facts | An `anim` object in `asset.json` and in the record: `rig` (game path), `seconds`, `fps`, `rootMotion`, `loop`, `name` |
+| The game's format | Once REDbridge #14 imports: `source/archive/<mod>/anims/<name>/<name>.anims` |
+| Rig | The man's or the woman's base rig, as the modder picks when trying it on a character. A service's own skeleton is retargeted on import; the other rigs come after |
+| When | With EDGEfab's first phase that stores an animation, after its first release. It fits D2 |
+
+In return EDGEdir's extension API gives EDGEfab a search of the index, the animations a character's entity carries among them, in D2. Its shape goes to EDGEfab #7 before it is built.
+
+What EDGEdir asked for, as the request to EDGEfab put it:
 
 | Need | Why |
 |---|---|
@@ -312,7 +326,7 @@ Routes 2 and 3 work together: one start per actor, on the same frame. A fourth r
 
 ### Requests this design leads to
 
-Filed on 2026-11-16: REDnode #46 (the written-workspot spike and the weather), REDbridge #17 (export of chosen clips; `anims.info` is in its #14), EDGEfab #7 (the split and the animation item). REDnode took #46 the same day: the spike is built and runs in the game after the A2 test. REDbridge #17 was taken too, to ship with `anims.info` before D2. The rest are filed when their phase is planned.
+Filed on 2026-11-16: REDnode #46 (the written-workspot spike and the weather), REDbridge #17 (export of chosen clips; `anims.info` is in its #14), EDGEfab #7 (the split and the animation item; answered and accepted the same day, see "Animations and actors"). REDnode took #46 the same day: the spike is built and runs in the game after the A2 test. REDbridge #17 was taken too, to ship with `anims.info` before D2. The rest are filed when their phase is planned.
 
 | To | Need | For phase |
 |---|---|---|
