@@ -1,0 +1,11 @@
+{
+  "page": null,
+  "upload": {
+    "name": "EDGEdir",
+    "category": "main",
+    "primary": true,
+    "modManager": false,
+    "archivePrevious": true,
+    "description": "EDGEdir {version}, the VS Code extension: not a game mod, so no Mod Manager Download. Extract, then in VS Code: Extensions view, ..., Install from VSIX. Or install it from the Marketplace or Open VSX, which update themselves."
+  }
+}
