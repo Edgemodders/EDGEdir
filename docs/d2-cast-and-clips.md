@@ -68,7 +68,18 @@ The question V raises for the game side, for the owner:
 | **A: the real player acts** (recommended) | The scene takes V over while it plays, as a quest's scene does: controls held, V moved to the mark, a workspot on the player, the camera track or third person to see it. It is what "V is in the scene" means to a player |
 | B: a stand-in copy | A spawned copy of V acts, and the player watches. Simpler to reason about, but the copy needs V's looks and clothes (REDnode's docs list copies of V as later work), and there are then two Vs |
 
-The request to REDnode asks what each would take. D2 does not depend on the answer.
+The request to REDnode (REDnode #47) asks what each would take. D2 does not depend on the answer.
+
+REDnode's answer the same day, read from the 2.5 type list and game files, all **unverified** until a spike:
+
+| Point | REDnode found |
+|---|---|
+| V's body | Readable today: `GetResolvedGenderName()` on the player answers Female or Male. A `game.player.body()` giving `wa` or `ma` can join REDnode's next build |
+| A: the real player | The workspot system takes the player by its signature, with a spawned device object beside V. The hard parts are holding the controls (likely a plugin call, found by static reading) and third person (untested on 2.5). The quest scene route is closed: no call starts a quest node |
+| B: a stand-in | The game's own copies are the photo mode puppets (`player_wa_photomode.ent`, `player_ma_photomode.ent`). Clothes copy as the inventory preview does. The face and body from character creation are native and unknown |
+| REDnode's view | One spike later, after A2's run and #46's: read the body, V in a workspot in first and third person, a photo mode puppet dressed and played. Its guess: B ships sooner and is the safer default |
+
+So the choice may come down to what the spike shows. The scene document does not change with it: `actor.player` names V either way.
 
 ## The animations
 
