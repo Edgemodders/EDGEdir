@@ -3,6 +3,7 @@
 // required: its running bridge is used when it reads the same game, and otherwise EDGEdir starts
 // REDbridge itself, as EDGEquest does (its extension.ts). docs/d2-cast-and-clips.md.
 import * as vscode from "vscode";
+import { AnimIndex } from "./core/animIndex";
 import { AnimSets, gameKey } from "./core/animSets";
 import { BridgeClient } from "./core/bridgeClient";
 import { Cast } from "./core/cast";
@@ -36,6 +37,12 @@ const edgedeck = () => activeApi("edgemodders.edgedeck");
 export class Game {
   readonly cast = new Cast(defaultCacheDir());
   readonly sets = new AnimSets(defaultCacheDir());
+  /** The animations inside each set. Filled in the background; empty with a REDbridge that has no `anims.info`. */
+  readonly index = new AnimIndex(defaultCacheDir());
+  /** Where reading the animations stands, in a sentence, for the view. */
+  clipsNote = "The animations inside each file are not read yet.";
+  private clipsRun: Promise<void> | undefined;
+  private stopping = false;
   state: GameState = "starting";
   /** Where the game and the bridge were found, in plain words, for the view. */
   where = "";
@@ -130,12 +137,60 @@ export class Game {
         });
       this.entities.clear();
       this.log(`${this.cast.entries.length.toLocaleString()} characters, ${this.sets.sets.length.toLocaleString()} animation files, for ${this.where}`);
+      if (!this.index.load(key) || rebuild) this.index.game = "";
       this.set("ready");
+      this.readClips(found.bridge, key, rebuild);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       this.log(`Reading the game failed: ${message}`);
       this.set("failed", message);
     }
+  }
+
+  /**
+   * Reads the animations inside each set, in the background, from where the last session stopped.
+   * The whole game takes some minutes; the view fills as it goes.
+   */
+  private readClips(bridge: BridgeClient, key: string, again: boolean): void {
+    if (this.clipsRun) return;
+    if (this.index.complete && this.index.game === key && !again) {
+      this.clipsNote = `${this.index.clips.toLocaleString()} animations in ${this.index.setsRead.toLocaleString()} files${this.index.failed ? `; ${this.index.failed} files could not be read` : ""}.`;
+      this.changed.fire();
+      return;
+    }
+    this.clipsRun = (async () => {
+      try {
+        let last = 0;
+        const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "EDGEdir" }, (progress) =>
+          this.index.build(bridge, key, {
+            again,
+            stop: () => this.stopping,
+            progress: (text) => {
+              progress.report({ message: text });
+              this.clipsNote = `${text}. Still reading.`;
+              // The view is drawn again every few seconds, not at every page.
+              if (Date.now() - last > 4000) {
+                last = Date.now();
+                this.changed.fire();
+              }
+            },
+          }),
+        );
+        if (!ok) {
+          this.clipsNote = "This REDbridge cannot list the animations inside a file (it needs the release after 0.13.0). The files are listed; their animations are not.";
+          this.log(this.clipsNote);
+        } else {
+          this.clipsNote = `${this.index.clips.toLocaleString()} animations in ${this.index.setsRead.toLocaleString()} files${this.index.failed ? `; ${this.index.failed} files could not be read` : ""}.`;
+          this.log(`Animations read: ${this.clipsNote}`);
+        }
+      } catch (e) {
+        this.clipsNote = `Reading the animations stopped: ${e instanceof Error ? e.message : String(e)}. What was read is kept; Read the Game Again goes on.`;
+        this.log(this.clipsNote);
+      } finally {
+        this.clipsRun = undefined;
+        this.changed.fire();
+      }
+    })();
   }
 
   /** An entity's rig, appearances and animation sets, read once per game path. */
@@ -156,6 +211,7 @@ export class Game {
   }
 
   dispose(): void {
+    this.stopping = true;
     this.own?.stop();
     this.output.dispose();
     this.changed.dispose();

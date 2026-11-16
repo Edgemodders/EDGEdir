@@ -29,6 +29,33 @@ export interface Clip {
   [more: string]: unknown;
 }
 
+/** The animation an `anim` clip plays (D2). The rig and length are copied in, so a scene opens and checks its rigs without the game. */
+export interface ClipAnim {
+  /** A game animation: its `.anims` file's game path. */
+  set?: string;
+  /** A made animation: its item's id (EDGEfab's, in the open project or the Library). */
+  id?: string;
+  /** The animation's name in its set. */
+  name: string;
+  /** The rig it is made for, a game path. */
+  rig?: string;
+  /** How long the whole animation is. */
+  seconds: number;
+  [more: string]: unknown;
+}
+
+/** How an `anim` clip plays its animation, with what the document leaves out filled in. */
+export interface Play {
+  anim: ClipAnim;
+  /** The part played, in the animation's own seconds. */
+  in: number;
+  out: number;
+  /** 1 is as made. */
+  speed: number;
+  /** How many times the part is played. */
+  loops: number;
+}
+
 /** Who acts on an actor track (D2): one of the game's characters, or V, the player. */
 export interface Actor {
   /** The TweakDB record, such as `Character.Judy`. Absent on V. */
@@ -239,6 +266,93 @@ export function freeStart(track: Track, kind: ClipKind, start: number, length: n
   return round(at);
 }
 
+// ---- Animations on clips (D2) ----
+
+export const SpeedRange = [0.1, 10] as const;
+export const MaxLoops = 999;
+
+/** How a clip plays its animation; undefined for a clip that has none (a D1 block, a transition). */
+export function playOf(clip: Clip): Play | undefined {
+  const anim = clip.anim as ClipAnim | undefined;
+  if (clip.kind !== "anim" || !anim || typeof anim !== "object" || typeof anim.name !== "string" || !isNumber(anim.seconds) || anim.seconds <= 0) return undefined;
+  const from = isNumber(clip.in) ? Math.min(Math.max(clip.in, 0), anim.seconds) : 0;
+  const to = isNumber(clip.out) ? Math.min(Math.max(clip.out, from), anim.seconds) : anim.seconds;
+  const speed = isNumber(clip.speed) && clip.speed > 0 ? clip.speed : 1;
+  const loops = isNumber(clip.loops) && clip.loops >= 1 ? Math.round(clip.loops) : 1;
+  return { anim, in: from, out: to, speed, loops };
+}
+
+/** How long a clip is on the timeline for the way it plays. */
+export const playLength = (p: Pick<Play, "in" | "out" | "speed" | "loops">) => round(((p.out - p.in) * p.loops) / p.speed);
+
+/** A clip with the way it plays written in; what is as the animation was made is left out, so the text stays short. */
+function withPlay(clip: Clip, p: Play): Clip {
+  const next: Clip = { ...clip, anim: p.anim, length: playLength(p) };
+  const put = (key: "in" | "out" | "speed" | "loops", value: number, plain: number) => {
+    if (Math.abs(value - plain) < Eps) delete next[key];
+    else next[key] = round(value);
+  };
+  put("in", p.in, 0);
+  put("out", p.out, p.anim.seconds);
+  put("speed", p.speed, 1);
+  put("loops", p.loops, 1);
+  return next;
+}
+
+/** The same path, whatever the case or the slash: game paths do not mind either. */
+const samePath = (a: string, b: string) => a.replace(/\//g, "\\").toLowerCase() === b.replace(/\//g, "\\").toLowerCase();
+
+/**
+ * Why a clip does not fit its track's actor, or undefined when it does (or when either rig is not
+ * known yet). The rule is strict: the same rig. EDGEdir does not retarget.
+ */
+export function unfit(track: Track, clip: Clip): string | undefined {
+  const rig = (clip.anim as ClipAnim | undefined)?.rig;
+  const actor = track.actor;
+  if (clip.kind !== "anim" || !rig || !actor?.rig || samePath(rig, actor.rig)) return undefined;
+  const short = (r: string) => (r.replace(/\//g, "\\").split("\\").pop() ?? r).replace(/\.rig$/i, "");
+  return `This animation is made for the rig ${short(rig)}; ${actor.name ?? "the actor"}'s rig is ${short(actor.rig)}`;
+}
+
+/** A game or made animation as a new clip on an actor track, at `start` or the first free time after it, at its full length. */
+export function addAnimClip(doc: SceneDoc, trackId: string, anim: ClipAnim, start: number): { doc: SceneDoc; id: string } {
+  if ((!anim.set && !anim.id) || !anim.name || !isNumber(anim.seconds) || anim.seconds <= 0) throw new EditError("That animation has no name or no length");
+  const id = nextClipId(doc);
+  const next = changeTrack(doc, trackId, (t) => {
+    open(t);
+    if (t.kind !== "actor") throw new EditError("An animation goes on an actor track");
+    const made = withPlay({ id, kind: "anim", start: 0, length: 0 }, { anim, in: 0, out: anim.seconds, speed: 1, loops: 1 });
+    made.start = freeStart(t, "anim", toFrame(doc, start), made.length);
+    return { ...t, clips: sorted([...t.clips, made]) };
+  });
+  return { doc: next, id };
+}
+
+/** Which part of its animation a clip plays, how fast and how often. The clip keeps its start; its length follows. */
+export function setPlay(doc: SceneDoc, clipId: string, change: { in?: number; out?: number; speed?: number; loops?: number }): SceneDoc {
+  const f = findClip(doc, clipId);
+  if (!f) throw new EditError("That clip is no longer in the scene");
+  open(f.track);
+  const now = playOf(f.clip);
+  if (!now) throw new EditError("This clip has no animation yet");
+  const p: Play = { ...now };
+  for (const key of ["in", "out", "speed", "loops"] as const) {
+    const v = change[key];
+    if (v === undefined) continue;
+    if (!isNumber(v)) throw new EditError("That is not a number");
+    p[key] = v;
+  }
+  const least = frame(doc);
+  if (p.in < 0 || p.out > p.anim.seconds + Eps) throw new EditError(`The animation runs from 0 to ${p.anim.seconds} s`);
+  if (p.out - p.in < least - Eps) throw new EditError("The part played must be at least a frame long");
+  if (p.speed < SpeedRange[0] || p.speed > SpeedRange[1]) throw new EditError(`Speed is between ${SpeedRange[0]} and ${SpeedRange[1]}`);
+  if (!Number.isInteger(p.loops) || p.loops < 1 || p.loops > MaxLoops) throw new EditError(`Loops is a whole number from 1 to ${MaxLoops}`);
+  p.out = Math.min(p.out, p.anim.seconds);
+  const next = withPlay(f.clip, p);
+  if (!fits(f.track, next.kind, next.start, next.length, [next.id])) throw new EditError("There is no room for that: the next clip is in the way");
+  return changeTrack(doc, f.track.id, (t) => ({ ...t, clips: sorted(t.clips.map((c) => (c.id === next.id ? next : c))) }));
+}
+
 // ---- Edits: tracks ----
 
 const withTracks = (doc: SceneDoc, tracks: Track[]): SceneDoc => ({ ...doc, tracks });
@@ -428,7 +542,25 @@ export function trimClip(doc: SceneDoc, clipId: string, edge: "start" | "end", t
     stop = Math.max(Math.min(time, ceiling), clip.start + frame(doc));
   }
   start = round(start);
-  const next: Clip = { ...clip, start, length: round(stop - start) };
+  let next: Clip = { ...clip, start, length: round(stop - start) };
+  // A clip with an animation trims the part it plays, and stops at the animation's own ends.
+  const p = playOf(clip);
+  if (p && p.loops > 1) {
+    if (edge === "start") throw new EditError("Set Loops to 1 to trim this clip's start");
+    // The end edge of a looping clip sets how many times it plays.
+    const one = (p.out - p.in) / p.speed;
+    const loops = Math.max(1, Math.min(MaxLoops, Math.round((stop - clip.start) / one), Math.max(1, Math.floor((stop - clip.start + Eps) / one))));
+    next = withPlay(clip, { ...p, loops });
+  } else if (p) {
+    if (edge === "start") {
+      const from = Math.max(0, p.out - (end - start) * p.speed);
+      next = { ...withPlay(clip, { ...p, in: from }), start: 0 };
+      next.start = round(end - next.length);
+    } else {
+      const to = Math.min(p.anim.seconds, p.in + (stop - clip.start) * p.speed);
+      next = withPlay(clip, { ...p, out: to });
+    }
+  }
   return changeTrack(doc, f.track.id, (t) => ({ ...t, clips: sorted(t.clips.map((c) => (c.id === clip.id ? next : c))) }));
 }
 
@@ -442,8 +574,16 @@ export function splitClip(doc: SceneDoc, clipId: string, time: number): { doc: S
   const at = toFrame(doc, time);
   if (at <= clip.start + Eps || at >= clipEnd(clip) - Eps) throw new EditError("The playhead is not inside the clip");
   const id = nextClipId(doc);
-  const first: Clip = { ...clip, length: round(at - clip.start) };
-  const second: Clip = { ...clip, id, start: at, length: round(clipEnd(clip) - at) };
+  let first: Clip = { ...clip, length: round(at - clip.start) };
+  let second: Clip = { ...clip, id, start: at, length: round(clipEnd(clip) - at) };
+  // A clip with an animation is cut in the animation too: each part plays its own share.
+  const p = playOf(clip);
+  if (p && p.loops > 1) throw new EditError("Set Loops to 1 to split this clip");
+  if (p) {
+    const mid = p.in + (at - clip.start) * p.speed;
+    first = withPlay(clip, { ...p, out: mid });
+    second = { ...withPlay(clip, { ...p, in: mid }), id, start: at };
+  }
   const next = changeTrack(doc, f.track.id, (t) => ({ ...t, clips: sorted([...t.clips.filter((c) => c.id !== clip.id), first, second]) }));
   return { doc: next, id };
 }

@@ -10,7 +10,7 @@ import { deskDir, fileName, newScene, renameScene, type DeskScene } from "./desk
 import { DeskView, type DeskItem } from "./deskView";
 import { pickActor } from "./actorPicker";
 import { AnimationsView, type AnimItem } from "./animationsView";
-import { EditError, findTrack, parseDoc, setActor } from "./doc";
+import { addAnimClip, EditError, findTrack, parseDoc, setActor, unfit, type SceneDoc } from "./doc";
 import { applyEdit, SceneEditorProvider, ViewType } from "./editor";
 import { Game } from "./game";
 
@@ -77,8 +77,30 @@ export function activate(context: vscode.ExtensionContext): void {
     return true;
   };
 
+  const scenes = new SceneEditorProvider(context, (uri) => void desk.opened(uri), chooseActor);
+  /** The scene in front as a document, or undefined when its text is not a scene just now. */
+  const frontDoc = (): SceneDoc | undefined => {
+    try {
+      const front = scenes.current();
+      return front && parseDoc(front.document.getText());
+    } catch {
+      return undefined;
+    }
+  };
+  // The Animations view's filters follow the actor of the track selected in the scene in front.
+  const followActor = () => {
+    const track = frontDoc()?.tracks.find((t) => t.id === scenes.current()?.track);
+    animations.setActor(track?.kind === "actor" ? track.actor : undefined);
+  };
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider(ViewType, new SceneEditorProvider(context, (uri) => void desk.opened(uri), chooseActor), {
+    scenes.onDidChangeCurrent(followActor),
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      if (e.document === scenes.current()?.document) followActor();
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.window.registerCustomEditorProvider(ViewType, scenes, {
       // The page keeps its place, zoom and selection while its tab is in the background.
       webviewOptions: { retainContextWhenHidden: true },
     }),
@@ -101,6 +123,41 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("edgedir.clearAnimationSearch", () => animations.setSearch("")),
     vscode.commands.registerCommand("edgedir.copyAnimPath", (item: AnimItem | undefined) => {
       if (item?.kind === "set") return vscode.env.clipboard.writeText(item.path);
+      if (item?.kind === "clip") return vscode.env.clipboard.writeText(item.set);
+    }),
+    vscode.commands.registerCommand("edgedir.copyAnimName", (item: AnimItem | undefined) => {
+      if (item?.kind === "clip") return vscode.env.clipboard.writeText(item.clip.name);
+    }),
+    vscode.commands.registerCommand("edgedir.animFitsOn", () => animations.setFilter("fits", true)),
+    vscode.commands.registerCommand("edgedir.animFitsOff", () => animations.setFilter("fits", false)),
+    vscode.commands.registerCommand("edgedir.animCarriedOn", () => animations.setFilter("carried", true)),
+    vscode.commands.registerCommand("edgedir.animCarriedOff", () => animations.setFilter("carried", false)),
+
+    // An animation from the view becomes a clip on the selected actor track, at the playhead.
+    vscode.commands.registerCommand("edgedir.addToTrack", async (item: AnimItem | undefined) => {
+      if (item?.kind !== "clip") return;
+      const front = scenes.current();
+      const doc = frontDoc();
+      if (!front || !doc) return void vscode.window.showWarningMessage("EDGEdir: open a scene first. The animation goes on its selected actor track, at the playhead.");
+      const actors = doc.tracks.filter((t) => t.kind === "actor");
+      const picked = actors.find((t) => t.id === front.track) ?? (actors.length === 1 ? actors[0] : undefined);
+      if (!picked) return void vscode.window.showWarningMessage(actors.length ? "EDGEdir: select the actor track the animation should go on." : "EDGEdir: the scene has no actor track yet. Add one with Add Track.");
+      try {
+        let made = "";
+        await applyEdit(front.document, (d) => {
+          const result = addAnimClip(d, picked.id, { set: item.set, name: item.clip.name, rig: item.rig || undefined, seconds: item.clip.seconds }, front.playhead);
+          made = result.id;
+          return result.doc;
+        });
+        const now = frontDoc();
+        const track = now && findTrack(now, picked.id);
+        const clip = track?.clips.find((c) => c.id === made);
+        const why = track && clip ? unfit(track, clip) : undefined;
+        if (why) void vscode.window.showWarningMessage(`EDGEdir: ${why}. The clip is on the track, marked unfit.`);
+      } catch (e) {
+        if (e instanceof EditError) void vscode.window.showWarningMessage(`EDGEdir: ${e.message}`);
+        else fail("Add to Track", e);
+      }
     }),
 
     vscode.commands.registerCommand("edgedir.newScene", async () => {

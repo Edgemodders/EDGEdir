@@ -16,7 +16,16 @@ type FromPage =
   | { type: "restored" }
   | { type: "openText" }
   /** Choose who acts on an actor track (D2): the host shows the picker and writes the change. */
-  | { type: "chooseActor"; track: string };
+  | { type: "chooseActor"; track: string }
+  /** The selected track and the playhead, when either changes: where Add to Track puts a clip. */
+  | { type: "cursor"; track: string; playhead: number };
+
+/** A scene open in the editor, with where its page's cursor is. */
+export interface OpenScene {
+  document: vscode.TextDocument;
+  track: string;
+  playhead: number;
+}
 
 /** Changes a scene document's text with one of src/doc.ts's edits. Undo takes it back as one step. */
 export async function applyEdit(document: vscode.TextDocument, change: (doc: SceneDoc) => SceneDoc): Promise<void> {
@@ -28,6 +37,18 @@ export async function applyEdit(document: vscode.TextDocument, change: (doc: Sce
 }
 
 export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
+  private readonly scenes = new Map<vscode.WebviewPanel, OpenScene>();
+  private last: vscode.WebviewPanel | undefined;
+  private readonly moved = new vscode.EventEmitter<void>();
+  /** The scene in front, its selected track or its playhead changed. */
+  readonly onDidChangeCurrent = this.moved.event;
+
+  /** The scene in front, or the one that was last when another kind of editor or a view has the focus. */
+  current(): OpenScene | undefined {
+    const front = [...this.scenes.keys()].find((p) => p.active) ?? this.last;
+    return front ? this.scenes.get(front) : undefined;
+  }
+
   constructor(
     private readonly context: vscode.ExtensionContext,
     /** Called with each scene opened: the Desk's Recent. */
@@ -45,6 +66,13 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     webview.html = this.html(webview, dist, media);
 
     const post = (m: unknown) => void webview.postMessage(m);
+    const scene: OpenScene = { document, track: "", playhead: 0 };
+    this.scenes.set(panel, scene);
+    this.last = panel;
+    panel.onDidChangeViewState(() => {
+      if (panel.active) this.last = panel;
+      this.moved.fire();
+    });
 
     /**
      * Sends the document, and whether it differs from the file on disk: the page keeps unsaved edits
@@ -73,6 +101,9 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
       if (d.uri.toString() === document.uri.toString()) sendDoc();
     });
     panel.onDidDispose(() => {
+      this.scenes.delete(panel);
+      if (this.last === panel) this.last = undefined;
+      this.moved.fire();
       changed.dispose();
       saved.dispose();
     });
@@ -99,6 +130,14 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         case "chooseActor":
           await this.chooseActor(document, m.track);
           return;
+        case "cursor": {
+          const other = scene.track !== m.track;
+          scene.track = m.track;
+          scene.playhead = m.playhead;
+          // The playhead alone changes nothing a listener shows.
+          if (other) this.moved.fire();
+          return;
+        }
       }
     });
   }

@@ -8,7 +8,7 @@ import type { BridgeInfo, FileList } from "./types";
 
 /** What the index needs of a bridge. */
 export interface SetsBridge {
-  list(params: { prefix?: string; offset?: number; limit?: number }): Promise<FileList>;
+  list(params: { prefix?: string; extension?: string; offset?: number; limit?: number }): Promise<FileList>;
 }
 
 /** The key a cache is filed under: it changes when the game's archives do (a patch). */
@@ -57,19 +57,28 @@ export class AnimSets {
   }
 
   /**
-   * Reads the names of every game file in pages and keeps the `.anims` ones. A search by name
-   * returns at most 5,000 files and the game has more sets than that, so the whole list is paged.
+   * Reads the game's `.anims` files in pages. A REDbridge after 0.13.0 filters the list by ending,
+   * which takes seconds. An older one ignores the filter, so every game file's name is paged through
+   * and the `.anims` ones kept, which takes about two minutes. A search by name cannot be used: it
+   * returns at most 5,000 files and the game has more sets than that.
    */
   async build(bridge: SetsBridge, game: string, progress?: (text: string) => void): Promise<void> {
     const found = new Set<string>();
     let offset = 0;
     let total = 0;
+    let filtered = true;
     do {
-      const page = await bridge.list({ offset, limit: PageSize });
+      const page = await bridge.list({ extension: Ending, offset, limit: PageSize });
+      // The first page tells whether the bridge knew the filter.
+      if (offset === 0) filtered = page.items.every((f) => f.name.toLowerCase().endsWith(Ending));
       total = page.total;
       for (const f of page.items) if (f.name.toLowerCase().endsWith(Ending)) found.add(f.name);
       offset += page.items.length;
-      progress?.(`Animation files: ${Math.min(offset, total).toLocaleString()} of ${total.toLocaleString()} game files looked at, ${found.size.toLocaleString()} found`);
+      progress?.(
+        filtered
+          ? `Animation files: ${found.size.toLocaleString()} of ${total.toLocaleString()}`
+          : `Animation files: ${Math.min(offset, total).toLocaleString()} of ${total.toLocaleString()} game files looked at, ${found.size.toLocaleString()} found`,
+      );
       if (!page.items.length) break;
     } while (offset < total);
     this.game = game;

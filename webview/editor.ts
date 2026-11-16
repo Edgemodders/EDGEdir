@@ -26,6 +26,9 @@ import {
   splitClip,
   toFrame,
   trimClip,
+  playOf,
+  setPlay,
+  unfit,
   type Actor,
   type Clip,
   type SceneDoc,
@@ -228,6 +231,9 @@ function drawRuler(g: CanvasRenderingContext2D, w: number, k: ReturnType<typeof 
 }
 
 const laneTop = (i: number) => Ruler + i * Lane;
+/** The colour of a clip that does not fit its actor's rig. */
+const Unfit = "#ff5a5a";
+
 const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (c.kind === "transition" ? "transition" : c.kind);
 
 /** A clip's box in the lane: a transition is a thin band along the top, over the join, clear of the clips' names. */
@@ -281,11 +287,41 @@ function draw() {
         g.strokeStyle = k.cyan;
         g.setLineDash([3, 2]);
       } else {
-        g.fillStyle = colour;
+        const bad = !!unfit(t, c);
+        const paint = bad ? Unfit : colour;
+        g.fillStyle = paint;
         g.globalAlpha *= picked ? 0.45 : 0.22;
         g.fillRect(b.x, b.y, b.w, b.h);
         g.globalAlpha = t.mute ? 0.35 : 1;
-        g.strokeStyle = colour;
+        g.strokeStyle = paint;
+        g.save();
+        g.beginPath();
+        g.rect(b.x, b.y, b.w, b.h);
+        g.clip();
+        if (bad) {
+          // Hatched: the animation is made for another rig than the actor's.
+          g.globalAlpha *= 0.55;
+          g.beginPath();
+          for (let hx = b.x - b.h; hx < b.x + b.w; hx += 7) {
+            g.moveTo(hx, b.y + b.h);
+            g.lineTo(hx + b.h, b.y);
+          }
+          g.stroke();
+        }
+        const p = playOf(c);
+        if (p && p.loops > 1) {
+          // A tick where each loop starts again.
+          g.globalAlpha = (t.mute ? 0.35 : 1) * 0.7;
+          g.beginPath();
+          for (let n = 1; n < p.loops; n++) {
+            const lx = Math.round(b.x + (b.w * n) / p.loops) + 0.5;
+            g.moveTo(lx, b.y + b.h - 7);
+            g.lineTo(lx, b.y + b.h);
+          }
+          g.stroke();
+        }
+        g.restore();
+        g.globalAlpha = t.mute ? 0.35 : 1;
       }
       g.lineWidth = picked ? 2 : 1;
       g.strokeRect(Math.round(b.x) + 0.5, b.y + 0.5, Math.max(1, Math.round(b.w) - 1), b.h - 1);
@@ -358,6 +394,16 @@ function actorLabel(a: Actor): string {
 function rigName(rig: string): string {
   return (rig.replace(/\//g, "\\").split("\\").pop() ?? "").replace(/\.rig$/i, "");
 }
+
+let told = "";
+/** Tells the host the selected track and the playhead, when either changed. */
+function tellCursor() {
+  const now = `${selTrack}@${playhead.toFixed(4)}`;
+  if (!doc || now === told) return;
+  told = now;
+  vscode.postMessage({ type: "cursor", track: selTrack, playhead });
+}
+setInterval(tellCursor, 250);
 
 function drawHeads() {
   const list = $("headList");
@@ -479,9 +525,10 @@ function numberInput(id: string, value: number, step: number, done: (v: number) 
   return i;
 }
 
-function fact(label: string, value: string) {
+function fact(label: string, value: string, title?: string) {
   const p = document.createElement("p");
   p.className = "fact";
+  if (title) p.title = title;
   const s = document.createElement("span");
   s.textContent = label;
   p.append(s, value);
@@ -515,15 +562,33 @@ function drawInspector() {
     const found = findClip(d, [...sel][0]);
     if (!found) return;
     const { clip, track } = found;
+    const play = playOf(clip);
     box.append(
       heading(clip.kind === "transition" ? "Transition" : "Clip"),
       field("Name", textInput("f-name", clip.name ?? "", (v) => change((x) => renameClip(x, clip.id, v)))),
       field("Start (s)", numberInput("f-start", clip.start, frame(d), (v) => change((x) => moveClips(x, [clip.id], toFrame(x, v) - clip.start)))),
-      field("Length (s)", numberInput("f-length", clip.length, frame(d), (v) => change((x) => trimClip(x, clip.id, "end", toFrame(x, clip.start + v))))),
+      ...(play
+        ? [
+            fact("Length", `${Number(clip.length.toFixed(3))} s`),
+            field("In (s)", numberInput("f-in", play.in, frame(d), (v) => change((x) => setPlay(x, clip.id, { in: v })))),
+            field("Out (s)", numberInput("f-out", play.out, frame(d), (v) => change((x) => setPlay(x, clip.id, { out: v })))),
+            field("Speed", numberInput("f-speed", play.speed, 0.05, (v) => change((x) => setPlay(x, clip.id, { speed: v })))),
+            field("Loops", numberInput("f-loops", play.loops, 1, (v) => change((x) => setPlay(x, clip.id, { loops: Math.round(v) })))),
+          ]
+        : [field("Length (s)", numberInput("f-length", clip.length, frame(d), (v) => change((x) => trimClip(x, clip.id, "end", toFrame(x, clip.start + v)))))]),
       fact("Frames", `${Math.round(clip.start * fps)} to ${Math.round(clipEnd(clip) * fps)} (${Math.round(clip.length * fps)})`),
       fact("Track", `${track.name}${track.lock ? " (locked)" : ""}`),
     );
-    if (clip.kind === "anim") box.append(note("The animation is chosen in a later phase (D2). For now a clip is a named block."));
+    if (play) {
+      box.append(
+        fact("Animation", play.anim.name),
+        fact("From", play.anim.set ? (play.anim.set.split("\\").pop() ?? play.anim.set) : "A made animation", play.anim.set),
+        fact("Its length", `${Number(play.anim.seconds.toFixed(3))} s`),
+        fact("Its rig", play.anim.rig ? rigName(play.anim.rig) : "Not known"),
+      );
+      const why = unfit(track, clip);
+      if (why) box.append(note(`Unfit: ${why}. It stays on the track, and will not play on this actor.`));
+    } else if (clip.kind === "anim") box.append(note("A named block with no animation yet. Add one from the Animations view with Add to Track."));
     if (clip.kind === "transition") box.append(note("How a transition is made (tweening or an AI provider) comes in a later phase (D4)."));
   } else if (sel.size > 1) {
     box.append(heading(`${sel.size} clips`), note("Drag them together, or copy, cut and delete them."));
@@ -852,8 +917,15 @@ function trimDrag(ev: MouseEvent, clip: Clip, edge: "start" | "end") {
   const move = (e: MouseEvent) => {
     const raw = timeAt(at(e).px);
     const t = snapOn && !e.altKey ? snap(base, raw, edges, 8 * spp) : toFrame(base, raw);
-    drag!.preview = trimClip(base, clip.id, edge, t);
-    drag!.snapLine = edges.includes(t) ? t : undefined;
+    try {
+      drag!.preview = trimClip(base, clip.id, edge, t);
+      drag!.snapLine = edges.includes(t) ? t : undefined;
+    } catch (err) {
+      if (!(err instanceof EditError)) throw err;
+      // Refused (a looping clip's start, say): the clip stays, and the reason shows.
+      drag!.snapLine = undefined;
+      say(err.message, true);
+    }
     draw();
     drawInspector();
   };

@@ -17,12 +17,14 @@ const sample = {
   anchor: { mode: "player", distance: 3 },
   set: null,
   tracks: [
-    { id: "t1", kind: "actor", name: "Fixer", clips: [
-      { id: "c1", kind: "anim", start: 0, length: 3.2, name: "walk in" },
+    // Made-up names: an actor with a rig, a clip that fits, a looping one, and one made for another rig.
+    { id: "t1", kind: "actor", name: "Fixer", actor: { record: "Character.Fixer", name: "Ana Example", appearance: "ana_coat", entity: "base\\made_up\\ana.ent", rig: "base\\made_up\\woman.rig" }, clips: [
+      { id: "c1", kind: "anim", start: 0, length: 3.2, anim: { set: "base\\animations\\made_up\\walk.anims", name: "walk_in", rig: "base\\made_up\\woman.rig", seconds: 3.2 } },
       { id: "c2", kind: "transition", start: 3, length: 0.4 },
-      { id: "c3", kind: "anim", start: 3.2, length: 2.8, name: "lean on wall" },
+      { id: "c3", kind: "anim", start: 3.2, length: 3, in: 0.5, out: 1.5, loops: 3, anim: { set: "base\\animations\\made_up\\lean.anims", name: "lean_on_wall", rig: "base\\made_up\\woman.rig", seconds: 2 } },
+      { id: "c8", kind: "anim", start: 6.5, length: 1.5, anim: { set: "base\\animations\\made_up\\man.anims", name: "shrug", rig: "base\\made_up\\man.rig", seconds: 1.5 } },
     ] },
-    { id: "t2", kind: "actor", name: "Courier", clips: [{ id: "c4", kind: "anim", start: 1, length: 4, name: "wait" }] },
+    { id: "t2", kind: "actor", name: "V", actor: { player: "wa", name: "V", rig: "base\\made_up\\woman.rig" }, clips: [{ id: "c4", kind: "anim", start: 1, length: 4, name: "wait" }] },
     { id: "t3", kind: "audio", name: "Street", clips: [{ id: "c5", kind: "audio", start: 0.5, length: 2, name: "rain loop" }] },
     { id: "t4", kind: "camera", name: "Camera", clips: [
       { id: "c6", kind: "camera", start: 0, length: 3.2, name: "wide" },

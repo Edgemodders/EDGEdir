@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -191,6 +191,39 @@
         "command": "edgedir.copyAnimPath",
         "title": "Copy Game Path",
         "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.addToTrack",
+        "title": "Add to Track",
+        "category": "EDGEdir",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edgedir.copyAnimName",
+        "title": "Copy Animation Name",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.animFitsOn",
+        "title": "Only What Fits the Selected Actor",
+        "category": "EDGEdir",
+        "icon": "$(person)"
+      },
+      {
+        "command": "edgedir.animFitsOff",
+        "title": "Only What Fits the Selected Actor (On)",
+        "category": "EDGEdir",
+        "icon": "$(person-add)"
+      },
+      {
+        "command": "edgedir.animCarriedOn",
+        "title": "Only the Selected Actor's Own Files",
+        "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.animCarriedOff",
+        "title": "✓ Only the Selected Actor's Own Files",
+        "category": "EDGEdir"
       }
     ],
     "menus": {
@@ -224,6 +257,26 @@
           "command": "edgedir.showLog",
           "when": "view == edgedir.animations",
           "group": "overflow@2"
+        },
+        {
+          "command": "edgedir.animFitsOn",
+          "when": "view == edgedir.animations && edgedir.state == ready && !edgedir.animFits",
+          "group": "navigation@3"
+        },
+        {
+          "command": "edgedir.animFitsOff",
+          "when": "view == edgedir.animations && edgedir.state == ready && edgedir.animFits",
+          "group": "navigation@3"
+        },
+        {
+          "command": "edgedir.animCarriedOn",
+          "when": "view == edgedir.animations && edgedir.state == ready && !edgedir.animCarried",
+          "group": "filter@1"
+        },
+        {
+          "command": "edgedir.animCarriedOff",
+          "when": "view == edgedir.animations && edgedir.state == ready && edgedir.animCarried",
+          "group": "filter@1"
         }
       ],
       "view/item/context": [
@@ -249,7 +302,23 @@
         },
         {
           "command": "edgedir.copyAnimPath",
-          "when": "view == edgedir.animations && viewItem == animSet"
+          "when": "view == edgedir.animations && (viewItem == animSet || viewItem == animClip)",
+          "group": "copy@2"
+        },
+        {
+          "command": "edgedir.addToTrack",
+          "when": "view == edgedir.animations && viewItem == animClip",
+          "group": "inline"
+        },
+        {
+          "command": "edgedir.addToTrack",
+          "when": "view == edgedir.animations && viewItem == animClip",
+          "group": "add@1"
+        },
+        {
+          "command": "edgedir.copyAnimName",
+          "when": "view == edgedir.animations && viewItem == animClip",
+          "group": "copy@1"
         }
       ],
       "commandPalette": [
@@ -280,6 +349,22 @@
         {
           "command": "edgedir.clearAnimationSearch",
           "when": "edgedir.animSearch"
+        },
+        {
+          "command": "edgedir.addToTrack",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.copyAnimName",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.animFitsOff",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.animCarriedOff",
+          "when": "false"
         }
       ]
     },
