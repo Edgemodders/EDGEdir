@@ -9,6 +9,7 @@ import { BridgeClient } from "./core/bridgeClient";
 import { Cast } from "./core/cast";
 import { defaultCacheDir, resolveBridge, resolveGame, type GameChoice } from "./core/config";
 import { readEntity, type EntityFacts } from "./core/entity";
+import { libraryAnims, libraryRoot, projectAnims, type MadeAnim } from "./core/made";
 
 /** What the Animations view's welcome text is chosen by (package.json, `edgedir.state`). */
 export type GameState = "starting" | "noGame" | "noBridge" | "loading" | "ready" | "failed";
@@ -17,6 +18,9 @@ interface OtherApi {
   apiVersion: number;
   gamePath(): string | undefined;
   bridge?(): BridgeClient | undefined;
+  /** REDcode's open project. */
+  project?(): { dir: string; name: string } | undefined;
+  onDidChangeProject?: vscode.Event<unknown>;
 }
 
 function settings(key: string): string | undefined {
@@ -42,6 +46,10 @@ export class Game {
   /** Where reading the animations stands, in a sentence, for the view. */
   clipsNote = "The animations inside each file are not read yet.";
   private clipsRun: Promise<void> | undefined;
+  /** Whether the animations inside the files are being read just now. */
+  get readingClips(): boolean {
+    return !!this.clipsRun;
+  }
   private stopping = false;
   state: GameState = "starting";
   /** Where the game and the bridge were found, in plain words, for the view. */
@@ -94,6 +102,31 @@ export class Game {
     this.own = b;
     this.ownGame = game.path;
     return { bridge: b, from: `REDbridge at ${choice.exe} (${choice.from})` };
+  }
+
+  /** The REDcode project that is open, if REDcode is running and has one. */
+  project(): { dir: string; name: string } | undefined {
+    return redcode()?.project?.();
+  }
+
+  private madeAt = 0;
+  private madeList: { project: MadeAnim[]; library: MadeAnim[] } = { project: [], library: [] };
+  /**
+   * The animations made in EDGEfab: the open project's and the Library's. Read from disk, and kept
+   * for a few seconds so that drawing the view does not walk the Library at every line.
+   */
+  made(fresh = false): { project: MadeAnim[]; library: MadeAnim[] } {
+    if (fresh || Date.now() - this.madeAt > 5000) {
+      this.madeList = { project: projectAnims(this.project()?.dir), library: libraryAnims(libraryRoot()) };
+      this.madeAt = Date.now();
+    }
+    return this.madeList;
+  }
+
+  /** Reads the made animations again and draws the view again. */
+  refreshMade(): void {
+    this.made(true);
+    this.changed.fire();
   }
 
   /** The bridge, started when needed. Throws with a message fit to show. */

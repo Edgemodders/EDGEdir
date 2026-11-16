@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -189,7 +189,7 @@
       },
       {
         "command": "edgedir.copyAnimPath",
-        "title": "Copy Game Path",
+        "title": "Copy Path",
         "category": "EDGEdir"
       },
       {
@@ -224,6 +224,12 @@
         "command": "edgedir.animCarriedOff",
         "title": "✓ Only the Selected Actor's Own Files",
         "category": "EDGEdir"
+      },
+      {
+        "command": "edgedir.refreshAnimations",
+        "title": "Refresh",
+        "category": "EDGEdir",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -250,7 +256,7 @@
         },
         {
           "command": "edgedir.readGameAgain",
-          "when": "view == edgedir.animations && edgedir.state == ready",
+          "when": "view == edgedir.animations && edgedir.state != loading",
           "group": "overflow@1"
         },
         {
@@ -277,6 +283,16 @@
           "command": "edgedir.animCarriedOff",
           "when": "view == edgedir.animations && edgedir.state == ready && edgedir.animCarried",
           "group": "filter@1"
+        },
+        {
+          "command": "edgedir.refreshAnimations",
+          "when": "view == edgedir.animations",
+          "group": "navigation@4"
+        },
+        {
+          "command": "edgedir.readGame",
+          "when": "view == edgedir.animations && edgedir.state != ready && edgedir.state != loading",
+          "group": "overflow@0"
         }
       ],
       "view/item/context": [

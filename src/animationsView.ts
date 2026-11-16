@@ -5,7 +5,8 @@
 import * as vscode from "vscode";
 import type { ClipFacts, FoundClip } from "./core/animIndex";
 import { setName } from "./core/animSets";
-import { rigName } from "./core/entity";
+import { rigName, sameRig } from "./core/entity";
+import type { MadeAnim } from "./core/made";
 import type { Actor } from "./doc";
 import type { Game } from "./game";
 
@@ -14,7 +15,10 @@ export type AnimItem =
   | { kind: "group"; name: string }
   | { kind: "folder"; path: string; name: string; sets: number }
   | { kind: "set"; path: string }
-  | { kind: "clip"; set: string; rig: string; clip: ClipFacts; flat?: boolean };
+  | { kind: "clip"; set: string; rig: string; clip: ClipFacts; flat?: boolean }
+  /** The open project's or the Library's made animations (D2.7). */
+  | { kind: "madeGroup"; source: "project" | "library" }
+  | { kind: "made"; anim: MadeAnim };
 
 const Limit = 500;
 
@@ -53,15 +57,26 @@ export class AnimationsView implements vscode.TreeDataProvider<AnimItem> {
     if (!same && (this.fits || this.carried)) this.changed.fire();
   }
 
+  /** The made animations a search and the fits filter leave: the project's, then the Library's without the ones the project has. */
+  private madeFound(rig?: string): AnimItem[] {
+    const { project, library } = this.game.made();
+    const words = this.search.toLowerCase().split(/\s+/).filter(Boolean);
+    const all = [...project, ...library.filter((l) => !project.some((p) => p.id === l.id))];
+    return all
+      .filter((a) => words.every((w) => `${a.title} ${a.name}`.toLowerCase().includes(w)) && (!rig || sameRig(a.rig, rig)))
+      .map((anim): AnimItem => ({ kind: "made", anim }));
+  }
+
   /** The flat list a search or a filter gives. */
   private async found(): Promise<AnimItem[]> {
     const index = this.game.index;
     const notes: AnimItem[] = [];
+    if (this.game.state !== "ready") return this.madeFound();
     if (!index.setsRead) {
       // No animations read (yet): the files' names can still be searched.
       if (!this.search) return [{ kind: "note", text: "The filters need the animations inside each file, which are not read yet", icon: "info" }];
       const sets = this.game.sets.search(this.search, Limit);
-      return [{ kind: "note", text: `${sets.total.toLocaleString()} animation ${sets.total === 1 ? "file" : "files"} for "${this.search}"`, icon: "search" }, ...sets.sets.map((path): AnimItem => ({ kind: "set", path }))];
+      return [...this.madeFound(), { kind: "note", text: `${sets.total.toLocaleString()} animation ${sets.total === 1 ? "file" : "files"} for "${this.search}"`, icon: "search" }, ...sets.sets.map((path): AnimItem => ({ kind: "set", path }))];
     }
     let rig: string | undefined;
     let only: string[] | undefined;
@@ -87,13 +102,25 @@ export class AnimationsView implements vscode.TreeDataProvider<AnimItem> {
       detail: [result.total > Limit ? `The first ${Limit} are shown; add a word to narrow it` : "", index.complete ? "" : "Still reading the game: more will come"].filter(Boolean).join(". ") || undefined,
       icon: "search",
     });
-    return [...notes, ...result.items.map((f: FoundClip): AnimItem => ({ kind: "clip", ...f, flat: true }))];
+    // The actor's own files are the game's, so made animations are left out of that filter.
+    return [...(this.carried ? [] : this.madeFound(rig)), ...notes, ...result.items.map((f: FoundClip): AnimItem => ({ kind: "clip", ...f, flat: true }))];
   }
 
   getChildren(item?: AnimItem): AnimItem[] | Promise<AnimItem[]> {
-    // Until the game is read, the view's welcome text says why (package.json, viewsWelcome).
+    if (item?.kind === "madeGroup") return this.game.made()[item.source].map((anim): AnimItem => ({ kind: "made", anim }));
+    if (!item) {
+      const made = this.game.made();
+      const groups: AnimItem[] = [];
+      // The Project group shows while a REDcode project is open; the Library group once it has an animation.
+      if (this.game.project()) groups.push({ kind: "madeGroup", source: "project" });
+      if (made.library.length) groups.push({ kind: "madeGroup", source: "library" });
+      // Until the game is read, the view's welcome text says why (package.json, viewsWelcome): it
+      // shows only while the view is empty, so made animations alone still list.
+      if (this.game.state !== "ready") return made.project.length + made.library.length ? [{ kind: "note", text: "The game's animations are not read", detail: "Use Read the Game in the view's menu", icon: "info" }, ...groups] : [];
+      if (this.search || this.fits || this.carried) return this.found();
+      return [...groups, { kind: "group", name: "Game" }];
+    }
     if (this.game.state !== "ready") return [];
-    if (!item) return this.search || this.fits || this.carried ? this.found() : [{ kind: "group", name: "Game" }];
     if (item.kind === "group" || item.kind === "folder") {
       const level = this.game.sets.folder(item.kind === "folder" ? item.path : "");
       return [...level.folders.map((f): AnimItem => ({ kind: "folder", ...f })), ...level.sets.map((path): AnimItem => ({ kind: "set", path }))];
@@ -137,6 +164,26 @@ export class AnimationsView implements vscode.TreeDataProvider<AnimItem> {
         t.tooltip = set ? `${item.path}\nRig: ${set.rig || "none named"}` : `${item.path}\nIts animations are not read yet`;
         t.iconPath = new vscode.ThemeIcon("symbol-event");
         t.contextValue = "animSet";
+        return t;
+      }
+      case "madeGroup": {
+        const list = this.game.made()[item.source];
+        const project = this.game.project();
+        const t = new vscode.TreeItem(item.source === "project" ? "Project" : "Library", list.length ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
+        t.description = item.source === "project" ? `${project?.name ?? ""}${list.length ? `, ${list.length}` : ": no made animations"}` : String(list.length);
+        t.tooltip = item.source === "project" ? "Animations made in EDGEfab and put into the open REDcode project with Add to Project" : "Animations made in EDGEfab and kept in the EDGE Library";
+        t.iconPath = new vscode.ThemeIcon(item.source === "project" ? "project" : "library");
+        return t;
+      }
+      case "made": {
+        const a = item.anim;
+        const t = new vscode.TreeItem(a.title);
+        t.description = [`${a.seconds.toFixed(2)} s`, a.rig ? rigName(a.rig) : "", a.loop ? "loops" : "", a.rootMotion ? "moves" : "", a.file ? "" : "its file is missing"].filter(Boolean).join(" · ");
+        t.tooltip = new vscode.MarkdownString(
+          [`**${a.title}**${a.name !== a.title ? ` (${a.name})` : ""}`, `Made in EDGEfab, ${a.source === "project" ? "in the open project" : "in the Library"}`, `${a.seconds.toFixed(3)} s at ${Math.round(a.fps)} frames a second`, `Rig: ${a.rig ? rigName(a.rig) : "not given"}`, `\`${a.where}\``, "It plays in the game once REDbridge can import animation frames."].join("\n\n"),
+        );
+        t.iconPath = new vscode.ThemeIcon(a.file ? "wand" : "warning");
+        t.contextValue = "animClip";
         return t;
       }
       case "clip": {

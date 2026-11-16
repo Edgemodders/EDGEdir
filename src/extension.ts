@@ -11,6 +11,7 @@ import { DeskView, type DeskItem } from "./deskView";
 import { pickActor } from "./actorPicker";
 import { AnimationsView, type AnimItem } from "./animationsView";
 import { addAnimClip, EditError, findTrack, parseDoc, setActor, unfit, type SceneDoc } from "./doc";
+import { makeApi, type EDGEdirApi } from "./api";
 import { applyEdit, SceneEditorProvider, ViewType } from "./editor";
 import { Game } from "./game";
 
@@ -39,7 +40,7 @@ function tabsOf(file: string): vscode.Tab[] {
 
 const sceneOf = (item: unknown): DeskScene | undefined => (item && (item as DeskItem).kind === "scene" ? (item as { scene: DeskScene }).scene : undefined);
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): EDGEdirApi {
   const desk = new DeskView(context);
   const fail = (what: string, e: unknown) => void vscode.window.showErrorMessage(`EDGEdir, ${what}: ${(e as Error).message}`);
   const game = new Game();
@@ -124,9 +125,12 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("edgedir.copyAnimPath", (item: AnimItem | undefined) => {
       if (item?.kind === "set") return vscode.env.clipboard.writeText(item.path);
       if (item?.kind === "clip") return vscode.env.clipboard.writeText(item.set);
+      if (item?.kind === "made") return vscode.env.clipboard.writeText(item.anim.file || item.anim.where);
     }),
+    vscode.commands.registerCommand("edgedir.refreshAnimations", () => game.refreshMade()),
     vscode.commands.registerCommand("edgedir.copyAnimName", (item: AnimItem | undefined) => {
       if (item?.kind === "clip") return vscode.env.clipboard.writeText(item.clip.name);
+      if (item?.kind === "made") return vscode.env.clipboard.writeText(item.anim.name);
     }),
     vscode.commands.registerCommand("edgedir.animFitsOn", () => animations.setFilter("fits", true)),
     vscode.commands.registerCommand("edgedir.animFitsOff", () => animations.setFilter("fits", false)),
@@ -135,7 +139,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // An animation from the view becomes a clip on the selected actor track, at the playhead.
     vscode.commands.registerCommand("edgedir.addToTrack", async (item: AnimItem | undefined) => {
-      if (item?.kind !== "clip") return;
+      if (item?.kind !== "clip" && item?.kind !== "made") return;
+      // A game animation is named by its set; a made one by its item's id, which never changes.
+      const anim =
+        item.kind === "clip"
+          ? { set: item.set, name: item.clip.name, rig: item.rig || undefined, seconds: item.clip.seconds }
+          : { id: item.anim.id, name: item.anim.name, rig: item.anim.rig || undefined, seconds: item.anim.seconds, title: item.anim.title };
       const front = scenes.current();
       const doc = frontDoc();
       if (!front || !doc) return void vscode.window.showWarningMessage("EDGEdir: open a scene first. The animation goes on its selected actor track, at the playhead.");
@@ -145,7 +154,7 @@ export function activate(context: vscode.ExtensionContext): void {
       try {
         let made = "";
         await applyEdit(front.document, (d) => {
-          const result = addAnimClip(d, picked.id, { set: item.set, name: item.clip.name, rig: item.rig || undefined, seconds: item.clip.seconds }, front.playhead);
+          const result = addAnimClip(d, picked.id, anim, front.playhead);
           made = result.id;
           return result.doc;
         });
@@ -253,6 +262,9 @@ ${(e as Error).message}` },
       if ((item as DeskItem | undefined)?.kind === "recent") return desk.forget((item as { file: string }).file);
     }),
   );
+
+  // What the other EDGE tools may call (docs/api.md).
+  return makeApi(String(context.extension.packageJSON.version), game);
 }
 
 export function deactivate(): void {}
