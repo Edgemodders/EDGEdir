@@ -4,7 +4,7 @@ title: D2 Cast and clips
 
 # <span class="y">D2</span> Cast and clips
 
-**Status: plan agreed with the owner on 2026-11-16. D2.1 to D2.6 are built (EDGEdir 0.0.5) and wait for their hand tests ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2)). Part 2 needs REDbridge's next release, which is built on its main and not released. D2.7 and D2.8 are next.**
+**Status: plan agreed with the owner on 2026-11-16. Every step is built (EDGEdir 0.0.6) and waits for its hand test ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2), [part 3](testing.html#d2-made-animations-part-3)). Part 2 needs REDbridge's next release, which is built on its main and not released.**
 
 D2 is the second phase of the [design](design.html). It brings real things onto the timeline: an actor on each actor track, picked from the game's characters with V among them, and the game's animations as clips with their true lengths. It still shows no 3D picture (D3) and plays nothing in the game (D5).
 
@@ -221,6 +221,24 @@ What differs from the plan:
 
 Not checked yet: anything in VS Code. It is in the hand test.
 
+### D2.7 and D2.8 (EDGEdir 0.0.6, 2026-11-16)
+
+| Part | Where |
+|---|---|
+| Made animations read from the Library (`*.anim.asset`) and from the open project's records (`*.edgefab.json`, kind `anim`), in EDGEfab's agreed shape | `src/core/made.ts` |
+| The view's **Project** and **Library** groups; made animations in search and the fits filter; Add to Track with the item's id | `src/animationsView.ts`, `src/game.ts`, `src/extension.ts` |
+| The extension API | `src/api.ts`, [Extension API](api.html) |
+| A sample made animation for the hand test | `tools/made-anim-sample.mjs` |
+| Unit tests | `test/made.test.ts` (3 tests) |
+
+What is not built, and why:
+
+- **The mark on a Desk scene's clip that uses a project animation**, and copying Library animations into a project with the scene: they belong with moving a scene into a project (D7).
+- **Finding a made clip again when the scene opens** (its id looked up in the project, then the Library, to say when it is gone): the clip keeps its facts, so the lane is right without it. D3's preview needs the lookup and builds it.
+- The API was built before EDGEfab commented on its shape (EDGEfab #7). Members can be added within version 1.
+
+EDGEfab stores no animations yet, so all of this was tried against items written by hand in the agreed shape. The first real one may show a difference.
+
 ## Steps
 
 Each step is one or more small commits with its unit tests. The hand test comes after the last.
@@ -233,8 +251,8 @@ Each step is one or more small commits with its unit tests. The hand test comes 
 | D2.4 Sets (built) | The set level of the index; the Animations view's Game group down to sets | 0.13.0 |
 | D2.5 Clips (built) | The clip level; search; the two filters | `anims.info` |
 | D2.6 On the lane (built, without the drag) | The clip's `anim`, `in`, `out`, `speed`, `loops` in the document module and the page; Add to Track and the drag; the unfit mark; swapping an actor | D2.5 for real clips; unit tests need nothing |
-| D2.7 Made animations | The Library and Project groups, read from EDGEfab's agreed shape | A hand-made item; EDGEfab's first real one later |
-| D2.8 API | The extension API above, and `docs/api.md` | EDGEfab's comments on #7 |
+| D2.7 Made animations (built) | The Library and Project groups, read from EDGEfab's agreed shape | A hand-made item; EDGEfab's first real one later |
+| D2.8 API (built) | The extension API above, and `docs/api.md` | EDGEfab's comments on #7 |
 
 D2.1 to D2.4, and D2.6's document rules, can be built now. D2.5 waits for REDbridge's release.
 

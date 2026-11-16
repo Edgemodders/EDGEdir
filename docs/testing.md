@@ -12,16 +12,18 @@ Last updated 2026-11-16.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 37 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 40 tests |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | Round 1 by script: 22 of 22 pass (EDGEdir 0.0.2). The fixes in 0.0.3 and the owner's own run are open |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | Not run yet | Waiting (EDGEdir 0.0.4). The core passed a scripted run against the real game |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge's next release | D2.5, D2.6 | Not run yet | Waiting (EDGEdir 0.0.5) for REDbridge's release. The core passed a scripted run against the real game with a build of REDbridge's main |
+| [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | Not run yet | Waiting (EDGEdir 0.0.6) |
 
 ## Waiting for a hand test
 
 - [D1 Timeline](#d1-timeline), EDGEdir 0.0.3: the owner's own run, or the owner's word that round 1 by script is enough; steps 4, 5 and 22a are new in 0.0.3.
-- [D2 Cast, part 1](#d2-cast-part-1), EDGEdir 0.0.5 (built on 0.0.4; nothing in it changed).
-- [D2 Clips, part 2](#d2-clips-part-2), EDGEdir 0.0.5, once REDbridge's next release is out.
+- [D2 Cast, part 1](#d2-cast-part-1), EDGEdir 0.0.6 (built on 0.0.4). One change since: the Animations view's **Copy Game Path** is now **Copy Path**.
+- [D2 Clips, part 2](#d2-clips-part-2), EDGEdir 0.0.6, once REDbridge's next release is out.
+- [D2 Made animations, part 3](#d2-made-animations-part-3), EDGEdir 0.0.6.
 
 ## Type check, build and unit tests
 
@@ -91,7 +93,7 @@ EDGEdir 0.0.4, built 2026-11-16. Not run yet. It covers D2.1 to D2.4: the game's
 | 2 | Click **Read the Game** | A note at the bottom right, "EDGEdir is reading the game": first the characters (about 15 s), then the animation files (about 2 minutes with REDbridge 0.13.0, counting game files; a second or two with the release after it). Then the view shows **Game** with about 14,000 animation files |
 | 3 | Open **Game**, then `base`, then `animations`, and a folder below | Folders with their counts, then animation files by name |
 | 4 | Click the search button in the view's title, type two words from a name you saw | A line with the count, then the matching files, each with its folder. The clear button brings the folders back |
-| 5 | Right-click an animation file: **Copy Game Path**. Paste somewhere | The file's game path, ending `.anims` |
+| 5 | Right-click an animation file: **Copy Path**. Paste somewhere | The file's game path, ending `.anims` |
 | 6 | New Scene `Cast test`. **Add Track**, Actor. Click its head | The lane head says `ACTOR · nobody yet`. The inspector says nobody acts on the track, with **Choose Actor...** |
 | 7 | **Choose Actor...**, type `judy`, pick Judy Álvarez, then an appearance | A search box over the characters with V's two entries on top. Then the appearances, with "Any: the game picks" first. The track is renamed to the actor, the head says who, and the inspector shows Record, Appearance and Rig (`woman_base`) |
 | 8 | Add two clips to the track. **Change Actor...** and pick another woman | The clips stay. The name and the inspector follow |
@@ -132,6 +134,23 @@ EDGEdir 0.0.5, built 2026-11-16. Not run yet. It covers D2.5 and D2.6: the anima
 | 15 | In the view's `...` menu turn on **Only the Selected Actor's Own Files** with Judy's track selected | Only animations from the files Judy's entity lists |
 | 16 | Press Ctrl+Z a few times, then save, close and reopen the scene | Each change goes back. Reopened, the clips, their lengths and the red hatch are as saved |
 | 17 | Close the window opened by F5 during step 1's reading on a fresh cache, and open it again | Reading goes on from where it stopped, not from the start |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
+
+## D2 Made animations, part 3
+
+EDGEdir 0.0.6, built 2026-11-16. Not run yet. It covers D2.7. EDGEfab stores no animations yet, so the test uses a sample item written by a small tool. It needs an EDGE Library (set up in EDGEfab or EDGEbuilder), and neither the game nor REDbridge.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | In the EDGEdir folder run `node tools/made-anim-sample.mjs` | It says where it wrote `Sample wave.anim.asset`, in a folder `EDGEdir test` in your Library |
+| 2 | Press F5, open the Animations view, click **Refresh** in its title | A **Library** group with `Sample wave`: 2.40 s, `woman_base`, and a note that its file is missing (the sample has no clip file) |
+| 3 | Open a scene with an actor track, select the track, click the **+** on `Sample wave` | A clip `sample_wave`, 2.4 s long, on the track. The inspector says it is a made animation |
+| 4 | With a woman as the track's actor, turn on **Only What Fits the Selected Actor** | `Sample wave` is still listed, above the game's animations. With a man as the actor it is not |
+| 5 | With a REDcode project open in the same window (REDcode running) | A **Project** group with the project's name, saying it has no made animations |
+| 6 | Run `node tools/made-anim-sample.mjs --remove`, then **Refresh** | The Library group is gone. The clip stays on its track |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
