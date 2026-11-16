@@ -39,7 +39,7 @@ Source: REDnode 0.66.8, `docs/world.md` and `packages/rednode/src`.
 | `audio.play(file, { delay, volume, ... })` and `audio.event(name)` exist. Sound at a place or on an entity is not scheduled | Audio clips play flat (not placed in the world) at first |
 | No video API. An overlay page could play `<video>` (**unverified**) | The video track waits for a spike |
 | The editor channel (`%LOCALAPPDATA%\REDnode\editor.json`, 127.0.0.1 only, a new bearer token each run, any `Origin` refused) has sound, TweakDB and give routes. No world or scene routes | Playing a scene from VS Code needs new routes, or goes through a package |
-| The game's weather system is reachable through `api` while V is in the world; reading the rain state passed a REDnode test. Setting the weather from REDnode is **unverified** (the game's scripts have a set-weather call with a blend time) | A weather track is likely a small cue. It needs a spike, and a way to give the weather back after the scene |
+| The game's weather system is reachable through `api` while V is in the world; reading the rain state passed a REDnode test. **Found by REDnode's session on 2026-11-16 (REDnode #46):** nothing in game 2.5's script API sets the weather; the weather interface only reads. A way in is research: the engine's weather system found by reading the game's code, or a quest node | The weather track is not a small cue. It stays in the document and the editor, and plays in the game only if REDnode finds a call. It may move out of D6 |
 | REDagent 0.4.4 has an agent API for mods: a mod asks a question and gets a plain-text answer (`agent.ask`). An answer takes seconds, costs the player money, and needs the player's own key | An AI cue cannot be frame-timed, and its result differs each run |
 | `world.load` reads EDGEbuilder's `<name>.scene.json` (meshes, entities, NPCs standing idle) | An EDGEbuilder scene can be the set an EDGEdir scene plays on |
 
@@ -131,7 +131,7 @@ One file, `<name>.edgedir`, JSON, opened by EDGEdir's custom editor and readable
 | Script | A call into a REDnode package at a time: a function name and JSON arguments | Shown as a marker only | Run by the player | D8 |
 | Video | A 2D video file shown over the game for a time | In a corner of the viewport | **Unverified**: an overlay page | D8 |
 
-| Weather | A weather state from the game's list, with a blend time, held for the clip's length. One weather track per scene | A tint and a label only; no rain or fog in the viewport | A cue that sets the weather, and one that gives it back at the end (**unverified**) | D6 |
+| Weather | A weather state from the game's list, with a blend time, held for the clip's length. One weather track per scene | A tint and a label only; no rain or fog in the viewport | A cue that sets the weather, and one that gives it back at the end. **No game call is known** (REDnode #46): research first | D6, if a call is found |
 | AI | **Not designed yet.** A placeholder kind, so documents and the editor allow for it | A marker | Not decided | After Q7 |
 
 The AI track's purpose is open (Q7). What is known limits it: a call to REDagent answers after seconds, not frames, and never the same way twice. So an AI clip is best seen as a window of time the answer may land in, with a rule for what the scene does meanwhile (hold, loop the actors' clips, or go on). Some things it could do, for the owner to choose from:
@@ -312,7 +312,7 @@ Routes 2 and 3 work together: one start per actor, on the same frame. A fourth r
 
 ### Requests this design leads to
 
-None is filed yet. The owner agreed D0's and D2's in principle on 2026-11-16 (Q4); the others are agreed when their phase is planned. Each goes to its repo as a `request` issue with the shape that would work.
+Filed on 2026-11-16: REDnode #46 (the written-workspot spike and the weather), REDbridge #17 (export of chosen clips; `anims.info` is in its #14), EDGEfab #7 (the split and the animation item). REDnode took #46 the same day: the spike is built and runs in the game after the A2 test. REDbridge #17 was taken too, to ship with `anims.info` before D2. The rest are filed when their phase is planned.
 
 | To | Need | For phase |
 |---|---|---|
