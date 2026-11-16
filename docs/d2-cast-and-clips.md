@@ -4,7 +4,7 @@ title: D2 Cast and clips
 
 # <span class="y">D2</span> Cast and clips
 
-**Status: plan agreed with the owner on 2026-11-16. Every step is built (EDGEdir 0.0.6) and waits for its hand test ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2), [part 3](testing.html#d2-made-animations-part-3)). Part 2 needs REDbridge 0.14.0, released on 2026-11-16.**
+**Status: plan agreed with the owner on 2026-11-16. Every step is built (EDGEdir 0.0.7). Its three hand tests passed a round run by script on 2026-11-16, and 0.0.7 has small fixes from their notes ([part 1](testing.html#d2-cast-part-1), [part 2](testing.html#d2-clips-part-2), [part 3](testing.html#d2-made-animations-part-3)). Part 2 needs REDbridge 0.14.0, released on 2026-11-16.**
 
 D2 is the second phase of the [design](design.html). It brings real things onto the timeline: an actor on each actor track, picked from the game's characters with V among them, and the game's animations as clips with their true lengths. It still shows no 3D picture (D3) and plays nothing in the game (D5).
 

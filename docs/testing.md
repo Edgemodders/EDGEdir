@@ -13,17 +13,17 @@ Last updated 2026-11-16.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 40 tests |
-| [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | Round 1 by script: 22 of 22 pass (EDGEdir 0.0.2). The fixes in 0.0.3 and the owner's own run are open |
-| [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | Not run yet | Waiting (EDGEdir 0.0.4). The core passed a scripted run against the real game |
-| [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | Not run yet | Waiting (EDGEdir 0.0.6). The core passed a scripted run against the real game with a build of REDbridge's main |
-| [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | Not run yet | Waiting (EDGEdir 0.0.6) |
+| [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
+| [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
+| [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
+| [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
 
 ## Waiting for a hand test
 
-- [D1 Timeline](#d1-timeline), EDGEdir 0.0.3: the owner's own run, or the owner's word that round 1 by script is enough; steps 4, 5 and 22a are new in 0.0.3.
-- [D2 Cast, part 1](#d2-cast-part-1), EDGEdir 0.0.6 (built on 0.0.4). One change since: the Animations view's **Copy Game Path** is now **Copy Path**.
-- [D2 Clips, part 2](#d2-clips-part-2), EDGEdir 0.0.6, with REDbridge 0.14.0 (released 2026-11-16).
-- [D2 Made animations, part 3](#d2-made-animations-part-3), EDGEdir 0.0.6.
+Every hand test has passed a round run by script in another session (2026-11-16). Still open:
+
+- **The owner's word** on whether rounds run by script, with nobody watching, count for the release gate; or the owner's own run of any of them.
+- **The fixes in EDGEdir 0.0.7**, made from those rounds' notes and not run in VS Code yet: listed under each test's rounds below.
 
 ## Type check, build and unit tests
 
@@ -66,7 +66,7 @@ EDGEdir 0.0.3, built 2026-11-16. Round 1 ran on 0.0.2.
 | 21 | Copy that `.edgedir` file to your Desktop and open the copy in VS Code (File, Open File) | It opens in the scene editor. The Desk lists it under **Recent** |
 | 22 | Right-click `Test two` in the Desk: **Delete**, and confirm | The scene leaves the Desk, its tab closes, and its folder is in the Recycle Bin |
 | 22a | Only if the Desk is on a drive with no Recycle Bin (a network or `subst` drive): **Delete**, and confirm | A second question says the scene could not go to the Recycle Bin and asks to delete it for good. **Delete for Good** removes it; Cancel keeps it on the Desk |
-| 23 | With an installed build (not F5): double-click a `.edgedir` file in File Explorer, or pass it to VS Code on the command line | It opens in the scene editor, not as text, and the Desk lists it under **Recent** |
+| 23 | With an installed build (not F5), and the editor already running: pass a `.edgedir` file to it on the command line, or use File, Open File | It opens in the scene editor, not as text, and the Desk lists it under **Recent**. (Named on the command line of a cold start it opens as text: VS Code's limit, see round 2) |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
@@ -81,9 +81,20 @@ What round 1 found, and what was done:
 | Step 4: the inspector's Start kept its old value during a drag | Fixed in 0.0.3: Start, Length and Frames follow the drag. Not run yet |
 | With the editor at half width the toolbar wraps to two rows | Left as it is |
 
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 2 | 2026-11-16 | 4, 5, 22a and 23, on 0.0.6 at `17ee24d` | **4, 5 and 22a pass; 23 fails as VS Code's own limit.** By script, as round 1. 4 and 5: the inspector's Start, Length and Frames follow while the mouse is down. 22a: on a drive with no Recycle Bin the second question comes; Cancel keeps the scene, Delete for Good removes it |
+
+What round 2 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 23, with an installed build: a `.edgedir` file given on the command line when the editor starts cold opens as JSON text and is not under Recent. With File, Open File, and with the editor already running, it opens in the scene editor | **A known limit, left.** VS Code opens a file named at start before it has read the extensions' editors. EDGEwave found the same with `.edgewave` files (its docs/release.md). Opened from the Desk, the Explorer, Quick Open or File, Open File, a scene gets its editor. A double-click in File Explorer with the editor closed was not tried |
+| Step 22a: the scene's tab is closed before the second question, so after Cancel the scene was on the Desk with its tab gone | Fixed in 0.0.7: a scene kept after all opens again. Not run yet |
+
 ## D2 Cast, part 1
 
-EDGEdir 0.0.4, built 2026-11-16. Not run yet. It covers D2.1 to D2.4: the game's files, the actor picker with V, and the Animations view's file list.
+EDGEdir 0.0.7 (first built as 0.0.4). It covers D2.1 to D2.4: the game's files, the actor picker with V, and the Animations view's file list.
 
 **Before you start:** the game installed (not running), and REDbridge 0.13.0, which comes with REDcode. Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). To see the first read, delete `%LOCALAPPDATA%\EDGEdir\cache` if it is there.
 
@@ -107,11 +118,21 @@ EDGEdir 0.0.4, built 2026-11-16. Not run yet. It covers D2.1 to D2.4: the game's
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet |
+| 1 | 2026-11-16 | 1 to 15, on 0.0.6 at `17ee24d`, REDbridge 0.13.0 | **Pass, 15 of 15**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk, cache and Library, the real game folder read only; nobody watched it live). Reading the game took 85 s; 6,586 characters; 14,016 animation files. A second start filled the view by itself in about 5 s |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| A broken copy of REDbridge on the test rig: the view said the game could not be read, with Show Log and Try Again, and worked after the path was put right | Nothing: the failed state works |
+| Typing `judy` in the picker also listed a row named just "V" (photo mode's copy of Judy), and the list began with rows named `!OBSOLETE` and `[No Data]` | Fixed in 0.0.7: such rows are listed by their record's own name. It takes effect when the game is read again (**Read the Game Again**). Not run yet |
+| Step 15, on a track other than V's in a scene that has V: the picker was empty while its line said V can still be chosen | Fixed in 0.0.7: a message says there is nobody to choose just now, and the line no longer offers V when V is taken. Not run yet |
+| After the editor was stopped by force, a reopened scene showed the unsaved dot though its text matched the file | Seen once, after a forced stop. Not looked into |
+| Clear the Search shows the Game group closed again, not as it was opened | Left as it is |
 
 ## D2 Clips, part 2
 
-EDGEdir 0.0.5, built 2026-11-16. Not run yet. It covers D2.5 and D2.6: the animations inside each file, search and filters, and real clips on the lanes.
+EDGEdir 0.0.7 (first built as 0.0.5). It covers D2.5 and D2.6: the animations inside each file, search and filters, and real clips on the lanes.
 
 **Before you start:** as for part 1, and **REDbridge 0.14.0** (released 2026-11-16; it has `anims.info`; REDcode's **Install REDbridge** fetches it). With 0.13.0 the view lists files only, and steps 2 on cannot be done. Run part 1 first, or at least its steps 1 and 2.
 
@@ -137,11 +158,21 @@ EDGEdir 0.0.5, built 2026-11-16. Not run yet. It covers D2.5 and D2.6: the anima
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet |
+| 1 | 2026-11-16 | 1 to 17, on 0.0.6 at `17ee24d`, REDbridge 0.14.0 | **Pass, 17 of 17**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk, cache and Library, the real game folder read only; nobody watched it live). The animations were read in about 2.5 minutes: 146,814 in 14,016 files |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 17: closed 40 s into the first read, nothing was on disk and the next start began from 0 (the first save came at 2,000 files) | Fixed in 0.0.7: what is read is saved at every 500 files. Not run yet |
+| The status bar counts "of 14,028 files" while the view says 14,016 | Left: REDbridge counts 12 files that are in two archives twice; the view counts each path once |
+| Step 5: the new clip was not selected, so the inspector still showed the track | Fixed in 0.0.7: Add to Track selects the new clip. Not run yet |
+| Step 10: a looping clip's end edge rounded down, so a drag to just under two loops gave one | Fixed in 0.0.7: it goes to the nearest whole loop there is room for. Unit tested; not run yet |
+| An actor's own files can hold a set made for another rig (the game's data) | Nothing: it is why the two filters together give fewer than the second alone |
 
 ## D2 Made animations, part 3
 
-EDGEdir 0.0.6, built 2026-11-16. Not run yet. It covers D2.7. EDGEfab stores no animations yet, so the test uses a sample item written by a small tool. It needs an EDGE Library (set up in EDGEfab or EDGEbuilder), and neither the game nor REDbridge.
+EDGEdir 0.0.7 (first built as 0.0.6). It covers D2.7. EDGEfab stores no animations yet, so the test uses a sample item written by a small tool. It needs an EDGE Library (set up in EDGEfab or EDGEbuilder), and neither the game nor REDbridge.
 
 | Step | Do | Expect |
 |---|---|---|
@@ -154,5 +185,5 @@ EDGEdir 0.0.6, built 2026-11-16. Not run yet. It covers D2.7. EDGEfab stores no 
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet |
+| 1 | 2026-11-16 | 1 to 6, on 0.0.6 at `17ee24d` | **Pass, 6 of 6**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk, cache and Library, the real game folder read only; nobody watched it live) |
 

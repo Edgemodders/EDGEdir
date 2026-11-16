@@ -23,7 +23,7 @@ As of 2026-11-16. Each phase will end with a hand test by the owner, and an in-g
 | Design | Done 2026-11-16: draft 1 agreed by the owner |
 | D0 Spikes | The written workspot ran in the game on 2026-11-16 (REDnode #46): it works as a track, jumps blend and are 0 to 13 ms late; quest clips and root motion are open. Not started: game clips in a webview, setting the weather |
 | D1 Timeline | Built 2026-11-16: the scene document, the timeline editor and the Desk. Hand test round 1, by script, passed all 22 steps on 0.0.2; two small fixes are in 0.0.3 |
-| D2 Cast and clips | Plan agreed 2026-11-16. Built (EDGEdir 0.0.6), waiting for hand tests: reading the game, the actor picker with V, the Animations view with the game's and made animations, real clips on the lanes (trim, speed, loops, the rig check), and the extension API. The clips' test needs REDbridge 0.14.0 |
+| D2 Cast and clips | Plan agreed 2026-11-16. Built (EDGEdir 0.0.7). Its three hand tests passed a round by script on 2026-11-16 (15, 17 and 6 steps); small fixes from their notes are in 0.0.7: reading the game, the actor picker with V, the Animations view with the game's and made animations, real clips on the lanes (trim, speed, loops, the rig check), and the extension API. The clips' test needs REDbridge 0.14.0 |
 | D3 Preview | Plan written 2026-11-16, with a spike's findings, for the owner's review. Not built |
 | D4 to D9 | Later: transitions and sequences, play in game, audio camera and weather, pack and Library, script video and MCP, the AI track |
 
