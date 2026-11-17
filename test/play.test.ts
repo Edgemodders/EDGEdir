@@ -143,7 +143,8 @@ test("EDGEdir reaches the player through a folder, and copies the player into th
     assert.equal(alive(dir, 5000), undefined);
     fs.writeFileSync(path.join(dir, "alive.json"), JSON.stringify({ version: "0.1.0", at: 4000 }));
     assert.equal(alive(dir, 5000), "0.1.0");
-    assert.equal(alive(dir, 20000), undefined);
+    assert.equal(alive(dir, 8900), "0.1.0");
+    assert.equal(alive(dir, 9100), undefined);
     assert.equal(readState(dir), undefined);
     fs.writeFileSync(path.join(dir, "state.json"), JSON.stringify({ id, state: "playing", text: "Playing", startedAt: 6000, late: [{ ok: true }, { ok: false }] }));
     assert.equal(readState(dir)?.startedAt, 6000);

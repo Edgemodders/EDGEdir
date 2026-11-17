@@ -13,8 +13,8 @@ Last updated 2026-11-17.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 75 tests |
-| [D5 in the game](#d5-in-the-game) | In the game, on the owner's PC | D5c, D5d | | Not run yet (0.0.21, EDGEdir Player 0.1.0) |
-| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | | Not run yet (0.0.21) |
+| [D5 in the game](#d5-in-the-game) | In the game, on the owner's PC | D5c, D5d | | Not run yet (0.0.22, EDGEdir Player 0.1.0) |
+| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | | Not run yet (0.0.22) |
 | [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | By script: round 1, 11 of 14 (0.0.18: steps 2, 7 and 9 each missed one expectation); round 2, those and step 11 pass on 0.0.19. Every step has passed |
 | [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | 2026-11-17 | By script: 10 of 10 pass (0.0.16); the two changes of 0.0.18 from its notes pass too |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
@@ -43,7 +43,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15's two small changes passed with D5b's round on 2026-11-17.)
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20 has one small change from the rerun's notes, not run (the Sets view is read again when a scene is saved). One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
-- **D5d Play in game, in VS Code**, 13 steps, on EDGEdir 0.0.21: not run yet. The button, the questions and the player's install have not run in VS Code at all.
+- **D5d Play in game, in VS Code**, 13 steps, on EDGEdir 0.0.22: not run yet. The button, the questions and the player's install have not run in VS Code at all.
 - **D5 in the game**, 10 steps, on the owner's PC: not run yet. The player has not run in the game at all.
 - **The owner's spot tests** S1 to S13 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
@@ -442,7 +442,7 @@ What round 2 found, and what was done:
 
 ## D5d Play in game, in VS Code
 
-EDGEdir 0.0.21 (2026-11-17). It covers D5d's part in VS Code, and D5c's steps against a stand-in: the button, the list before the play, the ask before the player is copied, the line, the playhead, Stop. Nothing plays in the game: `tools/player-standin.mjs` stands in for the player and prints each call it would make.
+EDGEdir 0.0.22 (first built as 0.0.21, 2026-11-17). It covers D5d's part in VS Code, and D5c's steps against a stand-in: the button, the list before the play, the ask before the player is copied, the line, the playhead, Stop. Nothing plays in the game: `tools/player-standin.mjs` stands in for the player and prints each call it would make.
 
 **Before you start:** as for D5b The cue sheet, with its scene (Judy with two animation clips end to end, V with one clip), and D5a's scene on a set. The game is not running. A terminal in the repo's folder for the stand-in, with the same `LOCALAPPDATA` as the VS Code window.
 
@@ -460,7 +460,7 @@ EDGEdir 0.0.21 (2026-11-17). It covers D5d's part in VS Code, and D5c's steps ag
 | 10 | Stop it. Make a new scene with one empty actor track and click **Play in Game** | A warning: nothing to play in the game. Nothing is sent |
 | 11 | Open D5a's scene on its set, give one of the set's people a clip, and click **Play in Game** | The stand-in prints a `load` that lists the set's objects without that person, named `edgedir-set`, then that person's `spawn` at the place the set has them. **Stop in Game**: a `remove` and an `unload` |
 | 12 | Stop the stand-in (Ctrl+C) and start it again with `--fail spawn`. Click **Play in Game** in the first scene | The line turns red: Not played, Judy could not be spawned, with the stand-in's reason. The button reads Play in Game |
-| 13 | Start the stand-in again without `--fail`, play the scene, and stop the stand-in with Ctrl+C while it plays. Click **Stop in Game** | Within about 10 s the line says the player is not running and nothing is left to stop. The button reads Play in Game |
+| 13 | Start the stand-in again without `--fail`, play the scene, and stop the stand-in with Ctrl+C while it plays | Within about 7 s, with no click, the line turns red and says the player stopped and its people are gone from the game. The button reads Play in Game |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
@@ -468,7 +468,7 @@ EDGEdir 0.0.21 (2026-11-17). It covers D5d's part in VS Code, and D5c's steps ag
 
 ## D5 in the game
 
-EDGEdir 0.0.21 with EDGEdir Player 0.1.0 (2026-11-17). The in-game test of D5c and D5d, on the owner's PC. It answers the plan's questions G1 to G7. Say what you see at each step; the player's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
+EDGEdir 0.0.22 with EDGEdir Player 0.1.0 (2026-11-17). The in-game test of D5c and D5d, on the owner's PC. It answers the plan's questions G1 to G7. Say what you see at each step; the player's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
 
 **Before you start:** REDnode 0.66.9 or later with REDbridge and Codeware. The game running with a save loaded, V standing somewhere open, outside combat. In VS Code, D4's scene: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block. In the inspector give the first actor Right -1 and the second Right 1, both Turn 180.
 
@@ -483,7 +483,7 @@ EDGEdir 0.0.21 with EDGEdir Player 0.1.0 (2026-11-17). The in-game test of D5c a
 | 7 | Let the scene end | The playhead stays at the end; the people go on with their last clips |
 | 8 | Click **Stop in Game**, then **Play in Game** | **G6:** is everybody gone after Stop, and does the second play start clean, with two people only? |
 | 9 | Open a scene made on a set near V (D5a), with clips on its people; **Play in Game** | The set's props and its other people appear where the set has them, and the directed people play at their places. **Stop in Game** removes all of it |
-| 10 | While a scene plays, switch **EDGEdir Player** off in the Mod Manager | Its people are gone. In VS Code, **Stop in Game** says within about 10 s that the player is not running |
+| 10 | While a scene plays, switch **EDGEdir Player** off in the Mod Manager | Its people are gone. In VS Code, within about 7 s, the line says the player stopped and the button reads Play in Game |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|

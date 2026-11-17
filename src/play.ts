@@ -58,8 +58,11 @@ const readJson = (file: string): unknown => {
   }
 };
 
-/** The running player's version, when it said it was alive in the last `within` milliseconds. */
-export function alive(dir = playDir(), now = Date.now(), within = 7000): string | undefined {
+/**
+ * The running player's version, when it said it was alive in the last `within` milliseconds. It says
+ * so every 2 s. REDnode ends a package without telling it (#48), so silence is the only sign it stopped.
+ */
+export function alive(dir = playDir(), now = Date.now(), within = 5000): string | undefined {
   const a = readJson(path.join(dir, "alive.json")) as { version?: string; at?: number } | undefined;
   return a && typeof a.at === "number" && now - a.at < within && now - a.at > -within ? String(a.version ?? "0") : undefined;
 }

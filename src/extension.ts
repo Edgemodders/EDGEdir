@@ -296,6 +296,11 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         clearInterval(watching);
         return tell({ text: `The player did not answer. ${SwitchOn}`, bad: true, active: false });
       }
+      // A player that stopped says nothing more (REDnode ends it without notice, and removes its people).
+      if (!alive()) {
+        clearInterval(watching);
+        return tell({ text: "The player stopped: its people are gone from the game", bad: true, active: false });
+      }
       const text = JSON.stringify(s);
       if (text === last) return;
       last = text;
@@ -377,7 +382,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         for (let i = 0; i < 20; i++) {
           const s = readState();
           if (s && ["stopped", "failed", "idle"].includes(s.state)) return;
-          if (!alive(undefined, undefined, 5000)) break;
+          if (!alive()) break;
           await new Promise((r) => setTimeout(r, 500));
         }
         clearInterval(watching);

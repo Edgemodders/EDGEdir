@@ -240,6 +240,15 @@ Not built, against the design's Sets section:
 
 Looked at: the stand-in played a request written by hand (write, spawn, start, two jumps 13 and 0 ms late, ended); the page in a plain browser with the harness (the button's two readings, the line, the playhead running from the start time, Space refused during a play in the game).
 
+REDnode's answers on #48 about the player (2026-11-17, from its code, not run in the game):
+
+| Question | Answer | In EDGEdir |
+|---|---|---|
+| Does the last workspot's swap carry the ones written before it with `swap: false`? | Yes: each write packs the package's whole folder of workspots, earlier runs' files too | As built |
+| Do `mod.mjs` and `service.mjs` share `globalThis`? | Yes: one worker, the same globals and module instances | As built |
+| Does a package hear that it is being stopped? | No: the worker is ended, no handler runs, and REDnode then removes its spawns. A heartbeat older than about 5 s means stopped | 0.0.22: the player counts as running for 5 s after its last word; a play whose player falls silent says so in the line by itself, and the button goes back to Play in Game |
+| How long are a written workspot's entry names known? | For the package's run only | The player's own list of what it has written lives as long, so a new run writes again |
+
 Not built, against the plan:
 
 | Left out | Why |
