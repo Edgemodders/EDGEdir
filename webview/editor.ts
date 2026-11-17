@@ -145,6 +145,7 @@ window.addEventListener("message", (e) => {
     return;
   }
   if (m.type === "got") return preview.got(m);
+  if (m.type === "game") return onGame(m);
   if (m.type !== "doc") return;
   const text = JSON.stringify(m.doc);
   if (firstDoc) {
@@ -854,6 +855,7 @@ function render() {
   $("addTransition").hidden = track?.kind !== "actor";
   $<HTMLButtonElement>("split").disabled = !one || one.clip.kind === "transition" || one.clip.kind === "sequence";
   $("addTrack").hidden = seqMode;
+  $("gamePlay").hidden = seqMode;
   $("saveSeq").hidden = seqMode || track?.kind !== "actor";
   $<HTMLButtonElement>("saveSeq").disabled = ![...sel].some((id) => findClip(doc!, id)?.clip.kind === "anim");
   $<HTMLButtonElement>("remove").disabled = !sel.size;
@@ -1260,6 +1262,7 @@ function tick(now: number) {
 
 function play() {
   if (!doc || playing) return;
+  if (gameRun) return say("The game is playing this scene: stop it there first", true);
   const end = sceneLength(doc);
   if (end <= 0) return say("The scene has no clips to play yet", true);
   if (playhead >= end - 1e-6) playhead = 0;
@@ -1293,6 +1296,47 @@ function toEdge(dir: -1 | 1) {
   }
   draw();
 }
+
+// ---- play in game (D5d) --------------------------------------------------------------------------
+
+/** A play is on in the game: the button reads Stop in Game. */
+let gameOn = false;
+/** The scene runs in the game since `startedAt` (this PC's clock): the playhead runs with it. */
+let gameRun: { startedAt: number; length: number } | undefined;
+let gameTicking = false;
+
+function gameTick() {
+  gameTicking = false;
+  if (!gameRun || !doc) return;
+  const t = (Date.now() - gameRun.startedAt) / 1000;
+  playhead = Math.max(0, Math.min(gameRun.length, t));
+  if (x(playhead) > width() - 30 || x(playhead) < 0) {
+    viewStart = playhead - 40 * spp;
+    clampView();
+  }
+  draw();
+  // At the end the playhead stays there: the cast holds its last clips until Stop.
+  if (t >= gameRun.length) return;
+  gameTicking = true;
+  requestAnimationFrame(gameTick);
+}
+
+function onGame(m: { text?: string; bad?: boolean; active?: boolean; startedAt?: number; length?: number }) {
+  gameOn = !!m.active;
+  const b = $("gamePlay");
+  b.textContent = gameOn ? "Stop in Game" : "Play in Game";
+  b.classList.toggle("on", gameOn);
+  const line = $("gameLine");
+  line.textContent = m.text ?? "";
+  line.classList.toggle("bad", !!m.bad);
+  gameRun = gameOn && typeof m.startedAt === "number" ? { startedAt: m.startedAt, length: Number(m.length ?? 0) } : undefined;
+  if (gameRun && !gameTicking) {
+    stopPlay();
+    gameTicking = true;
+    requestAnimationFrame(gameTick);
+  }
+}
+$("gamePlay").addEventListener("click", () => send({ type: "game", do: gameOn ? "stop" : "play" }));
 
 $("play").addEventListener("click", () => (playing ? stopPlay() : play()));
 $("stop").addEventListener("click", () => stopPlay(true));

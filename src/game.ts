@@ -135,6 +135,11 @@ export class Game {
     this.changed.fire();
   }
 
+  /** The game's folder, when one is set or was found; nothing is searched for. */
+  async gameFolder(): Promise<string | undefined> {
+    return (await this.findGame(false))?.path;
+  }
+
   /** The bridge, started when needed. Throws with a message fit to show. */
   async bridge(): Promise<BridgeClient> {
     const game = await this.findGame(false);

@@ -14,12 +14,14 @@ import { addAnimClip, addSeqClip, EditError, findTrack, newDoc, refreshSeqs, lin
 import { rigName } from "./core/entity";
 import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
-import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type SequenceHost, type SetHost } from "./editor";
+import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PlayHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
+import { cuesOf } from "./cues";
+import { alive, appsDir, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor } from "./play";
 import { Game } from "./game";
 import { castLabel } from "./core/cast";
 import { libraryRoot } from "./core/made";
 import { addSetPeople, chooseSet, freshPeople, linkTo, parseSet, removeSet, setOf, stageOf, syncSet, type SetPerson } from "./set";
-import { hashOf, readSet, type SetFile } from "./setFiles";
+import { fileOf, hashOf, readSet, type SetFile } from "./setFiles";
 import { SetsView, type SetItem } from "./setsView";
 
 /** An empty tree, so a view shows its welcome text until its phase fills it. */
@@ -273,6 +275,119 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     },
   };
 
+  // ---- Play in game (D5d): the player is the REDnode package under player/, reached through a folder (src/play.ts) ----
+  const playerSource = path.join(context.extensionPath, "player");
+  const warn = (text: string) => void vscode.window.showWarningMessage(`EDGEdir: ${text}`);
+  const SwitchOn = "Start the game with a save loaded. In REDnode's Mod Manager (F10), switch EDGEdir Player on and allow its two permissions, bridge and archives.";
+  /** The notes each scene's play was agreed with: not asked again until they change. */
+  const agreed = new Map<string, string>();
+  let watching: ReturnType<typeof setInterval> | undefined;
+  let telling: ((news: PlayNews) => void) | undefined;
+  /** Passes on what the player says of the play `id`, until it is over. */
+  const follow = (id: string, tell: (news: PlayNews) => void) => {
+    clearInterval(watching);
+    telling = tell;
+    const began = Date.now();
+    let last = "";
+    watching = setInterval(() => {
+      const s = readState();
+      if (!s || s.id !== id) {
+        if (Date.now() - began < 8000) return;
+        clearInterval(watching);
+        return tell({ text: `The player did not answer. ${SwitchOn}`, bad: true, active: false });
+      }
+      const text = JSON.stringify(s);
+      if (text === last) return;
+      last = text;
+      const active = !["failed", "stopped", "idle"].includes(s.state);
+      tell({ ...lineOf(s), active, startedAt: s.state === "playing" || s.state === "ended" ? s.startedAt : undefined, length: s.length });
+      if (!active) clearInterval(watching);
+    }, 250);
+  };
+  context.subscriptions.push({ dispose: () => clearInterval(watching) });
+  /** True when the player runs in the game. Offers to copy it there, once asked, when it is missing or older. */
+  const playerReady = async (): Promise<boolean> => {
+    const shipped = playerVersion(playerSource) ?? "0";
+    const running = alive();
+    if (running && !older(running, shipped)) return true;
+    const gamePath = await game.gameFolder();
+    if (!gamePath) return warn("no Cyberpunk 2077 folder is set (the setting edgedir.gamePath, or REDcode's)."), false;
+    const state = installState(playerSource, gamePath);
+    if (state === "noRednode") return warn("REDnode is not in the game's folder (red4ext\\plugins\\REDnode). Play in game needs REDnode 0.66.9 or later, with REDbridge beside it."), false;
+    if (state === "none" || state === "older") {
+      const go = await vscode.window.showInformationMessage(
+        state === "none" ? `Play in game needs EDGEdir's player in the game. Copy EDGEdir Player ${shipped} into REDnode's apps folder?` : `The EDGEdir Player in the game is older than this EDGEdir's (${shipped}). Replace it?`,
+        { modal: true, detail: `${path.join(appsDir(gamePath), PlayerId)}\nIt is a REDnode package, and nothing of the game's own is changed. Remove it in that folder at any time.` },
+        "Copy",
+      );
+      if (go !== "Copy") return false;
+      install(playerSource, gamePath);
+      // A running REDnode picks a new package up by itself.
+      const up = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "EDGEdir: waiting for the player in the game" }, async () => {
+        for (let i = 0; i < 24; i++) {
+          const now = alive();
+          if (now && !older(now, shipped)) return true;
+          await new Promise((r) => setTimeout(r, 500));
+        }
+        return false;
+      });
+      if (!up) void vscode.window.showInformationMessage(`EDGEdir: the player is in the game's folder now. ${SwitchOn} Then press Play in Game again.`);
+      return up;
+    }
+    // An older one that runs from another folder (a development folder) is used as it is.
+    if (running) return true;
+    return warn(`the player is in the game's folder and is not running. ${SwitchOn}`), false;
+  };
+  const plays: PlayHost = {
+    async play(document, tell) {
+      try {
+        if (isSeqFile(document.uri.path)) return warn("a sequence plays in the game on an actor, in a scene.");
+        const doc = sceneIn(document);
+        const { sheet, notes } = cuesOf(doc);
+        if (!sheet.cast.length) return warn(`nothing to play in the game. ${notes.find((n) => !n.clip)?.text ?? "No actor track has a clip the game can play."}`);
+        const list = notes.map((n) => n.text).join("\n");
+        if (notes.length && agreed.get(document.uri.toString()) !== list) {
+          const go = await vscode.window.showWarningMessage(
+            `The game will not match the preview in ${notes.length} place${notes.length === 1 ? "" : "s"}.`,
+            { modal: true, detail: notes.map((n) => `- ${n.text}`).join("\n") },
+            "Play Anyway",
+          );
+          if (go !== "Play Anyway") return;
+          agreed.set(document.uri.toString(), list);
+        }
+        const link = setOf(doc);
+        let stage: ReturnType<typeof stageFor>;
+        if (link) {
+          const { library, project } = roots();
+          const file = fileOf(link, library, project?.dir);
+          if (!file || !fs.existsSync(file)) return warn(`the scene's set "${link.name}" was not found, so the scene cannot play on it. Choose the set again, or remove it.`);
+          stage = stageFor(doc, fs.readFileSync(file, "utf8"));
+        }
+        if (!(await playerReady())) return;
+        tell({ text: "Sent to the game", bad: false, active: true });
+        follow(request({ do: "play", sheet, stage }), tell);
+      } catch (e) {
+        fail("Play in Game", e);
+      }
+    },
+    async stop() {
+      try {
+        request({ do: "stop" });
+        // The player says when it has stopped. One that is gone says nothing: its people went with it.
+        for (let i = 0; i < 20; i++) {
+          const s = readState();
+          if (s && ["stopped", "failed", "idle"].includes(s.state)) return;
+          if (!alive(undefined, undefined, 5000)) break;
+          await new Promise((r) => setTimeout(r, 500));
+        }
+        clearInterval(watching);
+        telling?.({ text: "The player is not running: nothing is left to stop", bad: false, active: false });
+      } catch (e) {
+        fail("Stop in Game", e);
+      }
+    },
+  };
+
   const scenes: SceneEditorProvider = new SceneEditorProvider(
     context,
     (uri) => void desk.opened(uri),
@@ -284,6 +399,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     },
     sequences,
     sets,
+    plays,
   );
   /** The scene in front as a document, or undefined when its text is not a scene just now. */
   const frontDoc = (): SceneDoc | undefined => {

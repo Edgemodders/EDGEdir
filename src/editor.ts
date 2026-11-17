@@ -37,7 +37,9 @@ type FromPage =
   | { type: "saveSeq"; clips: string[] }
   | { type: "openSeq"; id: string }
   /** The scene's set (D5a): choose one, take it off, or add tracks for its people. */
-  | { type: "set"; do: "choose" | "remove" | "add" };
+  | { type: "set"; do: "choose" | "remove" | "add" }
+  /** Play in game, and Stop in game (D5d). */
+  | { type: "game"; do: "play" | "stop" };
 
 /** A scene open in the editor, with where its page's cursor is. */
 /** What the editor asks of the Desk's sequences (D4b). */
@@ -61,6 +63,22 @@ export interface SetHost {
   choose(document: vscode.TextDocument): Promise<void>;
   remove(document: vscode.TextDocument): Promise<void>;
   addPeople(document: vscode.TextDocument): Promise<void>;
+}
+
+/** What the page is told of a play in the game: one line, whether a play is on, and when the scene started on this PC's clock. */
+export interface PlayNews {
+  text: string;
+  bad: boolean;
+  active: boolean;
+  startedAt?: number;
+  length?: number;
+}
+
+/** What the editor asks of the player in the game (D5d). */
+export interface PlayHost {
+  /** Plays the scene in the game from its start; `tell` hears how it goes. */
+  play(document: vscode.TextDocument, tell: (news: PlayNews) => void): Promise<void>;
+  stop(): Promise<void>;
 }
 
 /** The scene a text document holds: a scene's own text, or a sequence shown as one lane. Throws when it is neither. */
@@ -108,6 +126,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly preview: PreviewSource,
     private readonly sequences: SequenceHost,
     private readonly sets: SetHost,
+    private readonly plays: PlayHost,
   ) {}
 
   /** Every scene and sequence open in an editor. */
@@ -189,6 +208,8 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
           return this.sequences.open(m.id);
         case "set":
           return m.do === "choose" ? this.sets.choose(document) : m.do === "remove" ? this.sets.remove(document) : this.sets.addPeople(document);
+        case "game":
+          return m.do === "play" ? this.plays.play(document, (news) => post({ type: "game", ...news })) : this.plays.stop();
         case "edit": {
           const text = writeScene(document.uri.path, m.doc, document.getText());
           if (text === document.getText()) return;
@@ -273,6 +294,7 @@ export const PageBody = `<header>
     <button class="icon" id="next" title="To the next clip edge (End: to the end)">${icon('<path d="M11 3h2v10h-2zM3 3v10l7-5z"/>')}</button>
     <button class="icon" id="loop" title="Loop the scene">${icon('<path d="M4 4h7V2l3 3-3 3V6H5v3H4zM12 12H5v2l-3-3 3-3v2h6V7h1z"/>')}</button>
   </span>
+  <button id="gamePlay" title="Play the scene in the running game, from its start, on people spawned for it. Needs REDnode and EDGEdir's player in the game">Play in Game</button>
   <span class="mono" id="time" title="The playhead: time, and frame">0:00.000</span>
   <span class="sep"></span>
   <button id="addTrack" title="Add a track to the scene">Add Track</button>
@@ -286,6 +308,7 @@ export const PageBody = `<header>
   <button class="icon" id="zoomIn" title="Zoom in (Ctrl+wheel)">+</button>
   <button id="fit" title="Show the whole scene">Fit</button>
   <button id="snap" class="on" title="Snap to clip edges and the playhead. Hold Alt while dragging to turn it off for one drag">Snap</button>
+  <span class="status" id="gameLine" role="status"></span>
 </div>
 <div id="invalid" hidden>
   <h2>This file cannot be read as a scene</h2>

@@ -123,10 +123,10 @@ It needs the `bridge` and `archives` permissions, which the player allows in RED
 
 | Way | How | Locked by | State |
 |---|---|---|---|
-| **A. The editor channel** | A new REDnode call, `POST /editor/service.call` `{ editor, package, call, args }`, that calls a function the package offers as a service, and answers with its answer | As the channel is: this PC only, a bearer token made new each run that only the player's own programs can read, and the player's Allow in the game the first time EDGEdir asks | Not in REDnode. A request (question P2) |
-| **B. An inbox file** | EDGEdir writes the cue sheet into a folder under `%LOCALAPPDATA%\EDGEdir\play\`; the player watches the folder and writes its answers beside it | The folder is in the player's own Windows profile: only their own programs can write it. No port is opened | Works with REDnode as it is (**unverified**: a Node mod watching a folder outside its own) |
+| **A. The editor channel** | A new REDnode call, `POST /editor/service.call` `{ editor, package, call, args }`, that calls a function the package offers as a service, and answers with its answer | As the channel is: this PC only, a bearer token made new each run that only the player's own programs can read, and the player's Allow in the game the first time EDGEdir asks | Agreed in principle by REDnode on 2026-11-17 (#48), in this shape, with an Allow for each editor and package. Not built; the owner sets when |
+| **B. An inbox file** | EDGEdir writes the cue sheet into a folder under `%LOCALAPPDATA%\EDGEdir\play\`; the player watches the folder and writes its answers beside it | The folder is in the player's own Windows profile: only their own programs can write it. No port is opened | **Built, EDGEdir 0.0.21.** REDnode says a Node mod has Node's own `fs` and may watch the folder with no permission (#48); not run in the game yet |
 
-A is the right one: it answers at once, it goes through the player's Allow, and EDGEhack's Try Live already works that way. B is the fallback if A is not in REDnode when D5d is built.
+A is the right one: it answers at once, it goes through the player's Allow, and EDGEhack's Try Live already works that way. B is the fallback if A is not in REDnode when D5d is built, and so D5d is built on B. The player's service file already offers `play`, `stop` and `state`, so the change to A is in EDGEdir's `src/play.ts` alone.
 
 ## Tests
 
@@ -154,8 +154,8 @@ What the in-game test answers:
 
 | To | Need | State |
 |---|---|---|
-| REDnode #48 | `/editor/service.call` on the editor channel (way A) | Filed 2026-11-17 |
-| REDnode #48 | Directing a person who was not spawned with the workspot (the owner's question), or else `world.load` leaving out the people a scene directs | Filed 2026-11-17 |
+| REDnode #48 | `/editor/service.call` on the editor channel (way A) | Agreed in principle 2026-11-17; not built |
+| REDnode #48 | Directing a person who was not spawned with the workspot (the owner's question), or else `world.load` leaving out the people a scene directs | Answered 2026-11-17: directing needs a spike step on a plain person, with #47's. Sets need neither: `world.load` takes the scene as an object, so the player takes the directed people out itself. A `skip` option may come with the call above |
 | REDnode #46 | The measured blend at a jump, and `blend` for each clip of `world.writeWorkspot` if a field sets it | Open; REDnode's next in-game round |
 | REDnode #47 | V in the game: the spike | Open |
 
@@ -219,6 +219,35 @@ Not built, against the design's Sets section:
 | A box turned as the prop is, in all three axes | Only the turn about the up axis is used. A tilted prop's box stands upright |
 | Lights and props with no `bounds` | Not drawn |
 | The set in the game | D5c, and REDnode #48's answer on directing a person who is already there |
+
+**D5c The player and D5d Play in game, EDGEdir 0.0.21 (2026-11-17). Not run in VS Code and not run in the game yet.** Built on way B, the folder, after REDnode's answer on #48.
+
+| Part | Where |
+|---|---|
+| The player package | `player/`: `rednode-app.json` (`edgedir-player` 0.1.0; permissions `bridge` and `archives`; REDnode 0.66.9 or later), `play.mjs` (the six steps, with the world's calls handed in so it runs in a unit test), `inbox.mjs` (the folder), `mod.mjs` (REDnode's `world`, V's place, the folder), `service.mjs` (`play`, `stop`, `state` for way A and for other packages). It ships inside the extension |
+| Write | One workspot for each cast member, named `<scene>_<track>`. The game takes them in one swap, with the last one written. A workspot whose rig and clips have not changed since the package started is not written again |
+| Place | In front of V: the anchor is 3 m ahead, Right and Forward are as V sees them, and a Turn of 180 faces V. On a set: metres east and north of the scene's origin, at the height the set gives the person. **Unverified against the game** (G3) |
+| The set | The set's file comes with the request. The player loads it with `world.load` under the name `edgedir-set`, without the people the cue sheet directs, and spawns those with their workspots. People of the set the scene does not direct stand as the set has them |
+| Warm up | Everyone is spawned at their mark, started on their first clip, and given 1.5 s. Whether the T pose shows is G2's question |
+| Play, end, stop | One timer for each cue from one start time; each cue's lateness is kept. At the scene's length the state is `ended` and the cast holds. Stop, a new play and a failure remove the cast and unload the set |
+| The folder | `%LOCALAPPDATA%\EDGEdir\play`: EDGEdir writes `request.json` (`id`, `at`, `do`, `sheet`, `stage`); the player writes `state.json` and, every 2 s, `alive.json`. Each file is written whole. A request older than the player's start is not played |
+| EDGEdir's side | `src/play.ts`, no VS Code: `request`, `readState`, `alive`, `stageFor`, `installState`, `install`, `lineOf` |
+| The button | `webview/editor.ts`: **Play in Game** beside the transport (`#gamePlay`), **Stop in Game** while a play is on; the line at the right of the toolbar (`#gameLine`); the playhead runs from the start time the player answered and stays at the end. Not shown in a sequence's own tab |
+| Before the play | `src/extension.ts` (the `PlayHost`): the notes in one list with **Play Anyway**, asked again only when they change; a scene with nobody to play says why; a set that is not found stops the play |
+| The install | The first play that finds no player running asks, then copies `player/` into `red4ext\plugins\REDnode\apps\edgedir-player` and waits 12 s for it to say it is alive. An older one in the game is replaced the same way. Without REDnode in the game's folder it says so |
+| The stand-in | `tools/player-standin.mjs`: the player's own steps and folder against a made-up world that prints each call, for the hand test in VS Code with no game |
+| Unit tests | `test/play.test.ts`, 5 tests |
+
+Looked at: the stand-in played a request written by hand (write, spawn, start, two jumps 13 and 0 ms late, ended); the page in a plain browser with the harness (the button's two readings, the line, the playhead running from the start time, Space refused during a play in the game).
+
+Not built, against the plan:
+
+| Left out | Why |
+|---|---|
+| The editor channel (way A) | Not in REDnode yet |
+| Actors out of view during the warm-up | G2 decides it: `world.move` on a person in a workspot is unverified |
+| The transition's length passed to the game | Waits for REDnode #46's measurement and a `blend` for each clip |
+| Each cue's lateness shown in the editor | It is in `state.json` (`late`); the line only counts jumps that did not land |
 
 ### D5b, looked at
 
