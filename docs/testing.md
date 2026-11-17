@@ -17,8 +17,8 @@ Last updated 2026-11-16.
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
 | [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
-| [D4b Sequences](#d4b-sequences) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4b | 2026-11-16 | By script: 19 of 19 pass (0.0.13); five fixes from its notes in 0.0.14, not run |
-| [D4a Transitions](#d4a-transitions) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4a | 2026-11-16 | **By script: 12 of 15 (0.0.13). Steps 3, 4 and 6 failed**; fixed in 0.0.14, not run again yet |
+| [D4b Sequences](#d4b-sequences) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4b | 2026-11-16 | By script: round 1, 19 of 19 (0.0.13); round 2, the five fixes of 0.0.14 pass |
+| [D4a Transitions](#d4a-transitions) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4a | 2026-11-16 | By script: round 1, 12 of 15 (0.0.13: steps 3, 4 and 6 failed); round 2, those and four more pass on 0.0.14. Every step has passed |
 | [D3 Preview](#d3-preview) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D3 | 2026-11-16 | By script: round 1, 17 of 17 (0.0.9); round 2, the four fixes of 0.0.10 pass |
 
 ## The release gate
@@ -36,8 +36,7 @@ The rounds by script are there so that work does not wait for the owner's testin
 
 Every hand test (D1, D2, D3) has passed a round run by script in another session (2026-11-16). Still open before a release:
 
-- **D4a Transitions: steps 3, 4 and 6 failed their round** (the body jumped at a join under a transition; Add Transition landed off the join). Fixed in EDGEdir 0.0.14; the three steps, and 5, 8, 11 and 12 by sight, are to be run again.
-- **D4b Sequences: five fixes in 0.0.14** from its round's notes, not run yet.
+- Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15 has two small changes from the last rerun's notes, not run: see D4b's round 2.)
 - **The owner's spot tests** S1 to S10 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -274,7 +273,7 @@ What round 1 found, and what was done:
 
 ## D4a Transitions
 
-EDGEdir 0.0.14 (first built as 0.0.12, 2026-11-16). It covers D4a: transitions in the 3D preview.
+EDGEdir 0.0.15 (first built as 0.0.12, 2026-11-16). It covers D4a: transitions in the 3D preview.
 
 **Before you start:** as for D3 Preview: the game installed (not running), REDbridge 0.14.0, F5 (**Run EDGEdir**), **Read the Game** done.
 
@@ -299,17 +298,18 @@ EDGEdir 0.0.14 (first built as 0.0.12, 2026-11-16). It covers D4a: transitions i
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | 2026-11-16 | 1 to 15, on 0.0.13 at `a73af0e` (and on 0.0.12 before, the same) | **12 of 15: steps 3, 4 and 6 fail.** run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk and cache, REDbridge 0.14.0, the real game folder read only; judged from `edgedirPreview.state()`, the inspector, the saved file and screenshots; nobody watched it live). Steps 4 and 6: the mix was worked out right (the shares ran as they should) but the body on screen jumped at the join all the same, with both methods. Step 3: a transition put by Add Transition was called Preview only and marked. The other twelve pass, 5, 8 and 11 by the numbers only |
+| 2 | 2026-11-16 | 3, 4, 5, 6, 8, 11 and 12, on 0.0.14 at `69281ac` | **Pass, 7 of 7**, by script in the EDGEweb session, as before; nobody watched it live. By sight too: across a Blend from a clip that ends lying down into one that starts standing, the body is lying at share 0.98, rising at 0.84, half up at 0.62 and standing at 0.16. With Inertial the frame after the join is the same pose as the frame before it. Add Transition lands on the join and is not called Preview only. With a gap the first clip still loops through it |
 
 What round 1 found, and what was done:
 
 | Found | Done |
 |---|---|
-| Steps 4 and 6, the main fault: with the second clip starting where the first ends, the first clip was mixed in at its **first** pose, not its last. It was treated as looping on past its end, so at the join it wrapped round to its start. A clip that ends lying down, joined to one that starts standing, mixed standing into standing: a jump. The browser check before the round had used a join with a gap, and a join whose two poses look alike, so it did not show | **Fixed in 0.0.14:** when the second clip starts where the first ends, the first holds its last pose under the transition. With a gap between them it goes on looping, as in the gap. Unit tested, and seen in a browser with a join from standing to lying down: the pose at the start of the transition is the first clip's last, with Blend and with Inertial. Not run in VS Code yet |
-| Step 3 (and 12): Add Transition put the transition on the frame (2.866667 s) while the clip starts at its animation's length (2.8667 s), so it was taken as off the join: "Preview only", and the yellow mark. A typed Start snapped to the frame too | **Fixed in 0.0.14:** Add Transition puts it on the clip's own start, and a transition within a thousandth of a second of the clip's start is on the join. Unit tested; not run yet |
+| Steps 4 and 6, the main fault: with the second clip starting where the first ends, the first clip was mixed in at its **first** pose, not its last. It was treated as looping on past its end, so at the join it wrapped round to its start. A clip that ends lying down, joined to one that starts standing, mixed standing into standing: a jump. The browser check before the round had used a join with a gap, and a join whose two poses look alike, so it did not show | **Fixed in 0.0.14:** when the second clip starts where the first ends, the first holds its last pose under the transition. With a gap between them it goes on looping, as in the gap. Unit tested, and seen in a browser with a join from standing to lying down: the pose at the start of the transition is the first clip's last, with Blend and with Inertial. Passed round 2 |
+| Step 3 (and 12): Add Transition put the transition on the frame (2.866667 s) while the clip starts at its animation's length (2.8667 s), so it was taken as off the join: "Preview only", and the yellow mark. A typed Start snapped to the frame too | **Fixed in 0.0.14:** Add Transition puts it on the clip's own start, and a transition within a thousandth of a second of the clip's start is on the join. Passed round 2 |
 
 ## D4b Sequences
 
-EDGEdir 0.0.14 (first built as 0.0.13, 2026-11-16). It covers D4b: sequences on the Desk and as blocks on a lane.
+EDGEdir 0.0.15 (first built as 0.0.13, 2026-11-16). It covers D4b: sequences on the Desk and as blocks on a lane.
 
 **Before you start:** as for D3 Preview. A scene with two actor tracks whose actors share a rig (two women), the first with three animation clips end to end and a transition at one join.
 
@@ -338,14 +338,15 @@ EDGEdir 0.0.14 (first built as 0.0.13, 2026-11-16). It covers D4b: sequences on 
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | 2026-11-16 | 1 to 19, on 0.0.13 at `a73af0e` | **Pass, 19 of 19**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk and cache, REDbridge 0.14.0, the real game folder read only; judged from `edgedirPreview.state()`, the inspector, the saved file and screenshots; nobody watched it live). The Desk's sequences, the commands, a `.edgeseq` in the editor and the link's refresh all work inside VS Code. A scene opened with nothing changed on the Desk is not unsaved |
+| 2 | 2026-11-16 | The five fixes of 0.0.14, at `69281ac` | **Pass, 5 of 5**, by script in the EDGEweb session, as before. Found: after a Rename the status bar said 1 block was updated when two took the name; with the last sequence deleted the Desk kept an empty Sequences heading. Both looked at in 0.0.15 (the count now includes a block that only took a name; the Desk is read once more a moment after a Delete); not run |
 
 What round 1 found, and what was done:
 
 | Found | Done |
 |---|---|
-| A block that was up to date said it was out of date when another block of the same sequence was held back for room | Fixed in 0.0.14: how a link stands is kept for each block, not each sequence. Unit tested; not run yet |
-| After Ctrl+Z took an update back, the block said its new length does not fit, though it had room | Fixed in 0.0.14: a block whose sequence has changed and would fit says so in its own sentence; "does not fit" is only for one with no room. Not run yet |
-| Rename did not reach a block held back for room | Fixed in 0.0.14: a block held back keeps its clips and takes the sequence's new name. Unit tested; not run yet |
-| Right after Delete, with the scene open, a block still said the sequence on the Desk had changed | Fixed in 0.0.14: open scenes are told again after a Delete or a Rename on the Desk. Not run yet |
-| Save as Sequence with a name the Desk already has said so only after the second question | Fixed in 0.0.14: the name box refuses it. New Sequence too. Not run yet |
+| A block that was up to date said it was out of date when another block of the same sequence was held back for room | Fixed in 0.0.14: how a link stands is kept for each block, not each sequence. Passed round 2 |
+| After Ctrl+Z took an update back, the block said its new length does not fit, though it had room | Fixed in 0.0.14: a block whose sequence has changed and would fit says so in its own sentence; "does not fit" is only for one with no room. Passed round 2 |
+| Rename did not reach a block held back for room | Fixed in 0.0.14: a block held back keeps its clips and takes the sequence's new name. Passed round 2 |
+| Right after Delete, with the scene open, a block still said the sequence on the Desk had changed | Fixed in 0.0.14: open scenes are told again after a Delete or a Rename on the Desk. Passed round 2 |
+| Save as Sequence with a name the Desk already has said so only after the second question | Fixed in 0.0.14: the name box refuses it. New Sequence too. Passed round 2 |
 | Step 8's text: with the pasted block of step 6 at the end, the first block has little room, so "both blocks are longer" is not always true | The step now says to move the pasted block away first |

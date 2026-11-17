@@ -519,10 +519,10 @@ export function unpackSeq(doc: SceneDoc, clipId: string): { doc: SceneDoc; ids: 
  * Every block that links a sequence takes the sequence as it is now. A block whose new length
  * would run into the next clip keeps its copy. Locked tracks are left alone.
  */
-export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; updated: number; blocked: number } {
+export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; updated: number; blocked: number; renamed: number } {
   let updated = 0;
   let blocked = 0;
-  let renamed = false;
+  let renamed = 0;
   const length = round(runEnd(seq.clips));
   const tracks = doc.tracks.map((t) => {
     if (t.lock || !t.clips.some((c) => seqOf(c)?.id === seq.id)) return t;
@@ -534,7 +534,7 @@ export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; update
         blocked++;
         // Held back for room: its clips stay, its name follows.
         if (now.name !== seq.name) {
-          renamed = true;
+          renamed++;
           clips = clips.map((x) => (x.id === c.id ? { ...x, seq: { ...now, name: seq.name } } : x));
         }
         continue;
@@ -544,7 +544,7 @@ export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; update
     }
     return clips === t.clips ? t : { ...t, clips: sorted(clips) };
   });
-  return { doc: updated || renamed ? withTracks(doc, tracks) : doc, updated, blocked };
+  return { doc: updated || renamed ? withTracks(doc, tracks) : doc, updated, blocked, renamed };
 }
 
 /**

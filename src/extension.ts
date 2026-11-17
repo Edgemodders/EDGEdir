@@ -124,7 +124,8 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
           if (!now) continue;
           await applyEdit(document, (d) => {
             const r = refreshSeqs(d, now);
-            updated += r.updated;
+            // A block held back for room that took a new name was changed too.
+            updated += r.updated + r.renamed;
             return r.doc;
           });
         }
@@ -418,6 +419,8 @@ ${(e as Error).message}` },
         } else if (wasOpen) await openScene(vscode.Uri.file(scene.file)); // Kept after all: its tab comes back.
       }
       desk.refresh();
+      // Once more after a moment: seen once, the list kept an empty Sequences heading after the last one went.
+      setTimeout(() => desk.refresh(), 700);
       // Open scenes that link a deleted sequence say so at once.
       scenes.resend();
     }),
