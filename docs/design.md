@@ -276,7 +276,7 @@ The owner's proposal: EDGEbuilder's scenes show in EDGEdir as a view, and choosi
 
 | Step | What happens |
 |---|---|
-| **The Sets view** | Lists EDGEbuilder's scenes by their `.scene.json` ending: in any folder of the Library, and in the open REDcode project's `source/scenes`. Each row shows the name and how many people and vehicles it has. Not EDGEbuilder's "This PC" scenes: they are in its package's data folder, which is its Desk, and no tool reads another's Desk (the Library's rules) |
+| **The Sets view** | Lists EDGEbuilder's scenes by their `.scene.json` ending: in any folder of the Library, and in the open REDcode project's `source/scenes`. Each row shows the name and how many people and vehicles it has. Not EDGEbuilder's "This PC" scenes: they are in its package's data folder, which is its Desk, and no tool reads another's Desk (the Library's rules; confirmed by EDGEbuilder on 2026-11-17). The walk of the Library skips what EDGEbuilder's own skips: folders ending `.bake` (a bake can hold copies of scenes) or `.asset`, folders starting with a dot, and `node_modules`; it stops 8 folders deep |
 | **New Scene on This Set** | Makes a scene on the Desk and opens it. The scene names the set. It gets one actor track for each `npc` object, with the actor (record and appearance) and the mark taken from the set, and one vehicle track for each vehicle. The tracks are empty: a person with no clips stands idle, as EDGEbuilder left them |
 | **A set that has scenes** | The view shows its scenes under it. Choosing one opens it; New Scene on This Set makes another |
 | **Choose Set** | A scene made without a set can be given one later, and a set can be taken off. Tracks made by hand stay |
