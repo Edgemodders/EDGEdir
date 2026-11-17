@@ -18,7 +18,7 @@ Two clips with a transition view as one movement in the preview. Saved as a sequ
 |---|---|---|
 | A transition clip already lies on an actor lane, over its neighbours, with a start and a length. It does nothing yet | D1 | D4 gives it a method and an ease, and the preview reads them |
 | The preview shows one clip per actor at a time: the clip under the playhead, or the last one, looping, in a gap | D3 (`src/pose.ts`) | A transition is two clips shown at once, mixed. The page's player (three.js) mixes two animations by weight; EDGEdir has not done it yet (**unverified**) |
-| In the game a jump from one clip to the next blends by itself: "a jump with `instant: true` goes at once with a smooth blend" | REDnode #46's spike | The game's own blend starts **at the jump**, which is the next clip's start. How long it is, whether it can be set per jump, and whether the first clip goes on moving during it are **not known**: asked on REDnode #46 with this plan |
+| In the game a jump from one clip to the next blends by itself: "a jump with `instant: true` goes at once with a smooth blend" | REDnode #46's spike | The game's own blend starts **at the jump**, which is the next clip's start. REDnode's answer from the files (below): it looks like inertialization, about 0.5 s, perhaps settable for each clip; nothing is measured yet |
 | New animation frames cannot reach the game: REDbridge has no `.anims` import (#14) | The design | Whatever the preview shows beyond the game's own blend stays in the preview until baking (D7). The preview must say so |
 | Clips play in place: no root motion in the preview or the game | D3, REDnode | The design's "root motion is matched first" is left out of D4 |
 | No AI provider that makes the frames between two motions is known | The design (Q5) | The method `ai` is in the document and in the list, shown as not available yet |
@@ -33,8 +33,8 @@ A transition joins the clip that plays before it, **A**, to the next clip that s
 
 | Method | What the preview shows over the transition's length | In the game |
 |---|---|---|
-| **Blend** | A and B both play, mixed bone by bone. The mix goes from all A to all B along the ease. Before B's start, B holds its first pose; after A's end, A goes on as it does in a gap | When the transition starts at B's start: the game's own blend at the jump, which is close to it. How close is for D5 to measure. Anywhere else: preview only, until baking |
-| **Inertial** | B plays whole from its start. The difference between A's pose and B's pose at B's start is added on top and fades away along the transition. B's own movement is kept; good for short joins | Preview only, until baking (D7) |
+| **Blend** | A and B both play, mixed bone by bone. The mix goes from all A to all B along the ease. Before B's start, B holds its first pose; after A's end, A goes on as it does in a gap | When the transition starts at B's start: the game's own join at the jump, if that is a blend. REDnode's first look says the game's join is nearer Inertial (below); not measured. Anywhere else: preview only, until baking |
+| **Inertial** | B plays whole from its start. The difference between A's pose and B's pose at B's start is added on top and fades away along the transition. B's own movement is kept; good for short joins | When it starts at B's start it may be what the game's own join does (REDnode's first look, not measured). Anywhere else: preview only, until baking (D7) |
 | **AI** | Nothing: listed, greyed, "no provider yet" | Not built |
 
 ### The ease
@@ -48,7 +48,7 @@ A transition joins the clip that plays before it, **A**, to the next clip that s
 
 ### Honest about the game
 
-A transition shows a small mark when the game will not play what the preview shows: an Inertial one, and a Blend one that does not start at B's start. The inspector says why in a sentence. **Add Transition** puts a new transition at the start of the next clip, 0.4 s long, where the game's own blend is; it can be moved and stretched from there.
+A transition shows a small mark when the game will not play what the preview shows: one that does not start at B's start, and one whose method is not the game's own. Which method is the game's own is not measured yet (see "Asked of REDnode"), so until it is the mark goes by the place alone. The inspector says why in a sentence. **Add Transition** puts a new transition at the start of the next clip, 0.4 s long, where the game's own blend is; it can be moved and stretched from there.
 
 One more place the preview and the game differ: a join with **no** transition. The preview cuts. The game blends for a moment by itself (question 2).
 
@@ -117,13 +117,17 @@ Written out in [Tests](testing.html) when each part is built, with a spot test f
 
 ## Asked of REDnode with this plan
 
-On REDnode #46, for D5 and for how true D4's mark is:
+Asked on REDnode #46 and answered the same day, from the game's files and its 2.5 script declarations. **Nothing is measured yet**: REDnode times it in its next round in the game and posts the numbers on #46.
 
-| Asked | Why |
+| Asked | REDnode's answer (unverified until measured) |
 |---|---|
-| How long is the blend at a jump, and can it be set for each jump or each entry of `world.writeWorkspot`? | If it can, a Blend transition's length becomes the game's blend time, and the two match |
-| During the blend, does the first clip go on playing, or hold its pose? | The preview's Blend keeps it playing |
-| Is there a way to jump with no blend at all? | A bare join in the preview is a cut |
+| How long is the blend at a jump, and can it be set? | Not for each jump: the game's jump calls take only the actor, the target and `instant`. Perhaps for each clip, in the written file: the clip's `blendOutTime` (`world.writeWorkspot` writes 0.5 s today), or the tree's own blend and inertialization times. Which one governs a jump is not known |
+| Does the first clip go on playing during the blend? | Probably not. It looked like inertialization: the new clip starts at once and the old pose's offset fades |
+| Is there a jump with no blend? | No call. A cut may come from blend times of 0 in the file |
+
+REDnode also found the game's own authored transition in a workspot (`customTransitionAnims`: an animation that leads from one idle to another), which `world.writeWorkspot` leaves empty today. It may be how a made transition reaches the game one day.
+
+**What this changes in the plan.** The game's own join looks like this plan's **Inertial**, not its Blend, and about half a second long. So the mark's rule above is a first guess: which method and which length match the game is settled when REDnode has measured, and until then the mark's sentence says "not yet measured in the game" where it would claim a match. Blend and Inertial are both built for the preview either way, as the owner asked for both. If the game's blend time can be set for each clip, a transition's length becomes that time in D5.
 
 ## Out of D4
 
