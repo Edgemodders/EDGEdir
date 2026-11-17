@@ -4,7 +4,7 @@ title: D4 Transitions
 
 # <span class="y">D4</span> Transitions and sequences
 
-**Status: agreed by the owner on 2026-11-16 (all five questions as recommended). D4a Transitions is built (EDGEdir 0.0.12), looked at in a plain browser with real clips, not run in VS Code yet. D4b Sequences is not built.** What is built is at the end.
+**Status: agreed by the owner on 2026-11-16 (all five questions as recommended). Both parts are built: D4a Transitions (EDGEdir 0.0.12) and D4b Sequences (0.0.13). Both were looked at in a plain browser with real clips; D4b's Desk and commands have not been run in VS Code yet.** What is built is at the end.
 
 D4 is the fourth phase of the [design](design.html). It makes the transition clip do something: two animation clips joined by one view as one movement in the 3D preview. And it makes a run of clips and transitions a thing that is stored by itself and used again: a sequence. Nothing in D4 plays in the game (D5), and nothing in D4 makes new game files (D7).
 
@@ -133,7 +133,7 @@ REDnode also found the game's own authored transition in a workspot (`customTran
 
 ## What is built
 
-**D4a Transitions, EDGEdir 0.0.12 (2026-11-16).** D4b Sequences is not built yet.
+**D4a Transitions, EDGEdir 0.0.12 (2026-11-16).**
 
 | Part | Where | What it does |
 |---|---|---|
@@ -152,6 +152,29 @@ What differs from the plan, or was settled in building:
 | Inertial before B starts | Nothing: A plays alone until B's start, though the transition has begun. The fade runs from B's start to the transition's end |
 | The mark | By the place alone, as the plan says: it shows on a transition that does not start at B's start, and on AI. It does not tell Blend from Inertial until REDnode has measured the game's join |
 | A clip made for another rig | It is not joined to: a transition over it reaches the next clip that fits, or joins nothing |
+
+**D4b Sequences, EDGEdir 0.0.13 (2026-11-16).**
+
+| Part | Where | What it does |
+|---|---|---|
+| D4.5 The file | `src/seq.ts`, `src/doc.ts` | `SeqDoc`, `parseSeq`, `formatSeq`; `seqAsScene` and `sceneAsSeq` (a sequence shown to the editor as a scene with one lane, `t1`, whose actor is a stand-in: `{ standIn: true, rig }`); `readScene` and `writeScene` (either kind of file). The block: `seqOf`, `addSeqClip`, `unpackSeq`, `refreshSeqs`, `seqDiffers`, `runOf` (the picked clips and the transitions between them, from 0) and `replaceWithSeq`. A block is refused a trim and a split, and the rig rule covers it |
+| D4.6 The Desk and the editor | `src/desk.ts`, `src/deskView.ts`, `src/editor.ts`, `webview/editor.ts` | `<name>.sequence.asset` items with a `.edgeseq` inside, under a **Sequences** heading; **New Sequence** (a name, then a rig: the selected actor's, the feminine base, the masculine base); Rename, Delete and Reveal as for a scene. The scene editor opens a `.edgeseq`: one lane, no Add Track, no mute or lock, the base body for the rig. Add to Track from the Animations view works there as in a scene |
+| D4.7 On a lane | `src/extension.ts`, `src/pose.ts`, `webview/editor.ts` | **Add to Track** on a Desk sequence (its **+**) puts a block at the playhead of the selected actor track. **Save as Sequence** in the toolbar (clips selected on an actor track): a name, then keep the clips or replace them with the block. The block's inspector: the sequence's name, clips and rig, how the link stands, **Open Sequence** (or double-click the block) and **Unpack**. The preview opens a block out into its clips (`flat`), so it plays as they do and a transition joins it to its neighbours |
+
+The link: a block keeps the sequence's id and a copy of its clips. When a scene opens, and when a sequence is saved, every block whose copy differs takes the sequence as it is on the Desk, as one edit that can be undone. A block whose new length would run into the next clip keeps its copy and says so; one whose sequence is not on the Desk says it plays its copy.
+
+Checked: 6 unit tests (`test/seq.test.ts`). In a plain browser with real clips: a block on a second actor plays the same poses as the clips it was made from, with its own transition; the block's inspector; a sequence in the editor shows one lane with the base body and plays. **Not run anywhere yet: everything that needs VS Code** (the Desk's items and commands, Save as Sequence, Add to Track, opening a `.edgeseq`, the link's refresh on open and on save).
+
+What differs from the plan, or was settled in building:
+
+| Point | As built |
+|---|---|
+| Save as Sequence | The plan had a tick box "Replace with the Sequence". As built it is a second question after the name, with two choices |
+| New Sequence's rig | The selected actor's rig is offered first when a scene with an actor track selected is in front |
+| A sequence's name | The name of its item on the Desk: Rename there. The editor shows it and does not change it |
+| The link's refresh | It is an edit to the scene (the scene shows as unsaved after it), so Undo takes it back and the scene's text always says what it plays |
+| Where sequences are looked up | The Desk only. A project's and the Library's come with D7 (Move to Project, Add to Library) |
+| Transitions taken by Save as Sequence | Those that lie wholly between the first picked clip's start and the last one's end, picked or not |
 
 ## Out of D4
 

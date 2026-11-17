@@ -12,11 +12,12 @@ Last updated 2026-11-16.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 53 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 59 tests |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
 | [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
+| [D4b Sequences](#d4b-sequences) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4b | | Not run yet (0.0.13) |
 | [D4a Transitions](#d4a-transitions) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4a | | Not run yet (0.0.12) |
 | [D3 Preview](#d3-preview) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D3 | 2026-11-16 | By script: round 1, 17 of 17 (0.0.9); round 2, the four fixes of 0.0.10 pass |
 
@@ -36,12 +37,13 @@ The rounds by script are there so that work does not wait for the owner's testin
 Every hand test (D1, D2, D3) has passed a round run by script in another session (2026-11-16). Still open before a release:
 
 - **D4a Transitions**, 15 steps, on EDGEdir 0.0.12: not run yet, by script or by hand.
-- **The owner's spot tests** S1 to S9 below: none run yet.
+- **D4b Sequences**, 19 steps, on EDGEdir 0.0.13: not run yet. Its Desk and commands have not run in VS Code at all.
+- **The owner's spot tests** S1 to S10 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
 ## Spot tests for the owner
 
-One short test per major feature, about 25 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
+One short test per major feature, about 30 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
 
 **Before you start:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
 
@@ -56,6 +58,7 @@ One short test per major feature, about 25 minutes in all. Each one names the fu
 | S7 | A made animation | Run `node tools/made-anim-sample.mjs`, click **Refresh** in the Animations view, click the **+** on `Sample wave`. Then run it with `--remove` | A **Library** group with `Sample wave`, 2.40 s; the clip `sample_wave` lands on the track as a made animation. After the remove and a Refresh the group is gone and the clip stays | Part 3, 1 to 3, 6 |
 | S8 | The 3D preview | Open the scene of S4 to S6 with Judy's track set back to Judy. Drag the playhead through her clips, then press Space. Select V's track and set **Turn (°)** to 180. Drag in the view, then click **Frame** | Two grey bodies stand side by side above the timeline; V's has no head and the line says it stands in for your V. Judy takes the pose under the playhead and plays in time. V turns round. The view orbits, and Frame fits both | D3, 2 to 8, 12 |
 | S9 | Transitions | In the scene of S8, give Judy two clips end to end. Put the playhead near the join, **Add Transition**. Drag the playhead through it, then play. Set **Method** to Inertial and play again. Drag the transition off the second clip's start | The body moves from one clip into the other with no jump, with both methods; say which looks better. Off the second clip's start the transition gets a yellow bar and the inspector says Preview only | D4a, 3 to 8 |
+| S10 | Sequences | In the scene of S9, select Judy's two clips and click **Save as Sequence**; name it and keep the clips. Give a second actor track another woman, select it, and click the **+** on the sequence in the Desk. Play. Double-click the block | The Desk lists the sequence under **Sequences**. One block lands on the second track and that actor plays the same movement. The sequence opens in its own tab with one lane and a grey base body | D4b, 2 to 4, 7 |
 
 | Round | Date | Spots | Result |
 |---|---|---|---|
@@ -69,7 +72,7 @@ npm run build
 npm test
 ```
 
-The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D4a's 6 tests (`test/transition.test.ts`) check a transition's method and ease, where Add Transition puts one, which clips it joins, the pose under a Blend and an Inertial one, and what it says about the game. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
+The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D4b's 6 tests (`test/seq.test.ts`) check a sequence's file, the block on a lane (as long as its clips, not trimmed or split, unpacked), the pose through a block, a linked block taking the sequence as it is now, what Save as Sequence takes, and the Desk's sequence items. D4a's 6 tests (`test/transition.test.ts`) check a transition's method and ease, where Add Transition puts one, which clips it joins, the pose under a Blend and an Inertial one, and what it says about the game. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
 
 ## D1 Timeline
 
@@ -292,6 +295,38 @@ EDGEdir 0.0.12, built 2026-11-16. Not run yet. It covers D4a: transitions in the
 | 13 | **Change Actor...** to a man | The clips are hatched red, and the transition is dimmed: it joins nothing on this actor. Change back: as before |
 | 14 | Save, close the tab, open the scene from the Desk | The transition is there with its method, ease and length, and the preview blends |
 | 15 | Open a scene from before this version that has a transition (or delete `"method"` and `"ease"` from one in the text) | It reads as Blend, Smooth |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
+
+## D4b Sequences
+
+EDGEdir 0.0.13, built 2026-11-16. Not run yet. It covers D4b: sequences on the Desk and as blocks on a lane.
+
+**Before you start:** as for D3 Preview. A scene with two actor tracks whose actors share a rig (two women), the first with three animation clips end to end and a transition at one join.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Select the first track. Look at the toolbar with no clip selected, then click the second clip | **Save as Sequence** is there, greyed; with a clip selected it can be clicked |
+| 2 | Select the second and third clips (Ctrl+click) and click **Save as Sequence**. Name it `Sit down`, choose **Keep the clips on the lane** | A note says the sequence is on the Desk. The Desk has a **Sequences** heading with `Sit down`. The lane is unchanged |
+| 3 | Select the second track. In the Desk click the **+** on `Sit down` | One block named `▸ Sit down` lands on the second track at the playhead, selected, as long as the two clips. The inspector says Sequence block, its sequence, 2 clips, its rig, and that it is linked |
+| 4 | Drag the playhead through the block, then play | The second actor plays the same movement the first does over those two clips, with the transition if it lay between them |
+| 5 | Try to drag the block's right edge. Select it and press **S** with the playhead inside | It does not trim, and the top right says why. Split is greyed |
+| 6 | Drag the block along the lane; Ctrl+C, End, Ctrl+V | It moves like a clip. A second block lands at the end |
+| 7 | Double-click the block (or **Open Sequence**) | `Sit down` opens in its own tab: one lane with the two clips starting at 0, a grey base body in the view, no **Add Track**, no M and L on the lane. The inspector says Sequence, its rig, and what a sequence is |
+| 8 | In the sequence's tab, with the fits filter on in the Animations view, add a third animation at the end. Save (Ctrl+S) | The Desk's `Sit down` says just now. Back in the scene's tab, both blocks are longer and play the third clip; the status bar said the blocks were updated; the scene shows as unsaved |
+| 9 | In the scene press Ctrl+Z | The blocks go back to their older copy. The inspector of a block now says the sequence on the Desk has changed |
+| 10 | Close the scene without saving and open it again from the Desk | The blocks are up to date again, by themselves |
+| 11 | Put a clip right after the first block, so there is no room. In the sequence's tab add another animation and save | The second block follows. The first keeps its copy, and its inspector says the new length does not fit |
+| 12 | Select a block and click **Unpack** | The block becomes plain clips (and transitions) on the lane, selected. They play the same. The other block is unchanged |
+| 13 | Select the first track's clips again, **Save as Sequence**, name it `Whole`, choose **Replace them with the sequence's block** | The clips are gone and one block stands in their place. It plays as they did. Ctrl+Z brings the clips back |
+| 14 | **Change Actor...** on the second track to a man | Its block is hatched red, the inspector says Unfit and why, and the body does not play it |
+| 15 | In the Desk click the **New Sequence** button in the view's title, name it `Empty one`, choose the feminine base rig | It opens in its own tab with an empty lane and the base body. Its **+** on the Desk, with a scene's track selected, says the sequence has no clips yet |
+| 16 | In the Desk right-click `Sit down`: **Rename...** to `Sit slowly`. Then reopen the scene | The Desk shows the new name. The scene's block is named `▸ Sit slowly` |
+| 17 | Right-click `Sit slowly`: **Delete**, confirm. Select the scene's block | The sequence leaves the Desk. The block still plays; its inspector says the sequence is not on this PC's Desk and it plays its copy. **Open Sequence** says the same |
+| 18 | Save the scene, close it, open it again | The block is there and plays |
+| 19 | With a sequence's tab in front and its lane selected, click the **+** on a sequence in the Desk | A message says a sequence cannot hold another sequence |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
