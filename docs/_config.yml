@@ -30,6 +30,8 @@ nav:
     url: /d2-cast-and-clips.html
   - title: D3 Preview
     url: /d3-preview.html
+  - title: D4 Transitions
+    url: /d4-transitions.html
   - title: Extension API
     url: /api.html
   - title: Tests

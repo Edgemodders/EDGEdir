@@ -6,6 +6,7 @@ EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design
 |---|---|
 | [Design](design.html) | Draft 1, agreed 2026-11-16: the scene document, the timeline editor, the preview, how a scene reaches the game, and the phases |
 | [D1 Timeline](d1-timeline.html) | The first phase's plan, agreed 2026-11-16: the scene document, the timeline editor and the Desk |
+| [D4 Transitions](d4-transitions.html) | The fourth phase's plan, written 2026-11-16 for the owner's review: transitions that blend two clips in the preview, and sequences |
 | [D3 Preview](d3-preview.html) | The third phase's plan, agreed 2026-11-16, and what is built of it: the 3D view of the actors playing their clips |
 | [Extension API](api.html) | What other EDGE tools can ask EDGEdir: a search of the animation index |
 | [D2 Cast and clips](d2-cast-and-clips.html) | The second phase's plan, agreed 2026-11-16, and what is built of it: actors (V among them), the animation index, real clips |
@@ -25,6 +26,7 @@ As of 2026-11-16. Each phase ends with a hand test, run in full by script or by 
 | D1 Timeline | Built 2026-11-16: the scene document, the timeline editor and the Desk. Hand test round 1, by script, passed all 22 steps on 0.0.2; two small fixes are in 0.0.3 |
 | D2 Cast and clips | Plan agreed 2026-11-16. Built (EDGEdir 0.0.8). Its three hand tests passed a round by script on 2026-11-16 (15, 17 and 6 steps); the fixes from their notes passed a second round on 0.0.7: reading the game, the actor picker with V, the Animations view with the game's and made animations, real clips on the lanes (trim, speed, loops, the rig check), and the extension API. The clips' test needs REDbridge 0.14.0 |
 | D3 Preview | Plan agreed 2026-11-16. Built (EDGEdir 0.0.11): each actor's body, grey, on its mark above the timeline, in the pose under the playhead; V as the game's base body; marks in the inspector. Its hand test passed a round by script on 2026-11-16 (17 steps, on 0.0.9); the four fixes from its notes passed a second round on 0.0.10 |
-| D4 to D9 | Later: transitions and sequences, play in game, audio camera and weather, pack and Library, script video and MCP, the AI track |
+| D4 Transitions and sequences | Plan written 2026-11-16, with five questions, for the owner's review. Not built |
+| D5 to D9 | Later: play in game, audio camera and weather, pack and Library, script video and MCP, the AI track |
 
 EDGEdir is not affiliated with CD Projekt RED. Source code and issues: [github.com/Edgemodders/EDGEdir](https://github.com/Edgemodders/EDGEdir)
