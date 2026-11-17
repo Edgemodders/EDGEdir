@@ -24,7 +24,7 @@ export interface Preview {
   got(m: Got): void;
   frame(): void;
   /** What the preview has, for tests of the page: bodies standing, files waited for, and the note. */
-  state(): { bodies: number; waiting: number; failed: number; note: string; poses: Record<string, { clip: string; t: number }> };
+  state(): { bodies: number; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
 }
 
 interface Loaded {
@@ -39,16 +39,29 @@ interface Loaded {
   clip?: THREE.AnimationClip;
 }
 
+/** What a body shows: the clip and the moment, and under a transition the clip mixed in. */
+interface Shown {
+  clip: string;
+  t: number;
+  mix?: { method: string; from: string; t: number; share: number };
+}
+
 interface Standing {
   key: string;
   group: THREE.Group;
   ring: THREE.Mesh;
   root?: THREE.Object3D;
   mixer?: THREE.AnimationMixer;
-  action?: THREE.AnimationAction;
-  clip?: THREE.AnimationClip;
+  /** The clips playing now, each with its action. */
+  actions: Map<THREE.AnimationClip, THREE.AnimationAction>;
+  bones: THREE.Bone[];
+  /** Inertial: the join the difference was measured for, and the difference, bone by bone. */
+  deltaKey: string;
+  delta: { q: THREE.Quaternion; p: THREE.Vector3 }[];
+  /** What the last offset wrote on each bone, and what the player had set, to take it back. */
+  written: { bone: THREE.Bone; q: THREE.Quaternion; p: THREE.Vector3; baseQ: THREE.Quaternion; baseP: THREE.Vector3 }[];
   /** What is shown, for `state`. */
-  shows: { clip: string; t: number };
+  shows: Shown;
 }
 
 /** How far ahead of the playhead clips are loaded, in seconds. */
@@ -186,6 +199,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
   function remove(id: string) {
     const s = standing.get(id);
     if (!s) return;
+    undo(s);
     s.mixer?.stopAllAction();
     scene.remove(s.group);
     standing.delete(id);
@@ -205,35 +219,90 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       ring.position.y = 0.003;
       group.add(ring);
       scene.add(group);
-      s = { key, group, ring, shows: { clip: "", t: 0 } };
+      s = { key, group, ring, actions: new Map(), bones: [], deltaKey: "", delta: [], written: [], shows: { clip: "", t: 0 } };
       standing.set(track.id, s);
     }
     if (!s.root && file.scene) {
       s.root = cloneSkinned(file.scene);
       s.group.add(s.root);
       s.mixer = new THREE.AnimationMixer(s.root);
+      s.root.traverse((o) => {
+        if ((o as THREE.Bone).isBone) s!.bones.push(o as THREE.Bone);
+      });
     }
     return s;
   }
 
-  /** Shows a clip at a moment, or the rest pose when there is none. */
-  function show(s: Standing, clip: THREE.AnimationClip | undefined, t: number, name: string) {
+  /** One clip at a moment, with its weight in the mix. */
+  interface Part {
+    clip: THREE.AnimationClip;
+    t: number;
+    weight: number;
+  }
+
+  /**
+   * A second copy of a clip, for when both sides of a transition are the same animation: the player
+   * keeps one moment for each clip, so the two sides need a clip each.
+   */
+  const twins = new Map<THREE.AnimationClip, THREE.AnimationClip>();
+  const twin = (clip: THREE.AnimationClip) => twins.get(clip) ?? (twins.set(clip, clip.clone()), twins.get(clip)!);
+
+  /** Takes back what `offset` added, so the player finds the bones as it left them. */
+  function undo(s: Standing) {
+    for (const w of s.written) {
+      if (w.bone.quaternion.equals(w.q)) w.bone.quaternion.copy(w.baseQ);
+      if (w.bone.position.equals(w.p)) w.bone.position.copy(w.baseP);
+    }
+    s.written = [];
+  }
+
+  /** Plays the parts given and nothing else, each at its moment and weight. */
+  function play(s: Standing, parts: Part[]) {
     if (!s.mixer) return;
-    if (s.clip !== clip) {
-      // Stopping an action puts the bones back as the body was made.
-      s.action?.stop();
-      s.clip = clip;
-      s.action = clip ? s.mixer.clipAction(clip) : undefined;
-      if (s.action) {
-        s.action.play();
-        s.action.paused = true;
+    undo(s);
+    for (const [clip, action] of s.actions)
+      if (!parts.some((p) => p.clip === clip)) {
+        // Stopping an action puts the bones back as the body was made.
+        action.stop();
+        s.actions.delete(clip);
       }
+    for (const part of parts) {
+      let action = s.actions.get(part.clip);
+      if (!action) {
+        action = s.mixer.clipAction(part.clip);
+        action.play();
+        action.paused = true;
+        s.actions.set(part.clip, action);
+      }
+      action.time = Math.min(Math.max(part.t, 0), part.clip.duration);
+      action.setEffectiveWeight(part.weight);
     }
-    if (s.action && clip) {
-      s.action.time = Math.min(Math.max(t, 0), clip.duration);
-      s.mixer.update(0);
+    s.mixer.update(0);
+  }
+
+  /**
+   * Inertial: the difference between A's pose and B's pose at the moment B started, bone by bone,
+   * of which `share` is added on top of the pose the player just set. Kept for each join.
+   */
+  function offset(s: Standing, key: string, a: Part, b: Part, share: number, now: Part) {
+    if (!s.bones.length) return;
+    if (s.deltaKey !== key) {
+      play(s, [{ ...a, weight: 1 }]);
+      const poseA = s.bones.map((bone) => ({ q: bone.quaternion.clone(), p: bone.position.clone() }));
+      play(s, [{ ...b, weight: 1 }]);
+      s.delta = s.bones.map((bone, n) => ({ q: bone.quaternion.clone().invert().multiply(poseA[n].q), p: poseA[n].p.clone().sub(bone.position) }));
+      s.deltaKey = key;
     }
-    s.shows = { clip: clip ? name : "", t: clip ? t : 0 };
+    play(s, [now]);
+    const none = new THREE.Quaternion();
+    s.bones.forEach((bone, n) => {
+      const d = s.delta[n];
+      const baseQ = bone.quaternion.clone();
+      const baseP = bone.position.clone();
+      bone.quaternion.multiply(none.clone().slerp(d.q, share));
+      bone.position.addScaledVector(d.p, share);
+      s.written.push({ bone, q: bone.quaternion.clone(), p: bone.position.clone(), baseQ, baseP });
+    });
   }
 
   /** Everything the scene asks for at this time: bodies on their marks, in their poses, and the note. */
@@ -270,14 +339,29 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       if (pose.passed) lines.push(`${who}: "${pose.passed.name ?? (pose.passed.anim as { name?: string }).name}" is passed over (made for another rig)`);
       const cw = pose.play && clipWant(pose.play.anim);
       if (!cw) {
-        show(s, undefined, 0, "");
+        play(s, []);
+        s.shows = { clip: "", t: 0 };
         continue;
       }
       const clip = files.get(clipKey(cw));
-      if (clip?.state === "ready") show(s, clip.clip, pose.t, cw.name);
+      if (clip?.state === "failed") fail(clip.error, `"${cw.name}"`);
+      else if (clip?.state !== "ready") loading++;
       // Not here yet: the body keeps the pose it has.
-      else if (clip?.state === "failed") fail(clip.error, `"${cw.name}"`);
-      else loading++;
+      if (clip?.state !== "ready" || !clip.clip) continue;
+      const b: Part = { clip: clip.clip, t: pose.t, weight: 1 };
+      // Under a transition the first clip is mixed in, when it is here too.
+      const mw = pose.mix && clipWant(pose.mix.play.anim);
+      const other = mw && files.get(clipKey(mw));
+      if (!pose.mix || !mw || other?.state !== "ready" || !other.clip) {
+        if (other?.state === "failed") fail(other.error, `"${mw!.name}"`);
+        play(s, [b]);
+        s.shows = { clip: cw.name, t: pose.t };
+        continue;
+      }
+      const first = other.clip === clip.clip ? twin(other.clip) : other.clip;
+      if (pose.mix.method === "blend") play(s, [{ ...b, weight: 1 - pose.mix.share }, { clip: first, t: pose.mix.t, weight: pose.mix.share }]);
+      else offset(s, `${pose.mix.transition.id}|${clipKey(mw)}|${pose.mix.t.toFixed(4)}|${clipKey(cw)}|${pose.mix.start.toFixed(4)}`, { clip: first, t: pose.mix.t, weight: 1 }, { clip: clip.clip, t: pose.mix.start, weight: 1 }, pose.mix.share, b);
+      s.shows = { clip: cw.name, t: pose.t, mix: { method: pose.mix.method, from: mw.name, t: pose.mix.t, share: pose.mix.share } };
     }
     for (const [reason, what] of failed) lines.unshift(`Not loaded: ${what.length > 3 ? `${what.slice(0, 3).join(", ")} and ${what.length - 3} more` : what.join(", ")}. ${reason.replace(/[.\s]+$/, "")}. Frame tries again`);
     if (loading) lines.unshift(`Loading ${loading} file${loading === 1 ? "" : "s"} from the game…`);

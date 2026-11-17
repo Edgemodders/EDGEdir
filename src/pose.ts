@@ -1,7 +1,7 @@
 // The preview's rules (D3), as pure functions the page, the host and the unit tests share: which
 // clip an actor plays at a time and where in its animation, where an actor stands, and the names
 // the preview's files are asked for by. No VS Code, no page, no files. docs/d3-preview.md.
-import { clipEnd, playOf, unfit, type Actor, type Clip, type ClipAnim, type Play, type SceneDoc, type Track } from "./doc";
+import { clipEnd, playOf, transitionOf, unfit, type Actor, type Clip, type ClipAnim, type Ease, type Method, type Play, type SceneDoc, type Track } from "./doc";
 
 /** What an actor shows at a time. */
 export interface Pose {
@@ -14,6 +14,25 @@ export interface Pose {
   gap: boolean;
   /** A clip under the playhead that was passed over, because it is made for another rig. */
   passed?: Clip;
+  /** A transition under the playhead that mixes another clip in (D4). */
+  mix?: Mix;
+}
+
+/** What a transition adds to the pose of its second clip, B (the pose's own `clip`). */
+export interface Mix {
+  transition: Clip;
+  method: Method;
+  /** The first clip, A. */
+  clip: Clip;
+  play: Play;
+  /**
+   * Blend: the moment in A now (A goes on playing), and `share` is how much of A is left in the mix.
+   * Inertial: the moment in A when B started; `share` is how much of the difference between A's
+   * pose and B's pose at that moment is still added on top of B. `start` is B's moment then.
+   */
+  t: number;
+  share: number;
+  start: number;
 }
 
 /**
@@ -39,10 +58,79 @@ export function poseAt(track: Track, time: number): Pose {
     }
   }
   if (!clip || !play) return { t: 0, gap: false, ...(passed ? { passed } : {}) };
+  const base: Pose = { clip, play, t: momentIn(clip, play, time), gap: time >= clipEnd(clip) - 1e-6, ...(passed ? { passed } : {}) };
+  return mixed(track, time, base) ?? base;
+}
+
+/** The moment in a clip's animation at a time on the timeline: its part, wrapped; held at `in` before the clip starts. */
+function momentIn(clip: Clip, play: Play, time: number): number {
   const span = play.out - play.in;
   const run = Math.max(0, time - clip.start) * play.speed;
-  const t = span > 0 ? play.in + (run % span) : play.in;
-  return { clip, play, t, gap: time >= clipEnd(clip) - 1e-6, ...(passed ? { passed } : {}) };
+  return span > 0 ? play.in + (run % span) : play.in;
+}
+
+/** A clip that plays on its track's actor: it has an animation, made for the actor's rig. */
+function playable(track: Track, c: Clip): Play | undefined {
+  const p = playOf(c);
+  return p && !unfit(track, c) ? p : undefined;
+}
+
+/** How far a mix has gone, from 0 to 1, along an ease. */
+export function easeAt(ease: Ease, u: number): number {
+  const x = Math.min(1, Math.max(0, u));
+  if (ease === "linear") return x;
+  if (ease === "in") return x * x;
+  if (ease === "out") return 1 - (1 - x) * (1 - x);
+  return x * x * (3 - 2 * x);
+}
+
+/** The clips a transition joins: B is the first that starts inside it or at its end, A the one that plays before B. */
+export function joinOf(track: Track, transition: Clip): { a?: Clip; b?: Clip } {
+  const end = clipEnd(transition);
+  const clips = track.clips.filter((c) => playable(track, c));
+  const b = clips.find((c) => c.start >= transition.start - 1e-6 && c.start <= end + 1e-6);
+  if (!b) return {};
+  let a: Clip | undefined;
+  for (const c of clips) if (c.start < b.start - 1e-6 && (!a || c.start >= a.start)) a = c;
+  return { a, b };
+}
+
+/**
+ * What there is to say about a transition: whether it joins two clips, and whether the game will
+ * play what the preview shows. `mark` is set when it will not; `text` is the inspector's sentence.
+ */
+export function transitionNote(track: Track, transition: Clip): { joins: boolean; mark: boolean; text: string } {
+  const { a, b } = joinOf(track, transition);
+  const name = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? "the clip";
+  if (!b) return { joins: false, mark: false, text: "This transition joins nothing: no clip with an animation that fits the actor starts inside it." };
+  if (!a) return { joins: false, mark: false, text: `This transition joins nothing: no clip plays before "${name(b)}".` };
+  if (transitionOf(transition).method === "ai") return { joins: true, mark: true, text: "No AI provider makes transitions yet. The preview cuts here; choose Blend or Inertial." };
+  if (Math.abs(transition.start - b.start) > 1e-6)
+    return { joins: true, mark: true, text: `Preview only. The game makes its own join where "${name(b)}" starts; a transition placed anywhere else reaches the game only when it can be baked into new frames (a later phase).` };
+  return { joins: true, mark: false, text: `It starts where the game makes its own join. How close the game's join is to this one is not yet measured in the game.` };
+}
+
+/** The pose under a transition, or undefined when none is under the time or it mixes nothing. */
+function mixed(track: Track, time: number, base: Pose): Pose | undefined {
+  for (const tr of track.clips) {
+    if (tr.kind !== "transition" || time < tr.start - 1e-6 || time >= clipEnd(tr) - 1e-6) continue;
+    const { method, ease } = transitionOf(tr);
+    if (method === "ai") continue;
+    const { a, b } = joinOf(track, tr);
+    const pa = a && playable(track, a);
+    const pb = b && playable(track, b);
+    if (!a || !b || !pa || !pb) continue;
+    if (method === "blend") {
+      const share = 1 - easeAt(ease, (time - tr.start) / tr.length);
+      return { ...base, clip: b, play: pb, t: momentIn(b, pb, time), gap: false, mix: { transition: tr, method, clip: a, play: pa, t: momentIn(a, pa, time), share, start: pb.in } };
+    }
+    // Inertial: nothing before B starts, where A still plays alone.
+    const room = clipEnd(tr) - b.start;
+    if (time < b.start - 1e-6 || room <= 1e-6) continue;
+    const share = 1 - easeAt(ease, (time - b.start) / room);
+    return { ...base, clip: b, play: pb, t: momentIn(b, pb, time), gap: false, mix: { transition: tr, method, clip: a, play: pa, t: momentIn(a, pa, b.start), share, start: pb.in } };
+  }
+  return undefined;
 }
 
 /** What the preview loads for an actor: the entity in an appearance, or V's base body by rig. */
@@ -92,6 +180,7 @@ export function clipsNear(track: Track, time: number, ahead: number): ClipWant[]
     if (w) out.set(clipKey(w), w);
   };
   add(now);
+  add(poseAt(track, time).mix?.play);
   for (const c of track.clips) if (c.start > time && c.start <= time + ahead && !unfit(track, c)) add(playOf(c));
   return [...out.values()];
 }

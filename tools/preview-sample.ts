@@ -14,7 +14,7 @@ import { Players } from "../src/core/cast";
 import { resolveGame } from "../src/core/config";
 import { readEntity, sameRig } from "../src/core/entity";
 import { PreviewStore } from "../src/core/preview";
-import { addAnimClip, addTrack, newDoc, setActor, setMark, type ClipAnim, type SceneDoc } from "../src/doc";
+import { addAnimClip, addTrack, addTransition, newDoc, setActor, setMark, setTransition, type ClipAnim, type SceneDoc } from "../src/doc";
 import { bodyKey, bodyWant, clipKey, clipWant } from "../src/pose";
 
 const [exe, gameArg] = process.argv.slice(2);
@@ -89,6 +89,12 @@ interface Info {
       doc = addAnimClip(doc, t2, anim, at2).doc;
       at2 += anim.seconds + 1.5;
     }
+  }
+  // A Blend where the first actor's second clip starts, and an Inertial one at V's second clip (D4).
+  if (picked.length >= 2) doc = addTransition(doc, t1, picked[0].seconds).doc;
+  if (picked.length >= 4) {
+    const made = addTransition(doc, t2, 0.5 + picked[2].seconds + 1.5);
+    doc = setTransition(made.doc, made.id, { method: "inertial" });
   }
   fs.writeFileSync(path.join(out, "sample.json"), JSON.stringify({ doc, files }));
   console.log(`dist/preview-sample/sample.json written: ${Object.keys(files).length} files`);

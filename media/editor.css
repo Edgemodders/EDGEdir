@@ -95,6 +95,7 @@ button.flag.on { border-color: var(--accent); color: var(--accent); }
 .note { margin: 0; font-size: 12px; }
 input[type="text"], input[type="number"] { width: 100%; background: var(--vscode-input-background, #11131a); color: var(--vscode-input-foreground, #d0d4e0); border: 1px solid var(--vscode-input-border, var(--line)); padding: 3px 5px; font: inherit; }
 input[type="number"] { font-family: var(--mono); font-size: 12px; }
+select { width: 100%; background: var(--vscode-dropdown-background, #11131a); color: var(--vscode-dropdown-foreground, #d0d4e0); border: 1px solid var(--vscode-dropdown-border, var(--line)); padding: 3px 4px; font: inherit; }
 input:focus { outline: 1px solid var(--accent); outline-offset: -1px; }
 
 /* A file that is not a scene. */

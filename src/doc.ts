@@ -409,6 +409,57 @@ export function setActor(doc: SceneDoc, trackId: string, actor: Actor | undefine
   });
 }
 
+// ---- Transitions (D4) ----
+
+export const Methods = ["blend", "inertial", "ai"] as const;
+export type Method = (typeof Methods)[number];
+export const Eases = ["smooth", "linear", "in", "out"] as const;
+export type Ease = (typeof Eases)[number];
+
+/** How a transition is made and how its mix runs. One from D1 has neither field and reads as Blend, Smooth. */
+export function transitionOf(clip: Clip): { method: Method; ease: Ease } {
+  const method = Methods.includes(clip.method as Method) ? (clip.method as Method) : "blend";
+  const ease = Eases.includes(clip.ease as Ease) ? (clip.ease as Ease) : "smooth";
+  return { method, ease };
+}
+
+/** A transition's method or ease. */
+export function setTransition(doc: SceneDoc, clipId: string, change: { method?: string; ease?: string }): SceneDoc {
+  const f = findClip(doc, clipId);
+  if (!f) throw new EditError("That clip is no longer in the scene");
+  open(f.track);
+  if (f.clip.kind !== "transition") throw new EditError("Only a transition has a method");
+  if (change.method !== undefined && !Methods.includes(change.method as Method)) throw new EditError(`A transition's method is one of ${Methods.join(", ")}`);
+  if (change.ease !== undefined && !Eases.includes(change.ease as Ease)) throw new EditError(`A transition's ease is one of ${Eases.join(", ")}`);
+  const now = transitionOf(f.clip);
+  const next: Clip = { ...f.clip, method: change.method ?? now.method, ease: change.ease ?? now.ease };
+  return changeTrack(doc, f.track.id, (t) => ({ ...t, clips: t.clips.map((c) => (c.id === next.id ? next : c)) }));
+}
+
+/** How long a new transition is. */
+export const TransitionLength = 0.4;
+
+/**
+ * A new transition on an actor track, at the start of the clip whose join is nearest to `near`:
+ * where the game makes its own join. With no join on the track it goes at `near`.
+ */
+export function addTransition(doc: SceneDoc, trackId: string, near: number): { doc: SceneDoc; id: string } {
+  const track = findTrack(doc, trackId);
+  if (!track) throw new EditError("That track is no longer in the scene");
+  const clips = track.clips.filter((c) => c.kind !== "transition");
+  // A join is the start of a clip that has a clip before it.
+  const joins = clips.filter((c) => clips.some((o) => o.start < c.start - Eps));
+  let at = Math.max(0, near);
+  let length = TransitionLength;
+  if (joins.length) {
+    const b = joins.reduce((best, c) => (Math.abs(c.start - near) < Math.abs(best.start - near) ? c : best));
+    at = b.start;
+    length = Math.min(TransitionLength, b.length);
+  }
+  const made = addClip(doc, trackId, { start: at, length, kind: "transition" });
+  return { doc: setTransition(made.doc, made.id, {}), id: made.id };
+}
+
 // ---- Marks (D3) ----
 
 /** How far apart actors without a mark of their own stand. */

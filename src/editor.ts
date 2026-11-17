@@ -219,7 +219,7 @@ export const PageBody = `<header>
   <span class="sep"></span>
   <button id="addTrack" title="Add a track to the scene">Add Track</button>
   <button id="addClip" title="Add a clip to the selected track at the playhead (or double-click a lane)">Add Clip</button>
-  <button id="addTransition" title="Add a transition to the selected actor track at the playhead" hidden>Add Transition</button>
+  <button id="addTransition" title="Add a transition to the selected actor track, at the start of the clip nearest the playhead" hidden>Add Transition</button>
   <button id="split" title="Cut the selected clip in two at the playhead (S)">Split</button>
   <button id="remove" title="Remove the selected clips (Delete)">Delete</button>
   <span class="sep"></span>

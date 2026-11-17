@@ -28,6 +28,9 @@ import {
   trimClip,
   playOf,
   setPlay,
+  addTransition,
+  setTransition,
+  transitionOf,
   markOf,
   setMark,
   unfit,
@@ -37,6 +40,7 @@ import {
   type Track,
   type TrackKind,
 } from "../src/doc";
+import { joinOf, transitionNote } from "../src/pose";
 import { mountPreview } from "./preview";
 
 interface ViewState {
@@ -313,10 +317,17 @@ function draw() {
       if (c.kind === "transition") {
         g.fillStyle = k.bg;
         g.fillRect(b.x, b.y, b.w, b.h);
+        const tn = t.actor ? transitionNote(t, c) : undefined;
+        // One that joins nothing is dimmed; one the game will not match carries a yellow mark at its start.
+        const faint = tn && !tn.joins ? 0.4 : 1;
         g.fillStyle = k.cyan;
-        g.globalAlpha *= 0.3;
+        g.globalAlpha *= 0.3 * faint;
         g.fillRect(b.x, b.y, b.w, b.h);
-        g.globalAlpha = t.mute ? 0.35 : 1;
+        g.globalAlpha = (t.mute ? 0.35 : 1) * faint;
+        if (tn?.mark) {
+          g.fillStyle = k.accent;
+          g.fillRect(b.x, b.y, 3, b.h);
+        }
         g.strokeStyle = k.cyan;
         g.setLineDash([3, 2]);
       } else {
@@ -622,7 +633,26 @@ function drawInspector() {
       const why = unfit(track, clip);
       if (why) box.append(note(`Unfit: ${why}. It stays on the track, and will not play on this actor.`));
     } else if (clip.kind === "anim") box.append(note("A named block with no animation yet. Add one from the Animations view with Add to Track."));
-    if (clip.kind === "transition") box.append(note("How a transition is made (tweening or an AI provider) comes in a later phase (D4)."));
+    if (clip.kind === "transition") {
+      const now = transitionOf(clip);
+      const { a, b } = joinOf(track, clip);
+      const said = transitionNote(track, clip);
+      box.append(
+        field(
+          "Method",
+          choice("f-method", now.method, [["blend", "Blend"], ["inertial", "Inertial"], ["ai", "AI (no provider yet)", true]], (v) => change((x) => setTransition(x, clip.id, { method: v }))),
+        ),
+        field(
+          "Ease",
+          choice("f-ease", now.ease, [["smooth", "Smooth"], ["linear", "Linear"], ["in", "Ease in"], ["out", "Ease out"]], (v) => change((x) => setTransition(x, clip.id, { ease: v }))),
+        ),
+      );
+      if (a && b) box.append(fact("Joins", `${clipLabel(a)} to ${clipLabel(b)}`));
+      box.append(
+        note(now.method === "inertial" ? "Inertial: the second clip plays whole from its start, and the difference from the first clip's pose fades away." : now.method === "blend" ? "Blend: both clips play, mixed from the first to the second." : ""),
+        note(said.text),
+      );
+    } else if (track.kind === "actor" && play && bareJoin(track, clip)) box.append(note("No transition leads into this clip: the preview cuts here. The game will blend it briefly by itself."));
   } else if (sel.size > 1) {
     box.append(heading(`${sel.size} clips`), note("Drag them together, or copy, cut and delete them."));
   } else {
@@ -672,6 +702,29 @@ function drawInspector() {
     );
   }
   if (focus) document.getElementById(focus)?.focus();
+}
+
+/** Whether a clip follows another with no transition over its start. */
+function bareJoin(track: Track, clip: Clip): boolean {
+  if (!track.clips.some((c) => c.kind === "anim" && c.start < clip.start - 1e-6)) return false;
+  return !track.clips.some((c) => c.kind === "transition" && joinOf(track, c).b?.id === clip.id);
+}
+
+/** A drop-down list; an entry marked off cannot be chosen. */
+function choice(id: string, value: string, options: [value: string, label: string, off?: boolean][], done: (v: string) => void) {
+  const s = document.createElement("select");
+  s.id = id;
+  for (const [v, label, off] of options) {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = label;
+    o.disabled = !!off;
+    o.selected = v === value;
+    s.append(o);
+  }
+  s.addEventListener("change", () => done(s.value));
+  s.addEventListener("keydown", (e) => e.stopPropagation());
+  return s;
 }
 
 function note(text: string) {
@@ -988,7 +1041,13 @@ function newClip(trackId: string, at: number, kind?: "transition") {
 }
 
 $("addClip").addEventListener("click", () => selTrack && newClip(selTrack, playhead));
-$("addTransition").addEventListener("click", () => selTrack && newClip(selTrack, Math.max(0, playhead - 0.2), "transition"));
+$("addTransition").addEventListener("click", () => {
+  if (!selTrack) return;
+  const made = attempt((d) => addTransition(d, selTrack, playhead));
+  if (!made) return;
+  sel = new Set([made.id]);
+  commit(made.doc);
+});
 
 function splitSelected() {
   if (sel.size !== 1) return;
