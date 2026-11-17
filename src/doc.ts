@@ -458,7 +458,9 @@ export function addTransition(doc: SceneDoc, trackId: string, near: number): { d
     length = Math.min(TransitionLength, b.length);
   }
   const made = addClip(doc, trackId, { start: at, length, kind: "transition" });
-  return { doc: setTransition(made.doc, made.id, {}), id: made.id };
+  // On the clip's own start, which may be a hair off the frame (an animation's length is not a whole frame).
+  const placed = changeTrack(made.doc, trackId, (t) => ({ ...t, clips: sorted(t.clips.map((c) => (c.id === made.id ? { ...c, start: round(at) } : c))) }));
+  return { doc: setTransition(placed, made.id, {}), id: made.id };
 }
 
 // ---- Sequence blocks (D4b) ----
@@ -520,6 +522,7 @@ export function unpackSeq(doc: SceneDoc, clipId: string): { doc: SceneDoc; ids: 
 export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; updated: number; blocked: number } {
   let updated = 0;
   let blocked = 0;
+  let renamed = false;
   const length = round(runEnd(seq.clips));
   const tracks = doc.tracks.map((t) => {
     if (t.lock || !t.clips.some((c) => seqOf(c)?.id === seq.id)) return t;
@@ -529,6 +532,11 @@ export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; update
       if (!now || now.id !== seq.id || sameSeq(now, seq)) continue;
       if (length <= 0 || !fits({ ...t, clips }, "sequence", c.start, length, [c.id])) {
         blocked++;
+        // Held back for room: its clips stay, its name follows.
+        if (now.name !== seq.name) {
+          renamed = true;
+          clips = clips.map((x) => (x.id === c.id ? { ...x, seq: { ...now, name: seq.name } } : x));
+        }
         continue;
       }
       updated++;
@@ -536,7 +544,19 @@ export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; update
     }
     return clips === t.clips ? t : { ...t, clips: sorted(clips) };
   });
-  return { doc: updated ? withTracks(doc, tracks) : doc, updated, blocked };
+  return { doc: updated || renamed ? withTracks(doc, tracks) : doc, updated, blocked };
+}
+
+/**
+ * How a block stands to the sequence it links: `linked` (the same), `newer` (the sequence has
+ * changed, and its new length fits here), `blocked` (changed, and no room), `missing` (no sequence).
+ */
+export function linkState(track: Track, clip: Clip, seq: SeqRef | undefined): "linked" | "newer" | "blocked" | "missing" {
+  if (!seq) return "missing";
+  const now = seqOf(clip);
+  if (!now || (JSON.stringify(now.clips) === JSON.stringify(seq.clips) && (now.rig ?? "") === (seq.rig ?? ""))) return "linked";
+  const length = round(runEnd(seq.clips));
+  return length > 0 && fits(track, "sequence", clip.start, length, [clip.id]) ? "newer" : "blocked";
 }
 
 /** Whether a block's copy differs from the sequence as it is now. */

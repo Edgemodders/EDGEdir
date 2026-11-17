@@ -6,11 +6,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { defaultCacheDir } from "./core/config";
-import { deskDir, deskSequence, fileName, newScene, newSequence, renameScene, type DeskScene } from "./desk";
+import { deskDir, deskSequence, fileName, listDesk, newScene, newSequence, renameScene, type DeskScene } from "./desk";
 import { DeskView, type DeskItem } from "./deskView";
 import { pickActor } from "./actorPicker";
 import { AnimationsView, type AnimItem } from "./animationsView";
-import { addAnimClip, addSeqClip, EditError, findTrack, refreshSeqs, replaceWithSeq, runOf, seqDiffers, seqOf, setActor, unfit, type SceneDoc, type SeqRef } from "./doc";
+import { addAnimClip, addSeqClip, EditError, findTrack, refreshSeqs, linkState, replaceWithSeq, runOf, seqOf, setActor, unfit, type SceneDoc, type SeqRef } from "./doc";
 import { rigName } from "./core/entity";
 import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
@@ -92,7 +92,9 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       value,
       validateInput: (v) => {
         try {
-          fileName(v);
+          const name = fileName(v).toLowerCase();
+          // Said at the box, not after the questions that follow it.
+          if (listDesk().some((s) => s.kind === "sequence" && s.name.toLowerCase() === name)) return `The Desk already has a sequence named "${fileName(v)}"`;
           return undefined;
         } catch (e) {
           return (e as Error).message;
@@ -106,10 +108,9 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       const out: Record<string, string> = {};
       for (const t of doc.tracks)
         for (const c of t.clips) {
+          // By the block, not the sequence: one block can be held back for room while another follows.
           const seq = seqOf(c);
-          if (!seq || out[seq.id] === "newer") continue;
-          const now = refOf(seq.id);
-          out[seq.id] = !now ? "missing" : seqDiffers(c, now) ? "newer" : "linked";
+          if (seq) out[c.id] = linkState(t, c, refOf(seq.id));
         }
       return out;
     },
@@ -377,6 +378,11 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       try {
         const renamed = renameScene(scene, name);
         desk.refresh();
+        // A renamed sequence: the open scenes' blocks take its name, and say how they stand now.
+        if (scene.kind === "sequence") {
+          for (const d of scenes.documents()) await sequences.sync(d);
+          scenes.resend();
+        }
         if (wasOpen) await openScene(vscode.Uri.file(renamed.file));
       } catch (e) {
         fail("Rename Scene", e);
@@ -412,6 +418,8 @@ ${(e as Error).message}` },
         } else if (wasOpen) await openScene(vscode.Uri.file(scene.file)); // Kept after all: its tab comes back.
       }
       desk.refresh();
+      // Open scenes that link a deleted sequence say so at once.
+      scenes.resend();
     }),
 
     vscode.commands.registerCommand("edgedir.revealScene", (item: unknown) => {

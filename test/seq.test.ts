@@ -13,6 +13,7 @@ import {
   addTransition,
   EditError,
   formatDoc,
+  linkState,
   newDoc,
   parseDoc,
   refreshSeqs,
@@ -141,6 +142,14 @@ test("a linked block takes the sequence as it is now, unless its new length has 
   const longer = ref([...run, { id: "c4", kind: "anim", start: 5, length: 2, anim: anim("stand", 2) }]);
   const b = refreshSeqs(doc, longer);
   assert.deepEqual([b.updated, b.blocked], [1, 1]);
+  // How each block stands: by the block, not by the sequence.
+  assert.deepEqual(doc.tracks.map((t) => linkState(t, t.clips[0], longer)), ["blocked", "newer"]);
+  assert.deepEqual(b.doc.tracks.map((t) => linkState(t, t.clips[0], longer)), ["blocked", "linked"]);
+  assert.equal(linkState(doc.tracks[0], doc.tracks[0].clips[0], undefined), "missing");
+  assert.equal(linkState(doc.tracks[0], doc.tracks[0].clips[0], ref()), "linked");
+  // A block held back for room still takes the sequence's new name.
+  const named = refreshSeqs(doc, { ...longer, name: "renamed" });
+  assert.deepEqual(named.doc.tracks.map((t) => [seqOf(t.clips[0])?.name, t.clips[0].length]), [["renamed", 5], ["renamed", 7]]);
   assert.deepEqual(b.doc.tracks.map((t) => t.clips[0].length), [5, 7]);
   assert.equal(seqDiffers(b.doc.tracks[0].clips[0], longer), true);
   // Another sequence's blocks, and locked tracks, are left alone.

@@ -24,6 +24,10 @@ test("a transition has a method and an ease; one from D1 reads as Blend, Smooth"
   const made = addTransition(doc, t, 1.2);
   const tr = made.doc.tracks[0].clips.find((c) => c.id === made.id)!;
   assert.deepEqual([tr.kind, tr.start, tr.length, tr.method, tr.ease], ["transition", 2, 0.4, "blend", "smooth"]);
+  // The clip's own start, though it is off the frame.
+  const offFrame = addAnimClip(addAnimClip(addTrack(newDoc("S"), "actor"), "t1", anim("leap", 2.8667), 0).doc, "t1", anim("sit", 3), 2.8667).doc;
+  assert.equal(offFrame.tracks[0].clips[1].start, 2.8667);
+  assert.equal(addTransition(offFrame, "t1", 2.9).doc.tracks[0].clips.find((c) => c.kind === "transition")?.start, 2.8667);
   // With one clip there is no join: it goes where it was asked.
   const lone = addAnimClip(addTrack(newDoc("S"), "actor"), "t1", anim("walk", 2), 0).doc;
   assert.equal(addTransition(lone, "t1", 1.5).doc.tracks[0].clips.find((c) => c.kind === "transition")?.start, 1.5);
@@ -87,11 +91,20 @@ test("Blend: both clips play, the first going on and the second held until it st
   assert.equal(p.mix?.clip.id, "a");
   near(p.mix?.t, 1.75);
   near(p.mix?.share, 0.75);
-  // After B starts: B plays, and A goes on past its end, looping as in a gap.
+  // After B starts: B plays, and A, which ended where B starts, holds its last pose. It does not wrap round to its start.
   p = poseAt(t, 2.25);
   near(p.t, 0.75);
-  near(p.mix?.t, 0.25);
+  near(p.mix?.t, 2);
   near(p.mix?.share, 0.25);
+  near(poseAt(t, 2).mix?.t, 2);
+  // With a gap between them, A goes on looping through the gap and the transition.
+  const later: Clip = { ...B, start: 3 };
+  const gap = track([A, later, { ...tr, start: 3 }]);
+  near(poseAt(gap, 3.25).mix?.t, 1.25);
+  // A clip that starts a hair off the frame its transition is on (an animation's length) is still the join.
+  const off = track([{ ...A, length: 2.8667, anim: anim("walk", 2.8667) }, { ...B, start: 2.8667 }, { ...tr, start: 2.866667, length: 0.4 }]);
+  assert.equal(transitionNote(off, off.clips[2]).mark, false);
+  near(poseAt(off, 2.9).mix?.t, 2.8667);
   // At the transition's end: B alone.
   assert.equal(poseAt(t, 2.5).mix, undefined);
   assert.equal(poseAt(t, 2.5).clip?.id, "b");
@@ -116,8 +129,8 @@ test("Inertial: the second clip plays whole, and the difference at its start fad
   near(p.mix?.start, 0.5);
   p = poseAt(t, 2.25);
   near(p.t, 0.75);
-  // A's first loop ended where B starts: its pose there is the wrapped moment.
-  near(p.mix?.t, 0);
+  // A ended where B starts: the pose taken is A's last, not its first.
+  near(p.mix?.t, 2);
   near(p.mix?.share, 0.5);
   // A transition that ends where B starts has nothing to fade over.
   assert.equal(poseAt(track([A, B, { ...tr, start: 1, length: 1 }]), 1.5).mix, undefined);

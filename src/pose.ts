@@ -85,6 +85,23 @@ export function flat(track: Track): Track {
   return { ...track, clips: clips.sort((a, b) => a.start - b.start) };
 }
 
+/**
+ * Two times this close are the same place for a join. A clip can start at an animation's own length
+ * (2.8667 s), a hair off the frame a transition is put on (2.866667 s); less than any frame.
+ */
+const Near = 1e-3;
+
+/**
+ * The first clip's moment under a transition. When the second clip starts where the first ends,
+ * the first holds its last pose from there: it does not wrap round to its start. With a gap between
+ * them it goes on looping, as it does in the gap.
+ */
+function momentOfFirst(a: Clip, pa: Play, b: Clip, time: number): number {
+  const end = clipEnd(a);
+  if (b.start <= end + Near && time >= end - Near) return pa.out;
+  return momentIn(a, pa, time);
+}
+
 /** A clip that plays on its track's actor: it has an animation, made for the actor's rig. */
 function playable(track: Track, c: Clip): Play | undefined {
   const p = playOf(c);
@@ -104,10 +121,10 @@ export function easeAt(ease: Ease, u: number): number {
 export function joinOf(track: Track, transition: Clip): { a?: Clip; b?: Clip } {
   const end = clipEnd(transition);
   const clips = flat(track).clips.filter((c) => playable(track, c));
-  const b = clips.find((c) => c.start >= transition.start - 1e-6 && c.start <= end + 1e-6);
+  const b = clips.find((c) => c.start >= transition.start - Near && c.start <= end + Near);
   if (!b) return {};
   let a: Clip | undefined;
-  for (const c of clips) if (c.start < b.start - 1e-6 && (!a || c.start >= a.start)) a = c;
+  for (const c of clips) if (c.start < b.start - Near && (!a || c.start >= a.start)) a = c;
   return { a, b };
 }
 
@@ -121,7 +138,7 @@ export function transitionNote(track: Track, transition: Clip): { joins: boolean
   if (!b) return { joins: false, mark: false, text: "This transition joins nothing: no clip with an animation that fits the actor starts inside it." };
   if (!a) return { joins: false, mark: false, text: `This transition joins nothing: no clip plays before "${name(b)}".` };
   if (transitionOf(transition).method === "ai") return { joins: true, mark: true, text: "No AI provider makes transitions yet. The preview cuts here; choose Blend or Inertial." };
-  if (Math.abs(transition.start - b.start) > 1e-6)
+  if (Math.abs(transition.start - b.start) > Near)
     return { joins: true, mark: true, text: `Preview only. The game makes its own join where "${name(b)}" starts; a transition placed anywhere else reaches the game only when it can be baked into new frames (a later phase).` };
   return { joins: true, mark: false, text: `It starts where the game makes its own join. How close the game's join is to this one is not yet measured in the game.` };
 }
@@ -138,13 +155,13 @@ function mixed(track: Track, time: number, base: Pose): Pose | undefined {
     if (!a || !b || !pa || !pb) continue;
     if (method === "blend") {
       const share = 1 - easeAt(ease, (time - tr.start) / tr.length);
-      return { ...base, clip: b, play: pb, t: momentIn(b, pb, time), gap: false, mix: { transition: tr, method, clip: a, play: pa, t: momentIn(a, pa, time), share, start: pb.in } };
+      return { ...base, clip: b, play: pb, t: momentIn(b, pb, time), gap: false, mix: { transition: tr, method, clip: a, play: pa, t: momentOfFirst(a, pa, b, time), share, start: pb.in } };
     }
     // Inertial: nothing before B starts, where A still plays alone.
     const room = clipEnd(tr) - b.start;
-    if (time < b.start - 1e-6 || room <= 1e-6) continue;
+    if (time < b.start - 1e-6 || room <= Near) continue;
     const share = 1 - easeAt(ease, (time - b.start) / room);
-    return { ...base, clip: b, play: pb, t: momentIn(b, pb, time), gap: false, mix: { transition: tr, method, clip: a, play: pa, t: momentIn(a, pa, b.start), share, start: pb.in } };
+    return { ...base, clip: b, play: pb, t: momentIn(b, pb, time), gap: false, mix: { transition: tr, method, clip: a, play: pa, t: momentOfFirst(a, pa, b, b.start), share, start: pb.in } };
   }
   return undefined;
 }

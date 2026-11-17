@@ -4,7 +4,7 @@ title: D4 Transitions
 
 # <span class="y">D4</span> Transitions and sequences
 
-**Status: agreed by the owner on 2026-11-16 (all five questions as recommended). Both parts are built: D4a Transitions (EDGEdir 0.0.12) and D4b Sequences (0.0.13). Both were looked at in a plain browser with real clips; D4b's Desk and commands have not been run in VS Code yet.** What is built is at the end.
+**Status: agreed by the owner on 2026-11-16 (all five questions as recommended). Both parts are built: D4a Transitions (EDGEdir 0.0.12) and D4b Sequences (0.0.13). Their hand tests ran by script on 0.0.13: D4b passed 19 of 19; D4a failed three steps, of which the main fault (the body jumped at a join under a transition) is fixed in 0.0.14 and not run again yet ([Tests](testing.html)).** What is built is at the end.
 
 D4 is the fourth phase of the [design](design.html). It makes the transition clip do something: two animation clips joined by one view as one movement in the 3D preview. And it makes a run of clips and transitions a thing that is stored by itself and used again: a sequence. Nothing in D4 plays in the game (D5), and nothing in D4 makes new game files (D7).
 
@@ -33,7 +33,7 @@ A transition joins the clip that plays before it, **A**, to the next clip that s
 
 | Method | What the preview shows over the transition's length | In the game |
 |---|---|---|
-| **Blend** | A and B both play, mixed bone by bone. The mix goes from all A to all B along the ease. Before B's start, B holds its first pose; after A's end, A goes on as it does in a gap | When the transition starts at B's start: the game's own join at the jump, if that is a blend. REDnode's first look says the game's join is nearer Inertial (below); not measured. Anywhere else: preview only, until baking |
+| **Blend** | A and B both play, mixed bone by bone. The mix goes from all A to all B along the ease. Before B's start, B holds its first pose. After A's end, A holds its last pose when B starts where A ends; with a gap between them A goes on looping, as it does in the gap (corrected in 0.0.14: at first A wrapped round to its start at the join, which made the join jump) | When the transition starts at B's start: the game's own join at the jump, if that is a blend. REDnode's first look says the game's join is nearer Inertial (below); not measured. Anywhere else: preview only, until baking |
 | **Inertial** | B plays whole from its start. The difference between A's pose and B's pose at B's start is added on top and fades away along the transition. B's own movement is kept; good for short joins | When it starts at B's start it may be what the game's own join does (REDnode's first look, not measured). Anywhere else: preview only, until baking (D7) |
 | **AI** | Nothing: listed, greyed, "no provider yet" | Not built |
 

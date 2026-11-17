@@ -649,7 +649,7 @@ function drawInspector() {
     } else if (clip.kind === "anim") box.append(note("A named block with no animation yet. Add one from the Animations view with Add to Track."));
     const seq = seqOf(clip);
     if (clip.kind === "sequence" && seq) {
-      const state = links[seq.id] ?? "linked";
+      const state = links[clip.id] ?? "linked";
       box.append(
         fact("Sequence", seq.name || "No name"),
         fact("Clips", String(seq.clips.filter((c) => c.kind !== "transition").length)),
@@ -657,8 +657,10 @@ function drawInspector() {
         note(
           state === "missing"
             ? "The sequence is not on this PC's Desk. The block plays the copy the scene keeps."
-            : state === "newer"
+            : state === "blocked"
               ? "The sequence on the Desk has changed, and its new length does not fit here. The block plays its older copy. Make room, then open the scene again."
+              : state === "newer"
+                ? "The sequence on the Desk has changed since this copy was taken. The block plays its older copy until the scene is opened again or the sequence is saved."
               : "Linked to the sequence on the Desk: a change saved there shows here. The scene keeps a copy, so it opens without it.",
         ),
       );
