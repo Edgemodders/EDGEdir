@@ -83,8 +83,8 @@ Words, to keep them apart from the neighbours' words:
 
 | Word | Meaning |
 |---|---|
-| Scene | EDGEdir's timeline document. Not the game's `.scene` file, and not EDGEbuilder's `.scene.json` |
-| Set | An EDGEbuilder scene (props and extras) that an EDGEdir scene plays on. Optional |
+| Scene | EDGEdir's timeline document: the direction, what the people and things do over time. Not the game's `.scene` file, and not EDGEbuilder's `.scene.json` |
+| Set | An EDGEbuilder scene: the stage, what exists in the world (props, people, vehicles), that an EDGEdir scene plays on. Optional. See [Sets](#sets-the-stage-from-edgebuilder) |
 | Actor | A character on an actor track |
 | Mark | Where an actor stands at the start, relative to the scene's anchor |
 | Anchor | The scene's origin in the world: in front of V, or fixed coordinates |
@@ -257,6 +257,92 @@ A **sequence** is a run of animation clips and transitions for one actor, saved 
 | Storing | On the Desk and in the Library like a scene, as kind `sequence` |
 | In the game | Nothing new: when a scene is packed, a sequence is its clips. Once baking exists (D7), a sequence can also be baked once into a single animation and reused |
 
+## Sets: the stage from EDGEbuilder
+
+**Proposed on 2026-11-17, from the owner's note of the same day. Not agreed yet: the questions are at the end.** The owner's words for the split: EDGEbuilder and EDGEdir both say "scene" and mean the same place and moment, but each gives a different part of it.
+
+| | EDGEbuilder's scene | EDGEdir's scene |
+|---|---|---|
+| Is | The stage: what exists in the world. Props, people, vehicles, lights | The direction: what those things do over time |
+| Answers | What is there, and where | What do they do, where do they go, what sounds play, and when |
+| File | `<name>.scene.json` (its [scene format](https://edgemodders.github.io/EDGEbuilder/scene.html)) | `<name>.edgedir` |
+| Called, in EDGEdir | A **set** | A **scene** |
+
+One set can have many scenes: the same alley, directed three ways. That is why EDGEdir's Library kind is `act`.
+
+### The flow
+
+The owner's proposal: EDGEbuilder's scenes show in EDGEdir as a view, and choosing one opens it in EDGEdir's editor with a track for each person and vehicle on it.
+
+| Step | What happens |
+|---|---|
+| **The Sets view** | Lists EDGEbuilder's scenes by their `.scene.json` ending: in any folder of the Library, and in the open REDcode project's `source/scenes`. Each row shows the name and how many people and vehicles it has. Not EDGEbuilder's "This PC" scenes: they are in its package's data folder, which is its Desk, and no tool reads another's Desk (the Library's rules) |
+| **New Scene on This Set** | Makes a scene on the Desk and opens it. The scene names the set. It gets one actor track for each `npc` object, with the actor (record and appearance) and the mark taken from the set, and one vehicle track for each vehicle. The tracks are empty: a person with no clips stands idle, as EDGEbuilder left them |
+| **A set that has scenes** | The view shows its scenes under it. Choosing one opens it; New Scene on This Set makes another |
+| **Choose Set** | A scene made without a set can be given one later, and a set can be taken off. Tracks made by hand stay |
+
+### The link
+
+| Point | Rule |
+|---|---|
+| The set stays EDGEbuilder's | EDGEdir reads the file and never writes it. People and props are placed and moved in EDGEbuilder |
+| A link, not a copy | The scene keeps the set's place and content hash: `"set": { "path": "<Library or project path>", "name": "My Alley", "hash": "sha256:..." }`. A track that came from the set keeps the object's id: `"from": "wakako_spot"` |
+| When the set changes | On opening the scene, EDGEdir reads the set again. A person who moved has a new mark. A new person is offered as a track. A track whose person is gone says so and keeps its clips. Each change is one edit that can be undone, as a sequence's refresh is |
+| Where the scene plays | A scene with a set plays where the set is: the anchor is the set's place in the world (`"anchor": { "mode": "set" }`), not in front of V. Marks are the set's world positions |
+| Actors not in the set | Allowed. An actor added in EDGEdir stands at a mark typed in EDGEdir and is spawned by the scene. EDGEdir does not add them to the set |
+| A set that cannot be found | The scene opens, says the set is missing, and keeps the marks it last read. A set renamed in the Library is lost this way, since EDGEbuilder's scenes have no id (asked for in the request below) |
+
+### In the preview
+
+| Step | Shows |
+|---|---|
+| First | Each person at their mark from the set, facing as placed. Each prop as a grey box of its size: the set's file carries every object's `bounds`, so nothing is exported |
+| Later | The props' real meshes, exported once through REDbridge and cached, as bodies are. EDGEbuilder's plan has the same need for its sector view (its E2), so the cache may be shared (**unverified**) |
+
+### In the game
+
+| Point | What it means |
+|---|---|
+| The props | REDnode's `world.load` spawns the set's meshes, entities and people. Where the set is baked into a mod and installed, the props are already there and are not loaded twice (EDGEbuilder's "baked and on" flag) |
+| The people the scene directs | REDnode plays a workspot only on a person spawned with it. So the scene's player spawns each directed person itself, with its written workspot, at the set's mark, and the set must load without them. `world.load` has no way to leave objects out today (**unverified**; a REDnode request with D5's plan) |
+| A baked set's people | EDGEbuilder does not bake people (its "Baking NPCs is open"), so today people come only from the loaded set or the scene. If they are baked one day, the scene must be able to take one over by its `ref` (**unverified**, later) |
+
+### Vehicles
+
+EDGEbuilder's plan has no vehicle kind (checked 2026-11-17): a vehicle's `.ent` can be dropped as a plain `entity`, and whether that gives a working vehicle is **unverified**. Requested of EDGEbuilder the same day: a `vehicle` kind picked from the game's `Vehicle.*` records, as `npc` is from `Character.*`.
+
+In EDGEdir a vehicle gets its own track kind, `vehicle`. What a clip on it can be is not designed yet, and nothing of it has been tried in the game:
+
+| A vehicle might | Route in the game |
+|---|---|
+| Stand, with its engine and lights on or off | **Unverified** |
+| Open and close doors | **Unverified** |
+| Drive from one mark to another | **Unverified**; the game's AI drives vehicles along lanes |
+| Play an animation of its own (an AV landing; the game has such sets for quest scenes) | **Unverified**; REDnode's Director spike lists it as an optional step |
+| Carry an actor | **Unverified**; it needs the game's mounting |
+
+So the vehicle track needs a REDnode spike before it has a plan. Until then a set's vehicles show in the preview as boxes and stand in the game where EDGEbuilder put them.
+
+### Where it goes in the phases
+
+| Part | Phase |
+|---|---|
+| The Sets view, New Scene on This Set, the link, marks from the set, props as boxes | The first part of D5 (it needs no game, and D5 needs the place a scene plays at) |
+| The set loaded in the game around the scene's people | D5 |
+| Props' real meshes in the preview | After D6 |
+| The vehicle track | Its own phase after D6, once EDGEbuilder has the kind and REDnode's spike says what a vehicle can be told to do |
+
+### Questions for the owner
+
+| # | Question | Recommended |
+|---|---|---|
+| S1 | In EDGEdir, is an EDGEbuilder scene called a **set** (the view is **Sets**), so the two "scenes" are never mixed up on one screen? | Yes |
+| S2 | Is the set linked and read only in EDGEdir, with many scenes allowed for one set? | Yes |
+| S3 | Does every person and vehicle of the set get a track at once, though most may stay empty? | Yes, as the owner proposed: an empty track is an extra who stands idle |
+| S4 | May a scene have actors that are not in the set? | Yes; EDGEdir does not write them into the set |
+| S5 | Is it built as the first part of D5? | Yes |
+| S6 | The vehicle track: its own phase after D6, after the EDGEbuilder kind and a REDnode spike? | Yes |
+
 ## The editor
 
 One custom text editor for `*.edgedir`, built the EDGEwave way: plain TypeScript, canvas, the whole document posted back on each change so undo, redo, save and the dirty mark are VS Code's own.
@@ -362,6 +448,8 @@ So the first route, cues from a package, holds. A clip that moves its actor need
 | REDbridge | `.anims` import from glTF (#14). Needed for made animations in the game, and for baked transitions. EDGEfab needs it too, so the request may be EDGEfab's to make | D5 for made animations, D7 for baking |
 | EDGEwave | A sound's peaks and a mix's length through its API | D6 |
 | EDGEfab | The split agreed in Q1: its plan drops the animation index and "blend two clips". It imports animations and makes them from video, and stores each by itself in the Library, in the shape "Animations and actors" lists. Retargeting to the game's other rigs | D2 |
+| EDGEbuilder | A `vehicle` kind in its scenes, from `Vehicle.*` records; an id in a scene file; where its scenes are found (EDGEbuilder #6, filed 2026-11-17) | The vehicle track; the set's link |
+| REDnode | `world.load` leaving out the people a scene directs; a spike on what a spawned vehicle can be told to do | D5; the vehicle track |
 | EDGEkit | Include EDGEdir, once it is published | After the first release |
 
 ## Phases
