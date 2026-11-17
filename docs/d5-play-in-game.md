@@ -4,7 +4,7 @@ title: D5 Play in game
 
 # <span class="y">D5</span> Play in game
 
-**Status: a plan for the owner's review, written 2026-11-17. Not agreed, nothing built.** Seven questions are at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section, which has its own six questions.
+**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). D5b The cue sheet is built (EDGEdir 0.0.16), not run in VS Code yet. D5a, D5c and D5d are not built.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
 
 D5 is the fifth phase of the [design](design.html). A scene's actor tracks play on real people in the running game, started from VS Code. Audio, camera and weather tracks are D6. A mod a player installs is D7.
 
@@ -154,8 +154,8 @@ What the in-game test answers:
 
 | To | Need | State |
 |---|---|---|
-| REDnode | `/editor/service.call` on the editor channel (way A) | To file when P2 is agreed |
-| REDnode | `world.load` leaving out the people a scene directs | To file with D5a, when the Sets questions are agreed |
+| REDnode #48 | `/editor/service.call` on the editor channel (way A) | Filed 2026-11-17 |
+| REDnode #48 | Directing a person who was not spawned with the workspot (the owner's question), or else `world.load` leaving out the people a scene directs | Filed 2026-11-17 |
 | REDnode #46 | The measured blend at a jump, and `blend` for each clip of `world.writeWorkspot` if a field sets it | Open; REDnode's next in-game round |
 | REDnode #47 | V in the game: the spike | Open |
 
@@ -170,9 +170,11 @@ What the in-game test answers:
 | Moving an actor along a path | Later |
 | A packed mod | D7 |
 
-## Questions for the owner
+## Questions and the owner's answers
 
-| # | Question | Recommended |
+All agreed as recommended on 2026-11-17.
+
+| # | Question | Agreed |
 |---|---|---|
 | P1 | One player package that is given cue sheets, for D5 and for packed scenes in D7, and not a new package made for each scene? | Yes |
 | P2 | File the REDnode request for a call on the editor channel that reaches a package's service, and use the inbox file only if it is not there in time? | Yes |
@@ -181,3 +183,24 @@ What the in-game test answers:
 | P5 | Play in game always plays from the scene's start in D5? | Yes |
 | P6 | A scene whose clips the game cannot match (`in`, `speed`, a made animation) still plays, after the list is shown? | Yes |
 | P7 | The order: D5b the cue sheet first, since it needs nothing; D5a Sets once its six questions are answered; then D5c and D5d with the in-game test? | Yes |
+
+## What is built
+
+**D5b The cue sheet, EDGEdir 0.0.16 (2026-11-17). Not run in VS Code yet.**
+
+| Part | Where |
+|---|---|
+| The cue sheet and its notes | `src/cues.ts`: `cuesOf(doc)` answers `{ sheet, notes }`, a pure function with no VS Code, page or game in it. `notesFor(notes, track, clip)` picks the notes of one clip; a sequence block gets those of the clips in it, and a clip on a track that is left out gets the track's reason |
+| The inspector | `webview/editor.ts`: a selected clip on an actor track shows **In the game**, with one line for each note (`p.game`, its kind in `data-kind`). The cut at a join with no transition is not repeated there: the line D4 put above it already says it |
+| Unit tests | `test/cues.test.ts`, 7 tests: entries and jumps, two actors in time order, `in`, `speed` and loops, transitions, who is left out, made animations, sequence blocks |
+
+Looked at in a plain browser with the page harness and real clips: a clip given an In of 1 s and a Speed of 2 shows both lines under In the game.
+
+As built, against the plan:
+
+| Point | Built |
+|---|---|
+| An entry's name | The clip's id with every character but letters, digits and `_` made `_`, so a block's inner clip `c5/c2` is `c5_c2`. What names `world.writeWorkspot` takes is **unverified** |
+| A made animation | Left out; the clip after it is not called a cut, since nothing played before it in the game |
+| A track with only clips the game cannot play | Not in the cast, and nobody is spawned for it |
+| The scene-wide list before a play | Not built: it comes with Play in game (D5d) |

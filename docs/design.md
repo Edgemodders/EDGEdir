@@ -259,7 +259,7 @@ A **sequence** is a run of animation clips and transitions for one actor, saved 
 
 ## Sets: the stage from EDGEbuilder
 
-**Proposed on 2026-11-17, from the owner's note of the same day. Not agreed yet: the questions are at the end.** The owner's words for the split: EDGEbuilder and EDGEdir both say "scene" and mean the same place and moment, but each gives a different part of it.
+**Agreed by the owner on 2026-11-17 (all six questions as recommended), from the owner's note of the same day.** The owner's words for the split: EDGEbuilder and EDGEdir both say "scene" and mean the same place and moment, but each gives a different part of it.
 
 | | EDGEbuilder's scene | EDGEdir's scene |
 |---|---|---|
@@ -304,7 +304,7 @@ The owner's proposal: EDGEbuilder's scenes show in EDGEdir as a view, and choosi
 | Point | What it means |
 |---|---|
 | The props | REDnode's `world.load` spawns the set's meshes, entities and people. Where the set is baked into a mod and installed, the props are already there and are not loaded twice (EDGEbuilder's "baked and on" flag) |
-| The people the scene directs | REDnode plays a workspot only on a person spawned with it. So the scene's player spawns each directed person itself, with its written workspot, at the set's mark, and the set must load without them. `world.load` has no way to leave objects out today (**unverified**; a REDnode request with D5's plan) |
+| The people the scene directs | REDnode plays a workspot only on a person spawned with it. So the scene's player spawns each directed person itself, with its written workspot, at the set's mark, and the set must load without them. `world.load` has no way to leave objects out today (**unverified**). The owner asked whether REDnode could find a person who is already there and direct them. Finding is not what stops it (`world.near` finds people): a workspot plays only on a person who carries it, and the person gets it when spawned. Whether a person can be directed through a small object beside them that carries the workspot is **unverified**; REDnode names that way for V on its #47. Asked as REDnode #48: if it works, the scene takes a set's people over where they stand; if not, `world.load` leaves them out and the scene spawns them |
 | A baked set's people | EDGEbuilder does not bake people (its "Baking NPCs is open"), so today people come only from the loaded set or the scene. If they are baked one day, the scene must be able to take one over by its `ref` (**unverified**, later) |
 
 ### Vehicles
@@ -332,9 +332,11 @@ So the vehicle track needs a REDnode spike before it has a plan. Until then a se
 | Props' real meshes in the preview | After D6 |
 | The vehicle track | Its own phase after D6, once EDGEbuilder has the kind and REDnode's spike says what a vehicle can be told to do |
 
-### Questions for the owner
+### Questions and the owner's answers
 
-| # | Question | Recommended |
+All agreed as recommended on 2026-11-17.
+
+| # | Question | Agreed |
 |---|---|---|
 | S1 | In EDGEdir, is an EDGEbuilder scene called a **set** (the view is **Sets**), so the two "scenes" are never mixed up on one screen? | Yes |
 | S2 | Is the set linked and read only in EDGEdir, with many scenes allowed for one set? | Yes |
@@ -449,7 +451,8 @@ So the first route, cues from a package, holds. A clip that moves its actor need
 | EDGEwave | A sound's peaks and a mix's length through its API | D6 |
 | EDGEfab | The split agreed in Q1: its plan drops the animation index and "blend two clips". It imports animations and makes them from video, and stores each by itself in the Library, in the shape "Animations and actors" lists. Retargeting to the game's other rigs | D2 |
 | EDGEbuilder | A `vehicle` kind in its scenes, from `Vehicle.*` records; an id in a scene file; where its scenes are found (EDGEbuilder #6, filed 2026-11-17) | The vehicle track; the set's link |
-| REDnode | `world.load` leaving out the people a scene directs; a spike on what a spawned vehicle can be told to do | D5; the vehicle track |
+| REDnode | A call on the editor channel that reaches a package's service; directing a person not spawned with the workspot, or `world.load` leaving such people out (REDnode #48, filed 2026-11-17) | D5 |
+| REDnode | A spike on what a spawned vehicle can be told to do (not filed yet) | The vehicle track |
 | EDGEkit | Include EDGEdir, once it is published | After the first release |
 
 ## Phases

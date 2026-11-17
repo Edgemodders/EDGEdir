@@ -12,6 +12,7 @@ How to keep it (the Edgemodders convention):
 
 **New**
 
+- In the game: a selected clip's inspector now says what the game will not play as the preview shows it, under **In the game**: a clip that starts inside its animation or plays at another speed, a made animation, a transition (the game blends by itself), and V's track. Playing a scene in the game comes next.
 - The EDGEdir side bar with its own icon and three views, Desk, Library and Animations (Library and Animations are empty until their phases).
 - The scene editor: a `.edgedir` file opens as a timeline with tracks (actor, audio, camera, weather, script, video, AI) and clips. Clips are named blocks for now: add, move, trim by the edge, split, copy and paste, with snap to frames and to other clips, zoom, a playhead with play and loop, and an inspector. Undo, redo and save are VS Code's own.
 - Actors: an actor track gets its actor from a search over your game's characters (about 6,600), with V, the player, on top in either body. The track shows who acts on it; the inspector shows the record, the appearance and the rig. A scene has at most one V.

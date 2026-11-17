@@ -42,6 +42,7 @@ import {
   type Track,
   type TrackKind,
 } from "../src/doc";
+import { cuesOf, notesFor } from "../src/cues";
 import { joinOf, transitionNote } from "../src/pose";
 import { mountPreview } from "./preview";
 
@@ -696,6 +697,19 @@ function drawInspector() {
         note(said.text),
       );
     } else if (track.kind === "actor" && play && bareJoin(track, clip)) box.append(note("No transition leads into this clip: the preview cuts here. The game will blend it briefly by itself."));
+    // D5b: what the game will not play as the preview shows it. The cut at a bare join is said above.
+    if (track.kind === "actor") {
+      const said = notesFor(cuesOf(d).notes, track, clip).filter((n) => n.kind !== "cut");
+      if (said.length) {
+        box.append(heading("In the game"));
+        for (const n of said) {
+          const p = note(n.text);
+          p.classList.add("game");
+          p.dataset.kind = n.kind;
+          box.append(p);
+        }
+      }
+    }
   } else if (sel.size > 1) {
     box.append(heading(`${sel.size} clips`), note("Drag them together, or copy, cut and delete them."));
   } else {

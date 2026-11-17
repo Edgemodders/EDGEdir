@@ -6,13 +6,14 @@ title: Tests
 
 Every test run on EDGEdir: how to run it again, what to expect, and what it showed. Each phase ends with a hand test, run in full by script or by the owner, and spot tests of its main features by the owner ([the release gate](#the-release-gate)); new tests are added here when they are first run, and their later runs' results too.
 
-Last updated 2026-11-16.
+Last updated 2026-11-17.
 
 ## At a glance
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 59 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 66 tests |
+| [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | | Not run yet (0.0.16) |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
@@ -37,7 +38,8 @@ The rounds by script are there so that work does not wait for the owner's testin
 Every hand test (D1, D2, D3) has passed a round run by script in another session (2026-11-16). Still open before a release:
 
 - Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15 has two small changes from the last rerun's notes, not run: see D4b's round 2.)
-- **The owner's spot tests** S1 to S10 below: none run yet.
+- **D5b The cue sheet**, 10 steps, on EDGEdir 0.0.16: not run yet, by script or by hand.
+- **The owner's spot tests** S1 to S11 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
 ## Spot tests for the owner
@@ -58,6 +60,7 @@ One short test per major feature, about 30 minutes in all. Each one names the fu
 | S8 | The 3D preview | Open the scene of S4 to S6 with Judy's track set back to Judy. Drag the playhead through her clips, then press Space. Select V's track and set **Turn (°)** to 180. Drag in the view, then click **Frame** | Two grey bodies stand side by side above the timeline; V's has no head and the line says it stands in for your V. Judy takes the pose under the playhead and plays in time. V turns round. The view orbits, and Frame fits both | D3, 2 to 8, 12 |
 | S9 | Transitions | In the scene of S8, give Judy two clips end to end. Put the playhead near the join, **Add Transition**. Drag the playhead through it, then play. Set **Method** to Inertial and play again. Drag the transition off the second clip's start | The body moves from one clip into the other with no jump, with both methods; say which looks better. Off the second clip's start the transition gets a yellow bar and the inspector says Preview only | D4a, 3 to 8 |
 | S10 | Sequences | In the scene of S9, select Judy's two clips and click **Save as Sequence**; name it and keep the clips. Give a second actor track another woman, select it, and click the **+** on the sequence in the Desk. Play. Double-click the block | The Desk lists the sequence under **Sequences**. One block lands on the second track and that actor plays the same movement. The sequence opens in its own tab with one lane and a grey base body | D4b, 2 to 4, 7 |
+| S11 | What the game will not match | Select one of Judy's clips and type 1 in **In (s)** | **In the game** appears in the inspector and says the game starts the clip from its beginning. From [D5b](#d5b-the-cue-sheet) |
 
 | Round | Date | Spots | Result |
 |---|---|---|---|
@@ -350,3 +353,26 @@ What round 1 found, and what was done:
 | Right after Delete, with the scene open, a block still said the sequence on the Desk had changed | Fixed in 0.0.14: open scenes are told again after a Delete or a Rename on the Desk. Passed round 2 |
 | Save as Sequence with a name the Desk already has said so only after the second question | Fixed in 0.0.14: the name box refuses it. New Sequence too. Passed round 2 |
 | Step 8's text: with the pasted block of step 6 at the end, the first block has little room, so "both blocks are longer" is not always true | The step now says to move the pasted block away first |
+
+## D5b The cue sheet
+
+EDGEdir 0.0.16, built 2026-11-17. It covers D5b: what a scene will not play in the game as the preview shows it, said in the inspector. Nothing plays in the game yet.
+
+**Before you start:** as for D3 Preview. A scene with an actor track (Judy Álvarez) with two animation clips end to end, and a second actor track with V and one clip.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Select Judy's first clip | The inspector has no **In the game** heading |
+| 2 | Type 1 in **In (s)** | **In the game** appears, with one line: in the game the clip starts from the animation's beginning, not from 1 s |
+| 3 | Type 2 in **Speed** | A second line: in the game it plays at normal speed, not at 2 |
+| 4 | Ctrl+Z twice | Both lines and the heading are gone |
+| 5 | Select Judy's second clip | The line from D4 says the preview cuts here and the game blends by itself. No **In the game** heading |
+| 6 | **Add Transition** at the join, and select the transition | Under **In the game**: the game joins the first clip to the second with its own blend, about half a second, not measured; the method, length and ease are the preview's |
+| 7 | Select V's clip | Under **In the game**: V does not play in the game yet, V's track is left out |
+| 8 | Add an Actor track with no actor, put a clip on it with a typed name (no animation), and select it | No **In the game** heading: a block with no animation plays nowhere |
+| 9 | Select Judy's two clips and the transition, **Save as Sequence**, replace them with the block. Select the block | Under **In the game**: the transition's line. Open the sequence in its own tab and select a clip: a sequence plays in the game on an actor, in a scene |
+| 10 | Mute Judy's track and select the block | No **In the game** heading: a muted track is not played |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
