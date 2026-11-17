@@ -13,7 +13,7 @@ Last updated 2026-11-17.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 70 tests |
-| [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | **By script: 11 of 14 (0.0.18). Steps 2, 7 and 9 each missed one expectation**; fixed in 0.0.19, not run again yet |
+| [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | By script: round 1, 11 of 14 (0.0.18: steps 2, 7 and 9 each missed one expectation); round 2, those and step 11 pass on 0.0.19. Every step has passed |
 | [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | 2026-11-17 | By script: 10 of 10 pass (0.0.16); the two changes of 0.0.18 from its notes pass too |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
@@ -40,7 +40,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 
 - Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15's two small changes passed with D5b's round on 2026-11-17.)
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
-- **D5a Sets: steps 2, 7 and 9 each missed one expectation in their round** (a new scene not shown under its set; marks that moved when the set's people changed). Fixed in EDGEdir 0.0.19 with step 11's note; steps 2, 7, 9 and 11 are to be run again.
+- **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20 has one small change from the rerun's notes, not run (the Sets view is read again when a scene is saved). One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **The owner's spot tests** S1 to S12 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -390,7 +390,7 @@ What round 1 found, and what was done:
 
 ## D5a Sets
 
-EDGEdir 0.0.19 (first built as 0.0.17, 2026-11-17). It covers D5a: EDGEbuilder's scenes as sets, a scene made on one, and the link.
+EDGEdir 0.0.20 (first built as 0.0.17, 2026-11-17). It covers D5a: EDGEbuilder's scenes as sets, a scene made on one, and the link.
 
 **Before you start:** as for D3 Preview, and an EDGE Library on this PC (`%APPDATA%\EDGE\library.json` names its root; a scratch one for a scripted round). In a folder of the Library, an EDGEbuilder scene `alley.scene.json` named `My Alley` with two people from `Character.*` records a few metres apart, one of them turned, and two meshes with `bounds`. EDGEbuilder's [scene format](https://edgemodders.github.io/EDGEbuilder/scene.html) has the shape; a file written by hand is fine. Put a copy in a folder ending `.bake` too.
 
@@ -414,13 +414,21 @@ EDGEdir 0.0.19 (first built as 0.0.17, 2026-11-17). It covers D5a: EDGEbuilder's
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | 2026-11-17 | 1 to 14, on 0.0.18 at `49c92a2` | **11 of 14: steps 2, 7 and 9 each missed one expectation.** Run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk, cache and EDGE Library, REDbridge 0.14.0, the real game folder read only; judged from the Sets view's rows, the inspector, `edgedirPreview.state()`, the saved file, the status bar and screenshots; nobody watched it live). By sight in step 3: two bodies about four metres apart, one turned a quarter turn, and two boxes on the floor as light grey outlines, one of them turned 45 degrees. The Sets view, its commands and a real set file all work inside VS Code. With it, 0.0.18's two changes passed: In the game is in view under Name and Start, and a sequence's own tab shows none |
+| 2 | 2026-11-17 | 2, 7, 9 and 11, on 0.0.19 at `0d62e8f`, with a fresh scene | **Pass, 4 of 4**, by script in the EDGEweb session, as before; by the numbers, not by sight. The new scene shows under its set at once. With one person moved and one added, the status bar says 1 actor moved, and nobody else's mark changes. A track whose person is gone keeps its mark. The same set chosen again under its new file name keeps the tracks of the people it still has, and offers nothing to add. Every step has now passed |
 
 What round 1 found, and what was done:
 
 | Found | Done |
 |---|---|
-| Step 2: the new scene was not shown under its set. The set's row had a twistie but stayed shut, also after Refresh | Fixed in 0.0.19: a set's row that gets its first scene is a new row to VS Code, so it shows open. Not run yet |
-| Steps 7 and 9, one cause: the scene's origin was the middle of the set's people as they are now, so a person added, moved or removed moved the origin and with it every mark. Step 7 said 2 actors moved when one had. In step 9 the person who was gone kept an old mark against a new origin, and so stood 1.4 m from where the set had her | **Fixed in 0.0.19:** the origin is set when the set is chosen and stays there. A mark changes only when its person moves in the world, and a track whose person is gone keeps its place. Unit tested; not run yet |
-| Step 11: the same set chosen again under its new file name unlinked every track and offered to add its people a second time | Fixed in 0.0.19: a set of the same name picks the link up where it was. Tracks keep the person they came from when the set still has them, and the origin stays. Step 11 now expects that. Unit tested; not run yet |
+| Step 2: the new scene was not shown under its set. The set's row had a twistie but stayed shut, also after Refresh | Fixed in 0.0.19: a set's row that gets its first scene is a new row to VS Code, so it shows open. Passed round 2 |
+| Steps 7 and 9, one cause: the scene's origin was the middle of the set's people as they are now, so a person added, moved or removed moved the origin and with it every mark. Step 7 said 2 actors moved when one had. In step 9 the person who was gone kept an old mark against a new origin, and so stood 1.4 m from where the set had her | **Fixed in 0.0.19:** the origin is set when the set is chosen and stays there. A mark changes only when its person moves in the world, and a track whose person is gone keeps its place. Passed round 2 |
+| Step 11: the same set chosen again under its new file name unlinked every track and offered to add its people a second time | Fixed in 0.0.19: a set of the same name picks the link up where it was. Tracks keep the person they came from when the set still has them, and the origin stays. Step 11 now expects that. Passed round 2 |
 | With a track selected, the Set section is the last thing in the inspector and below the fold at 1440 by 900 | Left: the section is in view with no track's fields above it only in a short scene. To look at with D5d, which adds to the inspector |
 | The scene made on a set is offered the set's name, so both are "My Alley" in two views | Left as it is |
+
+What round 2 found, and what was done:
+
+| Found | Done |
+|---|---|
+| After a scene's set was chosen and the scene saved, the Sets view did not list the scene under the set until Refresh | Changed in 0.0.20: the view is read again when a scene is saved. Not run yet |
+| Once, after step 11's pick, a message said the scene's unsaved changes were put back from before the window reloaded, though the window had not reloaded. Before it the scene had been opened unsaved (a new hash), saved, closed, and opened again with the set's file renamed | **Open.** Not reproduced and not explained from the code: the page puts unsaved edits back when its kept copy differs from the saved file it was based on, and here a kept copy seems to have outlived a save and close. Nothing was lost. To watch for in later rounds |

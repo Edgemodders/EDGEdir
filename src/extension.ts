@@ -297,6 +297,8 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
   // A sequence was saved: every open scene that links it takes it, and the Desk shows its new time.
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(async (saved) => {
+      // A saved scene may have a new set: the Sets view lists it under that set.
+      if (saved.uri.path.toLowerCase().endsWith(".edgedir")) setsView.refresh();
       if (!isSeqFile(saved.uri.path)) return;
       desk.refresh();
       for (const d of scenes.documents()) await sequences.sync(d);

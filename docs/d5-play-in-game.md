@@ -4,7 +4,7 @@ title: D5 Play in game
 
 # <span class="y">D5</span> Play in game
 
-**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). D5b The cue sheet (EDGEdir 0.0.16; its hand test passed by script) and D5a Sets (0.0.17; its hand test by script missed three steps, fixed in 0.0.19, not run again yet) are built. D5c and D5d are not built.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
+**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). D5b The cue sheet (EDGEdir 0.0.16; its hand test passed by script) and D5a Sets (0.0.17; its hand test passed by script after fixes in 0.0.19) are built. D5c and D5d are not built.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
 
 D5 is the fifth phase of the [design](design.html). A scene's actor tracks play on real people in the running game, started from VS Code. Audio, camera and weather tracks are D6. A mod a player installs is D7.
 
@@ -194,7 +194,7 @@ All agreed as recommended on 2026-11-17.
 | The inspector | `webview/editor.ts`: a selected clip on an actor track shows **In the game**, with one line for each note (`p.game`, its kind in `data-kind`). The cut at a join with no transition is not repeated there: the line D4 put above it already says it |
 | Unit tests | `test/cues.test.ts`, 7 tests: entries and jumps, two actors in time order, `in`, `speed` and loops, transitions, who is left out, made animations, sequence blocks |
 
-**D5a Sets, EDGEdir 0.0.17 (2026-11-17). Its hand test by script passed 11 of 14 steps on 0.0.18; the three misses are fixed in 0.0.19 and not run again yet ([Tests](testing.html)).**
+**D5a Sets, EDGEdir 0.0.17 (2026-11-17). Its hand test by script passed 11 of 14 steps on 0.0.18; the three misses were fixed in 0.0.19 and passed their rerun ([Tests](testing.html)).**
 
 | Part | Where |
 |---|---|
