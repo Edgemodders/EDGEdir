@@ -279,7 +279,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       else if (clip?.state === "failed") fail(clip.error, `"${cw.name}"`);
       else loading++;
     }
-    for (const [reason, what] of failed) lines.unshift(`Not loaded: ${what.length > 3 ? `${what.slice(0, 3).join(", ")} and ${what.length - 3} more` : what.join(", ")}. ${reason}. Frame tries again`);
+    for (const [reason, what] of failed) lines.unshift(`Not loaded: ${what.length > 3 ? `${what.slice(0, 3).join(", ")} and ${what.length - 3} more` : what.join(", ")}. ${reason.replace(/[.\s]+$/, "")}. Frame tries again`);
     if (loading) lines.unshift(`Loading ${loading} file${loading === 1 ? "" : "s"} from the game…`);
     if (doc && !tracks.length) lines.push(doc.tracks.some((t) => t.kind === "actor") ? "Choose an actor on an actor track, and its body stands here." : "Add an actor track and choose an actor, and its body stands here.");
     noteEl.textContent = lines.join("  ·  ");

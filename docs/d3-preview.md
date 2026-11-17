@@ -4,7 +4,7 @@ title: D3 Preview
 
 # <span class="y">D3</span> Preview
 
-**Status: agreed by the owner on 2026-11-16 (all four questions as recommended) and built the same day (EDGEdir 0.0.9; now 0.0.10).** Its hand test passed a round by script in VS Code on 2026-11-16, 17 of 17 ([Tests](testing.html), "D3 Preview"); 0.0.10 has four fixes from that round's notes, not run yet. What is built, and what differs from the plan, is at the end.
+**Status: agreed by the owner on 2026-11-16 (all four questions as recommended) and built the same day (EDGEdir 0.0.9; now 0.0.11).** Its hand test passed a round by script in VS Code on 2026-11-16, 17 of 17 ([Tests](testing.html), "D3 Preview"); the four fixes from that round's notes passed a second round on 0.0.10. What is built, and what differs from the plan, is at the end.
 
 D3 is the third phase of the [design](design.html). It fills the empty area above the timeline with a 3D view: each actor's body, playing the clip under the playhead. It needs the game's files and REDbridge 0.14.0, not the game running. Nothing in D3 plays in the game (D5).
 
