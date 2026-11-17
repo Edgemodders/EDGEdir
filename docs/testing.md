@@ -14,7 +14,7 @@ Last updated 2026-11-17.
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 75 tests |
 | [D5 in the game](#d5-in-the-game) | In the game, on the owner's PC | D5c, D5d | | Not run yet (0.0.23, EDGEdir Player 0.1.0) |
-| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: 13 of 13 pass (0.0.22); one fix from its notes in 0.0.23, not run |
+| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes |
 | [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | By script: round 1, 11 of 14 (0.0.18: steps 2, 7 and 9 each missed one expectation); round 2, those and step 11 pass on 0.0.19. Every step has passed |
 | [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | 2026-11-17 | By script: 10 of 10 pass (0.0.16); the two changes of 0.0.18 from its notes pass too |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
@@ -43,7 +43,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15's two small changes passed with D5b's round on 2026-11-17.)
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
-- **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). One fix from its notes is in 0.0.23, not run: a tab whose scene's play was taken over by another scene says so. The copy of the player into the game's folder has not run: the round chose Cancel there.
+- **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
 - **D5 in the game**, 10 steps, on the owner's PC: not run yet. The player has not run in the game at all.
 - **The owner's spot tests** S1 to S13 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
@@ -465,12 +465,14 @@ EDGEdir 0.0.23 (first built as 0.0.21, 2026-11-17). It covers D5d's part in VS C
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | 2026-11-17 | 1 to 13, on 0.0.22 at `62ce1c3` | **Pass, 13 of 13.** Run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk, cache and Library, REDbridge 0.14.0, the real game folder read only, the stand-in at player 0.1.0; judged from the button, the line and its colour, the time, the status, the questions' text and the stand-in's output, the page sampled about every 120 ms; nobody watched it live). Step 3 met the no-player case: the question named the game's REDnode apps folder, Cancel was chosen, and nothing was written into the game's folder. In step 11 the set was loaded without the directed person, who was spawned at the set's place for her. In step 13 the line turned red 2.8 s after the stand-in was killed. With it, 0.0.20's change passed: a scene is listed under its set right after it is saved |
+| 2 | 2026-11-17 | 9, on 0.0.23 at `ee1f349` | **Pass.** By script in the EDGEweb session, as before. The first tab's button reads Play in Game and its line says another scene plays in the game now, not in red; the second tab plays and stops as it should. Nothing was written to the game's folder |
 
 What round 1 found, and what was done:
 
 | Found | Done |
 |---|---|
-| Step 9: after a second scene took the play over, the first scene's tab still read Stop in Game and Playing in the game | Fixed in 0.0.23: the tab whose scene was playing is told that another scene plays in the game now, and its button reads Play in Game. Step 9 now expects that. Not run yet |
+| Step 9: after a second scene took the play over, the first scene's tab still read Stop in Game and Playing in the game | Fixed in 0.0.23: the tab whose scene was playing is told that another scene plays in the game now, and its button reads Play in Game. Step 9 now expects that. Passed round 2 |
+| Round 2: after the second scene was stopped, the first tab's line still said another scene plays in the game. Its playhead stood where it was when the tab was left | Left: the line is replaced at the tab's next play, and a hidden tab's page does not run |
 | Spawning 1 person and The workspots are as they were went by too fast for the sampling; both are in the stand-in's output | Left: the stand-in answers in 30 ms, the game does not |
 | A scene on a set: the workspots are written before the set is loaded | As meant. Step 11's text says so now |
 | Step 2's list has the cut before V's line | The step's text follows the list now |
