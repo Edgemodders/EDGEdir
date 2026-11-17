@@ -13,8 +13,8 @@ Last updated 2026-11-17.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 70 tests |
-| [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | | Not run yet (0.0.17) |
-| [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | | Not run yet (0.0.16) |
+| [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | | Not run yet (0.0.18) |
+| [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | 2026-11-17 | By script: 10 of 10 pass (0.0.16); two changes from its notes in 0.0.18, not run |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
@@ -38,9 +38,9 @@ The rounds by script are there so that work does not wait for the owner's testin
 
 Every hand test (D1, D2, D3) has passed a round run by script in another session (2026-11-16). Still open before a release:
 
-- Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15 has two small changes from the last rerun's notes, not run: see D4b's round 2.)
-- **D5b The cue sheet**, 10 steps, on EDGEdir 0.0.16: not run yet, by script or by hand.
-- **D5a Sets**, 14 steps, on EDGEdir 0.0.17: not run yet. The Sets view and its commands have not run in VS Code at all.
+- Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15's two small changes passed with D5b's round on 2026-11-17.)
+- **D5b The cue sheet** passed its round by script (10 of 10). Two changes from its notes are in 0.0.18, not run: In the game sits near the top of the inspector, and is not shown in a sequence's own tab.
+- **D5a Sets**, 14 steps, on EDGEdir 0.0.18: not run yet. The Sets view and its commands have not run in VS Code at all.
 - **The owner's spot tests** S1 to S12 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -359,7 +359,7 @@ What round 1 found, and what was done:
 
 ## D5b The cue sheet
 
-EDGEdir 0.0.16, built 2026-11-17. It covers D5b: what a scene will not play in the game as the preview shows it, said in the inspector. Nothing plays in the game yet.
+EDGEdir 0.0.18 (first built as 0.0.16, 2026-11-17). It covers D5b: what a scene will not play in the game as the preview shows it, said in the inspector. Nothing plays in the game yet.
 
 **Before you start:** as for D3 Preview. A scene with an actor track (Judy Álvarez) with two animation clips end to end, and a second actor track with V and one clip.
 
@@ -373,16 +373,24 @@ EDGEdir 0.0.16, built 2026-11-17. It covers D5b: what a scene will not play in t
 | 6 | **Add Transition** at the join, and select the transition | Under **In the game**: the game joins the first clip to the second with its own blend, about half a second, not measured; the method, length and ease are the preview's |
 | 7 | Select V's clip | Under **In the game**: V does not play in the game yet, V's track is left out |
 | 8 | Add an Actor track with no actor, put a clip on it with a typed name (no animation), and select it | No **In the game** heading: a block with no animation plays nowhere |
-| 9 | Select Judy's two clips and the transition, **Save as Sequence**, replace them with the block. Select the block | Under **In the game**: the transition's line. Open the sequence in its own tab and select a clip: a sequence plays in the game on an actor, in a scene |
+| 9 | Select Judy's two clips and the transition, **Save as Sequence**, replace them with the block. Select the block | Under **In the game**: the transition's line. Open the sequence in its own tab and select a clip: no **In the game** heading there (changed in 0.0.18; before, every clip said a sequence plays in the game on an actor, in a scene) |
 | 10 | Mute Judy's track and select the block | No **In the game** heading: a muted track is not played |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet |
+| 1 | 2026-11-17 | 1 to 10, on 0.0.16 at `18404f8` | **Pass, 10 of 10**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk and cache, REDbridge 0.14.0, the real game folder read only; judged from the inspector's headings and its `p.game` lines, the saved file and screenshots; nobody watched it live). The two unrun changes of 0.0.15 passed with it: after a Rename the status bar counted both blocks, and the Sequences heading went with the last sequence |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| With a clip's full list of fields, **In the game** was below the fold of the inspector in a 1440 by 900 window: a tester may not see it appear | Changed in 0.0.18: the section sits near the top, under Name and Start. Not run yet |
+| In a sequence's own tab every clip said the same line (a sequence plays in the game on an actor, in a scene), which reads as a warning about that clip | Changed in 0.0.18: that line is not shown in a sequence's own tab. Step 9's last part now expects no **In the game** there. Not run yet |
+| On V's track only the line about V shows; In and Speed add none | As meant: the track is left out first |
 
 ## D5a Sets
 
-EDGEdir 0.0.17, built 2026-11-17. It covers D5a: EDGEbuilder's scenes as sets, a scene made on one, and the link.
+EDGEdir 0.0.18 (first built as 0.0.17, 2026-11-17). It covers D5a: EDGEbuilder's scenes as sets, a scene made on one, and the link.
 
 **Before you start:** as for D3 Preview, and an EDGE Library on this PC (`%APPDATA%\EDGE\library.json` names its root; a scratch one for a scripted round). In a folder of the Library, an EDGEbuilder scene `alley.scene.json` named `My Alley` with two people from `Character.*` records a few metres apart, one of them turned, and two meshes with `bounds`. EDGEbuilder's [scene format](https://edgemodders.github.io/EDGEbuilder/scene.html) has the shape; a file written by hand is fine. Put a copy in a folder ending `.bake` too.
 

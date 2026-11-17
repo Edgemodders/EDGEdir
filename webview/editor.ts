@@ -703,14 +703,17 @@ function drawInspector() {
     } else if (track.kind === "actor" && play && bareJoin(track, clip)) box.append(note("No transition leads into this clip: the preview cuts here. The game will blend it briefly by itself."));
     // D5b: what the game will not play as the preview shows it. The cut at a bare join is said above.
     if (track.kind === "actor") {
-      const said = notesFor(cuesOf(d).notes, track, clip).filter((n) => n.kind !== "cut");
+      // In a sequence's own tab every clip would say the same thing (it plays on an actor, in a scene): left out there.
+      const said = notesFor(cuesOf(d).notes, track, clip).filter((n) => n.kind !== "cut" && !(seqMode && n.kind === "standIn"));
       if (said.length) {
-        box.append(heading("In the game"));
+        // Near the top, under Name and Start: below the clip's other fields it was out of view in a short inspector.
+        const before = box.children[3] ?? null;
+        box.insertBefore(heading("In the game"), before);
         for (const n of said) {
           const p = note(n.text);
           p.classList.add("game");
           p.dataset.kind = n.kind;
-          box.append(p);
+          box.insertBefore(p, before);
         }
       }
     }
