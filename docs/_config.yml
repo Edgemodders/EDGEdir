@@ -34,6 +34,8 @@ nav:
     url: /d4-transitions.html
   - title: D5 Play in game
     url: /d5-play-in-game.html
+  - title: D6 Audio, camera, weather
+    url: /d6-audio-camera-weather.html
   - title: Extension API
     url: /api.html
   - title: Tests

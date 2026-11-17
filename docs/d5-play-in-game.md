@@ -4,7 +4,7 @@ title: D5 Play in game
 
 # <span class="y">D5</span> Play in game
 
-**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). D5b The cue sheet (EDGEdir 0.0.16; its hand test passed by script) and D5a Sets (0.0.17; its hand test passed by script after fixes in 0.0.19) are built. D5c and D5d are not built.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
+**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). All four parts are built: D5b The cue sheet (EDGEdir 0.0.16), D5a Sets (0.0.17), D5c The player and D5d Play in game (0.0.21). Every hand test in VS Code has passed by script; the player has not run in the game yet.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
 
 D5 is the fifth phase of the [design](design.html). A scene's actor tracks play on real people in the running game, started from VS Code. Audio, camera and weather tracks are D6. A mod a player installs is D7.
 
