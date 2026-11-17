@@ -74,8 +74,12 @@ test("the scene follows its set: a moved person, one gone, one new", () => {
   const r = syncSet(doc, now, "sha256:2");
   doc = r.doc;
   assert.equal(r.moved, 1);
-  assert.deepEqual([setOf(doc)?.hash, setOf(doc)?.origin], ["sha256:2", [-1191, 1500, 20]]);
-  assert.deepEqual(markOf(doc, "t2"), { x: 1, y: 0, yaw: 0 });
+  // The origin stays where it was when the set was chosen: only who moved has a new mark.
+  assert.deepEqual([setOf(doc)?.hash, setOf(doc)?.origin], ["sha256:2", [-1199, 1501, 20]]);
+  assert.deepEqual(markOf(doc, "t2"), { x: 9, y: -1, yaw: 0 });
+  // A new person and nobody moved: nothing moves.
+  const more = parseSet(alley([object("ana_spot", "npc", [-1200, 1500, 20], { record: "Character.Ana" }), object("bo_spot", "npc", [-1190, 1500, 20], { record: "Character.Bo" }), object("cy_spot", "npc", [-1192, 1500, 20], { record: "Character.Cy" })]));
+  assert.equal(syncSet(doc, more, "sha256:3").moved, 0);
   // Ana's track keeps its place and says so; Cy is offered.
   assert.deepEqual(markOf(doc, "t1"), { x: -1, y: -1, yaw: 0 });
   const stage = stageOf(doc, now)!;
@@ -83,8 +87,16 @@ test("the scene follows its set: a moved person, one gone, one new", () => {
   assert.deepEqual(freshPeople(doc, now).map((p) => p.id), ["cy_spot"]);
   doc = addSetPeople(doc, now).doc;
   assert.deepEqual([doc.tracks[2].name, fromOf(doc.tracks[2]), stageOf(doc, now)!.fresh], ["Cy", "cy_spot", 0]);
+  assert.deepEqual(markOf(doc, "t3"), { x: 7, y: -1, yaw: 0 });
+  // The same set chosen again (its file renamed): the tracks of people it still has stay linked, and the origin stays.
+  const again = chooseSet(doc, linkTo("library", "lane.scene.json", now, "sha256:2"), now);
+  assert.deepEqual([setOf(again)?.path, setOf(again)?.origin, again.tracks.map(fromOf)], ["lane.scene.json", [-1199, 1501, 20], [undefined, "bo_spot", "cy_spot"]]);
+  assert.equal(freshPeople(again, now).length, 0);
+  // Another set: the tracks are the scene's own.
+  const other = parseSet(JSON.stringify({ format: 2, name: "Yard", objects: [object("bo_spot", "npc", [0, 0, 0], { record: "Character.Bo" })] }));
+  assert.deepEqual(chooseSet(doc, linkTo("library", "yard.scene.json", other, "sha256:9"), other).tracks.map(fromOf), [undefined, undefined, undefined]);
   // The props, from the scene's origin, for the preview's boxes: only those with a size.
-  assert.deepEqual(stage.props, [{ id: "crate", x: -8, y: 3, z: 0, yaw: 0, size: [2, 2, 1.2], centre: [0, 0, 0.6] }]);
+  assert.deepEqual(stage.props, [{ id: "crate", x: 0, y: 2, z: 0, yaw: 0, size: [2, 2, 1.2], centre: [0, 0, 0.6] }]);
   // A set that is not there: the scene keeps what it has.
   assert.deepEqual(stageOf(doc, undefined, "Gone"), { name: "My Alley", state: "missing", why: "Gone", people: 0, vehicles: 0, gone: [], fresh: 0, props: [] });
   assert.equal(stageOf(newDoc("S"), now), undefined);

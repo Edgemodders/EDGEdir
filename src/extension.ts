@@ -241,7 +241,9 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         if (!set) return;
         const info = parseSet(fs.readFileSync(set.file, "utf8"));
         const link = linkTo(set.where, set.path, info, hashOf(fs.readFileSync(set.file, "utf8")));
-        await applyEdit(document, (d) => chooseSet(d, link));
+        await applyEdit(document, (d) => chooseSet(d, link, info));
+        // A set chosen again keeps its people's tracks: they stand where it has them now.
+        await sets.sync(document);
         setsView.refresh();
         const fresh = freshPeople(sceneIn(document), info).length;
         if (fresh) void vscode.window.showInformationMessage(`EDGEdir: the scene plays on "${set.name}" now. Add ${fresh === 1 ? "its person" : `its ${fresh} people`} as tracks with the button under Set.`);

@@ -76,6 +76,8 @@ export class SetsView implements vscode.TreeDataProvider<SetItem> {
     t.description = s.error ? "cannot be read" : `${count(s.people, "person", "people")}${s.vehicles ? `, ${count(s.vehicles, "vehicle")}` : ""}, ${count(s.props, "prop")}`;
     t.tooltip = s.error ? `${s.file}\n${s.error}` : `${s.file}\nAn EDGEbuilder scene. New Scene on This Set makes a scene that plays on it, with a track for each person`;
     t.contextValue = s.error ? "setBroken" : "set";
+    // A row that gets its first scene is a new row to VS Code, so it shows open: one made with no children stays shut.
+    t.id = `${s.where}|${s.path}|${this.scenesOn(s).length ? "open" : "leaf"}`;
     return t;
   }
 }

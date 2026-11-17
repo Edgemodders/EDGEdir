@@ -48,7 +48,7 @@ export interface SetLink {
   name: string;
   /** The file's content hash when the scene last read it. */
   hash: string;
-  /** The scene's origin in the world: the middle of the set's people. */
+  /** The scene's origin in the world: the middle of the set's people when the set was chosen. It stays there, so a mark changes only when its person moves. */
   origin: [number, number, number];
 }
 
@@ -107,15 +107,15 @@ export function originOf(info: SetInfo): [number, number, number] {
   return [r3(at.reduce((s, p) => s + p.x, 0) / at.length), r3(at.reduce((s, p) => s + p.y, 0) / at.length), r3(Math.min(...at.map((p) => p.z)))];
 }
 
-/** Where a person of the set stands, from the scene's origin. */
-export function markIn(info: SetInfo, person: SetPerson): Mark {
-  const [ox, oy] = originOf(info);
+/** Where a person of the set stands, from a scene's origin (the set's own middle when none is given). */
+export function markIn(info: SetInfo, person: SetPerson, origin = originOf(info)): Mark {
+  const [ox, oy] = origin;
   return { x: r3(person.x - ox), y: r3(person.y - oy), yaw: person.yaw };
 }
 
 /** The set's props from the scene's origin, for the preview's boxes: those the file gives a size for. */
-export function stageProps(info: SetInfo): { id: string; x: number; y: number; z: number; yaw: number; size: [number, number, number]; centre: [number, number, number] }[] {
-  const [ox, oy, oz] = originOf(info);
+export function stageProps(info: SetInfo, origin = originOf(info)): { id: string; x: number; y: number; z: number; yaw: number; size: [number, number, number]; centre: [number, number, number] }[] {
+  const [ox, oy, oz] = origin;
   return info.props.filter((p) => p.size && p.centre).map((p) => ({ id: p.id, x: r3(p.x - ox), y: r3(p.y - oy), z: r3(p.z - oz), yaw: p.yaw, size: p.size!, centre: p.centre! }));
 }
 
@@ -131,7 +131,7 @@ export const fromOf = (track: Track): string | undefined => (typeof track.from =
 
 /** An actor track for a person of the set, empty, standing where the set has them. */
 function trackFor(doc: SceneDoc, info: SetInfo, p: SetPerson, actor: Actor | undefined): Track {
-  const who: Actor = { ...(actor ?? { ...(p.record ? { record: p.record } : {}), ...(p.entity ? { entity: p.entity } : {}), name: p.record?.replace(/^Character\./, "") ?? p.id }), at: markIn(info, p) };
+  const who: Actor = { ...(actor ?? { ...(p.record ? { record: p.record } : {}), ...(p.entity ? { entity: p.entity } : {}), name: p.record?.replace(/^Character\./, "") ?? p.id }), at: markIn(info, p, setOf(doc)?.origin) };
   let name = who.name ?? p.id;
   for (let n = 2; doc.tracks.some((t) => t.name === name); n++) name = `${who.name ?? p.id} ${n}`;
   return { id: nextTrackId(doc), kind: "actor", name, from: p.id, actor: who, clips: [] };
@@ -158,9 +158,17 @@ export function addSetPeople(doc: SceneDoc, info: SetInfo, actors: Record<string
   return { doc: next, added };
 }
 
-/** Gives a scene a set: it plays where the set is. Its tracks stay; the set's people come with `addSetPeople`. */
-export function chooseSet(doc: SceneDoc, link: SetLink): SceneDoc {
-  return { ...doc, anchor: { mode: "set" }, set: link, tracks: doc.tracks.map((t) => withoutFrom(t)) };
+/**
+ * Gives a scene a set: it plays where the set is. Its tracks stay; the set's people come with
+ * `addSetPeople`. When the scene had a set of the same name (the same set under a new file name,
+ * or chosen again), the link picks up where it was: the origin stays, and tracks keep the person
+ * they came from when `info` still has them.
+ */
+export function chooseSet(doc: SceneDoc, link: SetLink, info?: SetInfo): SceneDoc {
+  const was = setOf(doc);
+  const again = !!was && !!info && was.name === link.name;
+  const ids = new Set(info?.people.map((p) => p.id));
+  return { ...doc, anchor: { mode: "set" }, set: again ? { ...link, origin: was!.origin } : link, tracks: doc.tracks.map((t) => (again && ids.has(fromOf(t) ?? "") ? t : withoutFrom(t))) };
 }
 
 /** Takes the set off: the scene plays in front of V again. Tracks and marks stay, and are the scene's own. */
@@ -176,7 +184,7 @@ function withoutFrom(t: Track): Track {
 }
 
 /**
- * Brings a scene up to its set as it is now: the link's name, hash and origin, and the mark of every
+ * Brings a scene up to its set as it is now: the link's name and hash, and the mark of every
  * track that came from a person of the set. A track whose person is gone keeps its mark and clips.
  * The same document comes back when nothing changed.
  */
@@ -187,13 +195,14 @@ export function syncSet(doc: SceneDoc, info: SetInfo, hash: string): { doc: Scen
   const tracks = doc.tracks.map((t) => {
     const person = info.people.find((p) => p.id === fromOf(t));
     if (!person || !t.actor) return t;
-    const mark = markIn(info, person);
+    const mark = markIn(info, person, link.origin);
     const at = t.actor.at as Partial<Mark> | undefined;
     if (at && at.x === mark.x && at.y === mark.y && at.yaw === mark.yaw) return t;
     moved++;
     return { ...t, actor: { ...t.actor, at: mark } };
   });
-  const now: SetLink = { ...link, name: info.name, hash, origin: originOf(info) };
+  // The origin stays where it was when the set was chosen: people who did not move keep their marks, and so does one who is gone.
+  const now: SetLink = { ...link, name: info.name, hash };
   const same = !moved && JSON.stringify(now) === JSON.stringify(link);
   return { doc: same ? doc : { ...doc, anchor: { mode: "set" }, set: now, tracks }, moved };
 }
@@ -227,6 +236,6 @@ export function stageOf(doc: SceneDoc, info: SetInfo | undefined, why?: string):
     vehicles: info.vehicles,
     gone: doc.tracks.filter((t) => fromOf(t) !== undefined && !ids.has(fromOf(t)!)).map((t) => t.id),
     fresh: freshPeople(doc, info).length,
-    props: stageProps(info),
+    props: stageProps(info, link.origin),
   };
 }
