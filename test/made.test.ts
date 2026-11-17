@@ -99,7 +99,15 @@ test("the API's search covers the game, the project and the Library, and says ho
     refresh: async () => {},
     onDidChange: () => ({ dispose() {} }),
     made: () => ({ project: [{ ...lib[1], source: "project" as const, seconds: 3 }], library: lib }),
-    entity: async (p: string) => ({ rig: W, appearances: [], sets: p === "ana.ent" ? [{ path: "A\\SIT.anims", use: "gameplay" as const, priority: 0 }] : [] }),
+    entity: async (p: string) => {
+      const own =
+        p === "ana.ent"
+          ? [{ path: "A\\SIT.anims", use: "gameplay" as const, priority: 0 }]
+          : p === "both.ent"
+            ? [{ path: "a\\walk.anims", use: "gameplay" as const, priority: 0 }, { path: "a\\sit.anims", use: "cinematics" as const, priority: 0 }]
+            : [];
+      return { rig: W, appearances: [], sets: own, components: [{ name: "root", rig: W, sets: own }] };
+    },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const api = makeApi("9.9.9", game as any);
@@ -118,7 +126,12 @@ test("the API's search covers the game, the project and the Library, and says ho
   assert.deepEqual([cut.total, cut.items.length], [5, 2]);
   const made = (await api.searchAnimations({ text: "spin", source: ["project"] })).items[0];
   assert.deepEqual([made.id, made.seconds, made.frames, !!made.file], ["aaaa", 3, 91, true]);
-  assert.deepEqual(await api.entityAnimSets("ana.ent"), { rig: W, sets: [{ path: "A\\SIT.anims", use: "gameplay", priority: 0 }] });
+  const own = [{ path: "A\\SIT.anims", use: "gameplay", priority: 0 }];
+  assert.deepEqual(await api.entityAnimSets("ana.ent"), { rig: W, sets: own, components: [{ name: "root", rig: W, sets: own }] });
+  // An entity's animations come in the entity's order of files, not by path.
+  assert.deepEqual(await names({ entity: { path: "both.ent" } }), ["game:walk", "game:sit_loop", "game:sit_spin"]);
+  // The game's animations do not say whether they loop.
+  assert.equal("loop" in (await api.searchAnimations({ source: ["game"] })).items[0], false);
 
   // Before the game is read: nothing of the game, the made animations still.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

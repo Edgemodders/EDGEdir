@@ -111,7 +111,12 @@ test("an entity gives the body's rig, its appearances and the sets it carries", 
   // No component called root: the first that is not a deformations rig.
   assert.equal(readEntity(entity([animated("deformations", "x\\deformations_rigs\\d.rig"), animated("body", body)])).rig, body);
   // Nothing animated: no rig, and no error.
-  assert.deepEqual(readEntity(entity([])), { rig: "", appearances: ["ana_default", "ana_coat"], sets: [] });
+  assert.deepEqual(readEntity(entity([])), { rig: "", appearances: ["ana_default", "ana_coat"], sets: [], components: [] });
+  // An object with more than one animated part: the body first, deformations left out.
+  assert.deepEqual(
+    readEntity(entity([animated("doors", "x\\doors.rig", ["a\\doors.anims"]), animated("deformations", "x\\deformations_rigs\\d.rig"), animated("root", body, ["a\\one.anims"])])).components.map((c) => `${c.name}:${c.rig}:${c.sets.length}`),
+    [`root:${body}:1`, "doors:x\\doors.rig:1"],
+  );
   assert.throws(() => readEntity("{"), /cannot be read/);
   assert.throws(() => readEntity('{"Data":{"RootChunk":{"$type":"CMesh"}}}'), /not an entity/);
 

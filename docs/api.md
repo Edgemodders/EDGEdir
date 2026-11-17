@@ -31,8 +31,8 @@ Use it only when EDGEdir is already active, as the tools do with REDcode's. Copy
 | `indexState()` | How far the index of the game's animations is: `level` (`"none"`: the game is not read; `"sets"`: the files are listed, the animations inside not yet, or the REDbridge is 0.13.0 or older; `"clips"`: complete), `game`, `sets`, `clips`, `building` |
 | `buildIndex()` | Finds the game and reads what is not read yet, with EDGEdir's own progress notes. Resolves when the file list is there. The animations inside the files go on in the background, about four minutes once per game version; listen to `onDidChangeIndex` |
 | `onDidChangeIndex` | The index or the made animations changed |
-| `searchAnimations(query)` | The animations a query finds: `{ total, items }`. Made animations come first, the open project's copy in place of the Library's |
-| `entityAnimSets(path, appearance?)` | The body's rig of an entity, and the animation files it lists, gameplay before cinematics. `appearance` is taken but not read yet: the appearance's own file may add files |
+| `searchAnimations(query)` | The animations a query finds: `{ total, items }`. The order is stable: made animations first (the open project's copy in place of the Library's); then the game's, file by file, each file's animations in the file's own order. With `entity`, the files come in the entity's order (gameplay first, then cinematics, as the entity lists them); without it, by path. `text` matches words in the animation's name or anywhere in its file's game path, folders too. A made animation that loops has `loop: true`; the game's have no `loop` |
+| `entityAnimSets(path, appearance?)` | The body's rig of an entity, and the animation files it lists, gameplay before cinematics. `components` has the same for every animated component that names a rig (`{ name, rig, sets }`, the body first, deformations rigs left out), for an object with more than one: `rig` and `sets` are the first one's. `appearance` is taken but not read yet: the appearance's own file may add files |
 
 ```ts
 interface AnimationQuery {

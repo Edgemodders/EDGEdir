@@ -23,6 +23,8 @@ export interface AnimationInfo {
   rootMotion: boolean;
   /** A made animation's glTF on disk, when it is there. */
   file?: string;
+  /** A made animation that is made to loop. Absent on the game's: their files do not say. */
+  loop?: boolean;
 }
 
 export interface AnimationQuery {
@@ -38,6 +40,12 @@ export interface AnimationQuery {
   limit?: number;
 }
 
+export interface EntitySet {
+  path: string;
+  use: "gameplay" | "cinematics";
+  priority: number;
+}
+
 export interface EDGEdirApi {
   readonly apiVersion: 1;
   readonly version: string;
@@ -51,8 +59,8 @@ export interface EDGEdirApi {
   /** The index, or the made animations, changed. */
   readonly onDidChangeIndex: vscode.Event<void>;
   searchAnimations(query: AnimationQuery): Promise<{ total: number; items: AnimationInfo[] }>;
-  /** The body's rig and the animation files an entity lists, gameplay before cinematics. `appearance` is taken but not read yet: the appearance's own file may add files. */
-  entityAnimSets(path: string, appearance?: string): Promise<{ rig: string; sets: { path: string; use: "gameplay" | "cinematics"; priority: number }[] }>;
+  /** The body's rig and the animation files an entity lists, gameplay before cinematics; and the same for each animated component (the body first), for an object with more than one. `appearance` is taken but not read yet: the appearance's own file may add files. */
+  entityAnimSets(path: string, appearance?: string): Promise<{ rig: string; sets: EntitySet[]; components: { name: string; rig: string; sets: EntitySet[] }[] }>;
 }
 
 export function makeApi(version: string, game: Game): EDGEdirApi {
@@ -79,7 +87,7 @@ export function makeApi(version: string, game: Game): EDGEdirApi {
         for (const a of lists) {
           if (!words.every((w) => `${a.title} ${a.name}`.toLowerCase().includes(w)) || (query.rig && !sameRig(a.rig, query.rig))) continue;
           total++;
-          if (items.length < limit) items.push({ source: a.source, id: a.id, name: a.name, rig: a.rig, seconds: a.seconds, frames: Math.round(a.seconds * a.fps) + 1, fps: a.fps, additive: false, rootMotion: a.rootMotion, ...(a.file ? { file: a.file } : {}) });
+          if (items.length < limit) items.push({ source: a.source, id: a.id, name: a.name, rig: a.rig, seconds: a.seconds, frames: Math.round(a.seconds * a.fps) + 1, fps: a.fps, additive: false, rootMotion: a.rootMotion, ...(a.file ? { file: a.file } : {}), ...(a.loop ? { loop: true } : {}) });
         }
       }
       if (from.has("game") && game.state === "ready") {
@@ -92,7 +100,7 @@ export function makeApi(version: string, game: Game): EDGEdirApi {
     },
     async entityAnimSets(path) {
       const facts = await game.entity(path);
-      return { rig: facts.rig, sets: facts.sets };
+      return { rig: facts.rig, sets: facts.sets, components: facts.components };
     },
   };
 }

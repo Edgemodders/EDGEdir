@@ -217,8 +217,9 @@ export class AnimIndex {
     const limit = Math.max(1, Math.min(q.limit ?? 200, 5000));
     const items: FoundClip[] = [];
     let total = 0;
-    for (const [key, s] of this.bySet) {
-      if (only && !only.has(key)) continue;
+    // The files named come in the order they were named (an entity's own order); otherwise by path.
+    const named = q.sets ? [...only!].map((key) => [key, this.bySet.get(key)] as const).filter((e): e is readonly [string, SetFacts] => !!e[1]) : undefined;
+    for (const [key, s] of named ?? this.bySet) {
       if (q.rig && !sameRig(s.rig, q.rig)) continue;
       // Words the set's path already has need not be in the clip's name.
       const left = words.filter((w) => !key.includes(w));

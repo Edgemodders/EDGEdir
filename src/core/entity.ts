@@ -15,6 +15,13 @@ export interface EntityAnimSet {
   priority: number;
 }
 
+/** One animated part of an entity: a body, a vehicle's doors, a prop's moving part. */
+export interface EntityComponent {
+  name: string;
+  rig: string;
+  sets: EntityAnimSet[];
+}
+
 export interface EntityFacts {
   /** The body's rig, a game path; empty when the entity has no animated body. */
   rig: string;
@@ -22,6 +29,8 @@ export interface EntityFacts {
   appearances: string[];
   /** The sets the body's component lists, gameplay before cinematics. The appearance's own file may add more. */
   sets: EntityAnimSet[];
+  /** Every animated component that names a rig, the body first, deformations rigs left out. */
+  components: EntityComponent[];
 }
 
 type Json = Record<string, unknown>;
@@ -73,7 +82,8 @@ export function readEntity(json: string): EntityFacts {
   const components = (compiled.length ? compiled : arr(root.components)).map(obj).filter((c): c is Json => !!c && c.$type === "entAnimatedComponent");
   const withRig = components.filter((c) => depot(c.rig));
   const body = withRig.find((c) => text(c.name) === "root") ?? withRig.find((c) => !isDeformations(depot(c.rig)));
-  return { rig: body ? depot(body.rig) : "", appearances, sets: body ? setsOf(body) : [] };
+  const parts = [...(body ? [body] : []), ...withRig.filter((c) => c !== body && !isDeformations(depot(c.rig)))];
+  return { rig: body ? depot(body.rig) : "", appearances, sets: body ? setsOf(body) : [], components: parts.map((c) => ({ name: text(c.name), rig: depot(c.rig), sets: setsOf(c) })) };
 }
 
 /** Whether two rig paths name the same rig. Game paths do not mind case or the slash's direction. */
