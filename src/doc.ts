@@ -99,7 +99,8 @@ export interface SceneDoc {
   /** Frames a second: what clip edges snap to. */
   fps: number;
   /** The scene's origin in the world (D5). */
-  anchor: { mode: "player" | "world"; [more: string]: unknown };
+  /** `player`: in front of V. `set`: where the scene's set is (D5a). */
+  anchor: { mode: "player" | "world" | "set"; [more: string]: unknown };
   /** An EDGEbuilder scene the scene plays on (D5), or none. */
   set: unknown;
   tracks: Track[];
@@ -609,6 +610,8 @@ export function setMark(doc: SceneDoc, trackId: string, change: Partial<Mark>): 
   const track = findTrack(doc, trackId);
   if (!track) throw new EditError("That track is no longer in the scene");
   if (!track.actor) throw new EditError("Choose an actor first: a mark is where an actor stands");
+  // D5a: a person of the scene's set stands where the set has them.
+  if (doc.set && typeof track.from === "string" && track.from) throw new EditError("This actor is placed by the set. Move the person in EDGEbuilder; the scene follows when it is opened again");
   const at = { ...markOf(doc, trackId) };
   for (const key of ["x", "y", "yaw"] as const) {
     const v = change[key];

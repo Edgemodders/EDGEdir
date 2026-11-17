@@ -12,6 +12,7 @@ How to keep it (the Edgemodders convention):
 
 **New**
 
+- Sets: a scene can play on a set, an EDGEbuilder scene with its props and people. The new **Sets** view lists the EDGEbuilder scenes in your EDGE Library and in the open REDcode project. **New Scene on This Set** makes a scene with a track for each of the set's people, standing where the set has them; its props show as plain boxes in the 3D preview. When the set changes in EDGEbuilder, the scene follows the next time it is opened. EDGEdir never changes a set.
 - In the game: a selected clip's inspector now says what the game will not play as the preview shows it, under **In the game**: a clip that starts inside its animation or plays at another speed, a made animation, a transition (the game blends by itself), and V's track. Playing a scene in the game comes next.
 - The EDGEdir side bar with its own icon and three views, Desk, Library and Animations (Library and Animations are empty until their phases).
 - The scene editor: a `.edgedir` file opens as a timeline with tracks (actor, audio, camera, weather, script, video, AI) and clips. Clips are named blocks for now: add, move, trim by the edge, split, copy and paste, with snap to frames and to other clips, zoom, a playhead with play and loop, and an inspector. Undo, redo and save are VS Code's own.

@@ -10,12 +10,17 @@ import { deskDir, deskSequence, fileName, listDesk, newScene, newSequence, renam
 import { DeskView, type DeskItem } from "./deskView";
 import { pickActor } from "./actorPicker";
 import { AnimationsView, type AnimItem } from "./animationsView";
-import { addAnimClip, addSeqClip, EditError, findTrack, refreshSeqs, linkState, replaceWithSeq, runOf, seqOf, setActor, unfit, type SceneDoc, type SeqRef } from "./doc";
+import { addAnimClip, addSeqClip, EditError, findTrack, newDoc, refreshSeqs, linkState, replaceWithSeq, runOf, seqOf, setActor, unfit, type Actor, type SceneDoc, type SeqRef } from "./doc";
 import { rigName } from "./core/entity";
 import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
-import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type SequenceHost } from "./editor";
+import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type SequenceHost, type SetHost } from "./editor";
 import { Game } from "./game";
+import { castLabel } from "./core/cast";
+import { libraryRoot } from "./core/made";
+import { addSetPeople, chooseSet, freshPeople, linkTo, parseSet, removeSet, setOf, stageOf, syncSet, type SetPerson } from "./set";
+import { hashOf, readSet, type SetFile } from "./setFiles";
+import { SetsView, type SetItem } from "./setsView";
 
 /** An empty tree, so a view shows its welcome text until its phase fills it. */
 class Empty implements vscode.TreeDataProvider<never> {
@@ -168,6 +173,104 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     },
   };
 
+  // Sets (D5a): EDGEbuilder's scenes, read only, from the Library and the open project.
+  const roots = () => ({ library: libraryRoot(), project: game.project() });
+  const setsView = new SetsView(roots);
+  const readLinked = (doc: SceneDoc) => {
+    const link = setOf(doc);
+    const { library, project } = roots();
+    return link ? readSet(link, library, project?.dir) : undefined;
+  };
+  /** What the game says of each of a set's people, by the person's id: the actor as a track keeps it. Without the game, the record alone. */
+  const actorsOf = async (people: SetPerson[]): Promise<Record<string, Actor | undefined>> => {
+    const out: Record<string, Actor | undefined> = {};
+    if (people.some((p) => p.record) && game.state !== "ready") await game.refresh();
+    for (const p of people) {
+      const entry = game.cast.find(p.record);
+      const entity = entry?.entity ?? p.entity;
+      if (!entity) continue;
+      const actor: Actor = { ...(p.record ? { record: p.record } : {}), name: entry ? castLabel(entry) : p.id, entity };
+      try {
+        const facts = await game.entity(entity);
+        if (facts.rig) actor.rig = facts.rig;
+        // The set's appearance when the entity has it; else the game picks.
+        if (p.appearance && facts.appearances.includes(p.appearance)) actor.appearance = p.appearance;
+      } catch {
+        // Without the game's files the person is still named; the rig is read when the actor is chosen again.
+      }
+      out[p.id] = actor;
+    }
+    return out;
+  };
+  const pickSet = async (title: string): Promise<SetFile | undefined> => {
+    const all = setsView.sets().filter((s) => !s.error);
+    if (!all.length) {
+      void vscode.window.showInformationMessage("EDGEdir: no sets were found. A set is an EDGEbuilder scene (a .scene.json file) in the EDGE Library or in the open REDcode project's source/scenes.");
+      return undefined;
+    }
+    const row = await vscode.window.showQuickPick(
+      all.map((set) => ({ label: set.name, description: `${set.where === "library" ? "Library" : "Project"}  ·  ${set.people} ${set.people === 1 ? "person" : "people"}`, detail: set.path, set })),
+      { title, placeHolder: "An EDGEbuilder scene: the stage the scene plays on", matchOnDescription: true, matchOnDetail: true },
+    );
+    return row?.set;
+  };
+  const sets: SetHost = {
+    stage(doc) {
+      const read = readLinked(doc);
+      return read ? stageOf(doc, "info" in read ? read.info : undefined, "why" in read ? read.why : undefined) : undefined;
+    },
+    async sync(document) {
+      if (isSeqFile(document.uri.path)) return;
+      try {
+        const read = readLinked(sceneIn(document));
+        if (!read || !("info" in read)) return;
+        let moved = 0;
+        await applyEdit(document, (d) => {
+          const r = syncSet(d, read.info, read.hash);
+          moved = r.moved;
+          return r.doc;
+        });
+        if (moved) vscode.window.setStatusBarMessage(`EDGEdir: ${moved} actor${moved === 1 ? "" : "s"} moved with the set`, 6000);
+      } catch {
+        // The text is not a scene just now.
+      }
+    },
+    async choose(document) {
+      try {
+        const set = await pickSet("Choose Set");
+        if (!set) return;
+        const info = parseSet(fs.readFileSync(set.file, "utf8"));
+        const link = linkTo(set.where, set.path, info, hashOf(fs.readFileSync(set.file, "utf8")));
+        await applyEdit(document, (d) => chooseSet(d, link));
+        setsView.refresh();
+        const fresh = freshPeople(sceneIn(document), info).length;
+        if (fresh) void vscode.window.showInformationMessage(`EDGEdir: the scene plays on "${set.name}" now. Add ${fresh === 1 ? "its person" : `its ${fresh} people`} as tracks with the button under Set.`);
+      } catch (e) {
+        if (e instanceof EditError) void vscode.window.showWarningMessage(`EDGEdir: ${e.message}`);
+        else fail("Choose Set", e);
+      }
+    },
+    async remove(document) {
+      try {
+        await applyEdit(document, removeSet);
+        setsView.refresh();
+      } catch (e) {
+        fail("Remove Set", e);
+      }
+    },
+    async addPeople(document) {
+      try {
+        const read = readLinked(sceneIn(document));
+        if (!read || !("info" in read)) return void vscode.window.showWarningMessage(`EDGEdir: ${read && "why" in read ? read.why : "this scene has no set"}.`);
+        const actors = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "EDGEdir: reading the set's people" }, () => actorsOf(freshPeople(sceneIn(document), read.info)));
+        await applyEdit(document, (d) => addSetPeople(d, read.info, actors).doc);
+      } catch (e) {
+        if (e instanceof EditError) void vscode.window.showWarningMessage(`EDGEdir: ${e.message}`);
+        else fail("Add People from the Set", e);
+      }
+    },
+  };
+
   const scenes: SceneEditorProvider = new SceneEditorProvider(
     context,
     (uri) => void desk.opened(uri),
@@ -178,6 +281,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       clip: (want) => game.previewClip(want),
     },
     sequences,
+    sets,
   );
   /** The scene in front as a document, or undefined when its text is not a scene just now. */
   const frontDoc = (): SceneDoc | undefined => {
@@ -216,6 +320,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     }),
     vscode.window.registerTreeDataProvider("edgedir.desk", desk),
     vscode.window.registerTreeDataProvider("edgedir.library", new Empty()),
+    vscode.window.registerTreeDataProvider("edgedir.sets", setsView),
     vscode.window.registerTreeDataProvider("edgedir.animations", animations),
 
     vscode.commands.registerCommand("edgedir.readGame", () => game.refresh()),
@@ -300,6 +405,43 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         await openScene(vscode.Uri.file(scene.file));
       } catch (e) {
         fail("New Scene", e);
+      }
+    }),
+
+    vscode.commands.registerCommand("edgedir.refreshSets", () => setsView.refresh()),
+    vscode.commands.registerCommand("edgedir.revealSet", (item: SetItem | undefined) => {
+      if (item?.kind === "set") return vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(item.set.file));
+    }),
+    // A new scene on the Desk that plays on a set, with a track for each of its people.
+    vscode.commands.registerCommand("edgedir.newSceneOnSet", async (item: SetItem | undefined) => {
+      const set = item?.kind === "set" ? item.set : await pickSet("New Scene on a Set");
+      if (!set || set.error) return;
+      const name = await vscode.window.showInputBox({
+        title: `New Scene on "${set.name}"`,
+        prompt: "A name for the scene. It is made on the Desk and plays where the set is, with a track for each of the set's people.",
+        value: listDesk().some((s) => s.name.toLowerCase() === set.name.toLowerCase()) ? "" : set.name,
+        validateInput: (v) => {
+          try {
+            fileName(v);
+            return undefined;
+          } catch (e) {
+            return (e as Error).message;
+          }
+        },
+      });
+      if (name === undefined) return;
+      try {
+        const text = fs.readFileSync(set.file, "utf8");
+        const info = parseSet(text);
+        const actors = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "EDGEdir: reading the set's people" }, () => actorsOf(info.people));
+        const first = addSetPeople(chooseSet(newDoc(name.trim()), linkTo(set.where, set.path, info, hashOf(text))), info, actors).doc;
+        const scene = newScene(name, undefined, first);
+        desk.refresh();
+        setsView.refresh();
+        await openScene(vscode.Uri.file(scene.file));
+        if (info.vehicles) void vscode.window.showInformationMessage(`EDGEdir: "${set.name}" has ${info.vehicles} vehicle${info.vehicles === 1 ? "" : "s"}. Vehicles have no track yet.`);
+      } catch (e) {
+        fail("New Scene on This Set", e);
       }
     }),
 
@@ -419,6 +561,7 @@ ${(e as Error).message}` },
         } else if (wasOpen) await openScene(vscode.Uri.file(scene.file)); // Kept after all: its tab comes back.
       }
       desk.refresh();
+      setsView.refresh();
       // Once more after a moment: seen once, the list kept an empty Sequences heading after the last one went.
       setTimeout(() => desk.refresh(), 700);
       // Open scenes that link a deleted sequence say so at once.

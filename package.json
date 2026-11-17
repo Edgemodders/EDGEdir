@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -56,6 +56,10 @@
           "name": "Desk"
         },
         {
+          "id": "edgedir.sets",
+          "name": "Sets"
+        },
+        {
           "id": "edgedir.library",
           "name": "Library"
         },
@@ -69,6 +73,16 @@
       {
         "view": "edgedir.desk",
         "contents": "Scenes you are working on wait here until they go into a project or the Library.\n[New Scene](command:edgedir.newScene)\n[About EDGEdir](https://edgemodders.github.io/EDGEdir/)"
+      },
+      {
+        "view": "edgedir.sets",
+        "when": "edgedir.sets == noRoot",
+        "contents": "A set is the stage a scene plays on: an EDGEbuilder scene with its props and people. Sets are listed from the EDGE Library and the open REDcode project. Neither was found on this PC.\n[About sets](https://edgemodders.github.io/EDGEdir/design.html#sets-the-stage-from-edgebuilder)"
+      },
+      {
+        "view": "edgedir.sets",
+        "when": "edgedir.sets != noRoot",
+        "contents": "A set is the stage a scene plays on: an EDGEbuilder scene with its props and people. No EDGEbuilder scene (.scene.json) was found in the EDGE Library or the open REDcode project.\n[Look Again](command:edgedir.refreshSets)\n[About sets](https://edgemodders.github.io/EDGEdir/design.html#sets-the-stage-from-edgebuilder)"
       },
       {
         "view": "edgedir.library",
@@ -246,6 +260,23 @@
         "title": "Refresh",
         "category": "EDGEdir",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "edgedir.newSceneOnSet",
+        "title": "New Scene on This Set",
+        "category": "EDGEdir",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edgedir.refreshSets",
+        "title": "Refresh Sets",
+        "category": "EDGEdir",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "edgedir.revealSet",
+        "title": "Reveal in File Explorer",
+        "category": "EDGEdir"
       }
     ],
     "menus": {
@@ -314,6 +345,11 @@
           "command": "edgedir.readGame",
           "when": "view == edgedir.animations && edgedir.state != ready && edgedir.state != loading",
           "group": "overflow@0"
+        },
+        {
+          "command": "edgedir.refreshSets",
+          "when": "view == edgedir.sets",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -366,6 +402,21 @@
           "command": "edgedir.copyAnimName",
           "when": "view == edgedir.animations && viewItem == animClip",
           "group": "copy@1"
+        },
+        {
+          "command": "edgedir.newSceneOnSet",
+          "when": "view == edgedir.sets && viewItem == set",
+          "group": "inline"
+        },
+        {
+          "command": "edgedir.newSceneOnSet",
+          "when": "view == edgedir.sets && viewItem == set",
+          "group": "0@1"
+        },
+        {
+          "command": "edgedir.revealSet",
+          "when": "view == edgedir.sets && viewItem =~ /^set(Broken)?$/",
+          "group": "1@1"
         }
       ],
       "commandPalette": [
@@ -415,6 +466,10 @@
         },
         {
           "command": "edgedir.addSequenceToTrack",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.revealSet",
           "when": "false"
         }
       ]

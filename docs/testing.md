@@ -12,7 +12,8 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 66 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 70 tests |
+| [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | | Not run yet (0.0.17) |
 | [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | | Not run yet (0.0.16) |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
@@ -39,7 +40,8 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 
 - Nothing of the hand tests: every step of D1 to D4 has passed a round by script. (0.0.15 has two small changes from the last rerun's notes, not run: see D4b's round 2.)
 - **D5b The cue sheet**, 10 steps, on EDGEdir 0.0.16: not run yet, by script or by hand.
-- **The owner's spot tests** S1 to S11 below: none run yet.
+- **D5a Sets**, 14 steps, on EDGEdir 0.0.17: not run yet. The Sets view and its commands have not run in VS Code at all.
+- **The owner's spot tests** S1 to S12 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
 ## Spot tests for the owner
@@ -61,6 +63,7 @@ One short test per major feature, about 30 minutes in all. Each one names the fu
 | S9 | Transitions | In the scene of S8, give Judy two clips end to end. Put the playhead near the join, **Add Transition**. Drag the playhead through it, then play. Set **Method** to Inertial and play again. Drag the transition off the second clip's start | The body moves from one clip into the other with no jump, with both methods; say which looks better. Off the second clip's start the transition gets a yellow bar and the inspector says Preview only | D4a, 3 to 8 |
 | S10 | Sequences | In the scene of S9, select Judy's two clips and click **Save as Sequence**; name it and keep the clips. Give a second actor track another woman, select it, and click the **+** on the sequence in the Desk. Play. Double-click the block | The Desk lists the sequence under **Sequences**. One block lands on the second track and that actor plays the same movement. The sequence opens in its own tab with one lane and a grey base body | D4b, 2 to 4, 7 |
 | S11 | What the game will not match | Select one of Judy's clips and type 1 in **In (s)** | **In the game** appears in the inspector and says the game starts the clip from its beginning. From [D5b](#d5b-the-cue-sheet) |
+| S12 | Sets | With an EDGEbuilder scene that has people saved in your EDGE Library: open the **Sets** view and click the **+** on it | A scene opens with a track for each person, their bodies standing in the preview as the set has them, and grey boxes for its props. From [D5a](#d5a-sets) |
 
 | Round | Date | Spots | Result |
 |---|---|---|---|
@@ -372,6 +375,33 @@ EDGEdir 0.0.16, built 2026-11-17. It covers D5b: what a scene will not play in t
 | 8 | Add an Actor track with no actor, put a clip on it with a typed name (no animation), and select it | No **In the game** heading: a block with no animation plays nowhere |
 | 9 | Select Judy's two clips and the transition, **Save as Sequence**, replace them with the block. Select the block | Under **In the game**: the transition's line. Open the sequence in its own tab and select a clip: a sequence plays in the game on an actor, in a scene |
 | 10 | Mute Judy's track and select the block | No **In the game** heading: a muted track is not played |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |
+
+## D5a Sets
+
+EDGEdir 0.0.17, built 2026-11-17. It covers D5a: EDGEbuilder's scenes as sets, a scene made on one, and the link.
+
+**Before you start:** as for D3 Preview, and an EDGE Library on this PC (`%APPDATA%\EDGE\library.json` names its root; a scratch one for a scripted round). In a folder of the Library, an EDGEbuilder scene `alley.scene.json` named `My Alley` with two people from `Character.*` records a few metres apart, one of them turned, and two meshes with `bounds`. EDGEbuilder's [scene format](https://edgemodders.github.io/EDGEbuilder/scene.html) has the shape; a file written by hand is fine. Put a copy in a folder ending `.bake` too.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Open the EDGEdir side bar | A **Sets** view between Desk and Library. Under **Library**: `My Alley`, with "2 people, 2 props". One row only: the copy in the `.bake` folder is not listed |
+| 2 | Click the **+** on `My Alley`. Accept the name it offers | A scene `My Alley` opens, with two actor tracks named after the two people, empty. The Desk lists it; in the Sets view it shows under `My Alley` |
+| 3 | Look at the 3D preview and click **Frame** | Both bodies stand apart as the set has them, one turned. Two grey boxes stand where the meshes are. `edgedirPreview.state()` says 2 bodies and 2 props |
+| 4 | Click an empty part of a lane so no clip is selected, and look at the inspector | Under **Set**: `My Alley`, "2 people, 2 props", and the buttons **Choose Set...** and **Remove Set**. No Add button |
+| 5 | Select the first actor track | Right, Forward and Turn are shown as plain facts, not boxes, with the line "Placed by the set". Actor, Record and Rig are filled |
+| 6 | Add an animation to the first track from the Animations view | It plays on the body in the preview, at the set's place |
+| 7 | Save and close the scene. In `alley.scene.json`, move the second person 2 m and add a third person. Open the scene again | The second body stands in its new place; the status bar says 1 actor moved with the set; the scene shows as unsaved. Under **Set**: "3 people", and a button **Add 1 Person from the Set** |
+| 8 | Click **Add 1 Person from the Set** | A third actor track, with its body in the preview. The button is gone. Ctrl+Z takes the track away again; redo it |
+| 9 | Close the scene (save). Remove the first person from `alley.scene.json`. Open the scene | The first track is still there with its clip. Selected, it says the person is no longer in the set and keeps its place |
+| 10 | Close the scene. Rename `alley.scene.json` to `lane.scene.json`. Open the scene | It opens. Under **Set**: the set's file is not there any more, and the scene keeps the places it last read. The bodies stand where they stood. No boxes |
+| 11 | Click **Choose Set...** and pick `My Alley` | The set is linked again: boxes are back |
+| 12 | Click **Remove Set** | Under **Set**: no set, the scene plays in front of V. The tracks stay; the first track's Right, Forward and Turn are boxes again and can be typed in |
+| 13 | **New Scene** on the Desk (no set). Add an Actor track, choose an actor. Under **Set**, **Choose Set...**, `My Alley` | A message says the set's people can be added. The actor chosen by hand keeps boxes for its place. **Add 2 People from the Set** adds two tracks |
+| 14 | Put a file `bad.scene.json` holding `{` in the Library and click **Refresh** on the Sets view | `bad` is listed as "cannot be read", with a warning icon and no **+** |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|

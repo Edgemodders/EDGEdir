@@ -259,7 +259,7 @@ A **sequence** is a run of animation clips and transitions for one actor, saved 
 
 ## Sets: the stage from EDGEbuilder
 
-**Agreed by the owner on 2026-11-17 (all six questions as recommended), from the owner's note of the same day.** The owner's words for the split: EDGEbuilder and EDGEdir both say "scene" and mean the same place and moment, but each gives a different part of it.
+**Agreed by the owner on 2026-11-17 (all six questions as recommended), from the owner's note of the same day. The part that needs no game is built as D5a (EDGEdir 0.0.17): see [D5's plan](d5-play-in-game.html), "What is built".** The owner's words for the split: EDGEbuilder and EDGEdir both say "scene" and mean the same place and moment, but each gives a different part of it.
 
 | | EDGEbuilder's scene | EDGEdir's scene |
 |---|---|---|

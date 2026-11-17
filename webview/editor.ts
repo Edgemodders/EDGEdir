@@ -43,6 +43,7 @@ import {
   type TrackKind,
 } from "../src/doc";
 import { cuesOf, notesFor } from "../src/cues";
+import { fromOf, type Stage } from "../src/set";
 import { joinOf, transitionNote } from "../src/pose";
 import { mountPreview } from "./preview";
 
@@ -68,6 +69,8 @@ let playhead = 0;
 let seqMode = false;
 /** How each linked sequence stands, by its id: linked, missing from the Desk, or newer there than the block's copy. */
 let links: Record<string, string> = {};
+/** How the scene stands to its set (D5a); undefined when it has none. */
+let stage: Stage | undefined;
 let playing = false;
 let playFrom = 0;
 let lastTick = 0;
@@ -162,16 +165,17 @@ window.addEventListener("message", (e) => {
   $("invalid").hidden = true;
   $("work").hidden = false;
   const before = doc;
-  const mode = `${seqMode}|${JSON.stringify(links)}`;
+  const mode = `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}`;
   seqMode = !!m.sequence;
   links = (m.links as Record<string, string> | undefined) ?? {};
+  stage = m.stage as Stage | undefined;
   document.body.classList.toggle("sequence", seqMode);
   doc = m.doc as SceneDoc;
   // What undo or a text edit took away is no longer selected; a clip that is new (redo, paste in the text) is not either.
   sel = new Set([...sel].filter((id) => findClip(doc!, id)));
   if (!findTrack(doc, selTrack)) selTrack = doc.tracks[0]?.id ?? "";
   if (!fitted && sceneLength(doc) > 0) fit();
-  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}`) render();
+  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}`) render();
   applyPendingSelect();
 });
 
@@ -290,7 +294,7 @@ function box(c: Clip, lane: number) {
 
 function draw() {
   // The preview shows the scene as a drag would leave it, at the playhead.
-  preview.sync(drag?.preview ?? doc, playhead, selTrack);
+  preview.sync(drag?.preview ?? doc, playhead, selTrack, stage?.props);
   const k = colours();
   const w = width();
   const tracks = shown();
@@ -744,11 +748,25 @@ function drawInspector() {
             i.removeAttribute("min");
             return i;
           };
-          box.append(
-            field("Right (m)", markInput("f-markx", "x", 0.1)),
-            field("Forward (m)", markInput("f-marky", "y", 0.1)),
-            field("Turn (°)", markInput("f-markyaw", "yaw", 15)),
-          );
+          // D5a: a person of the set stands where the set has them.
+          const placed = !!stage && fromOf(track) !== undefined;
+          if (placed)
+            box.append(
+              fact("Right (m)", String(mark.x)),
+              fact("Forward (m)", String(mark.y)),
+              fact("Turn (°)", String(mark.yaw)),
+              note(
+                stage!.gone.includes(track.id)
+                  ? `This person is no longer in the set "${stage!.name}". The track keeps its clips and its place.`
+                  : `Placed by the set "${stage!.name}". Move the person in EDGEbuilder; the scene follows when it is opened again.`,
+              ),
+            );
+          else
+            box.append(
+              field("Right (m)", markInput("f-markx", "x", 0.1)),
+              field("Forward (m)", markInput("f-marky", "y", 0.1)),
+              field("Turn (°)", markInput("f-markyaw", "yaw", 15)),
+            );
         } else box.append(note("Nobody acts on this track yet."));
         box.append(action(a ? "Change Actor..." : "Choose Actor...", "Pick one of the game's characters, or V, for this track. Its clips stay", () => vscode.postMessage({ type: "chooseActor", track: track.id })));
       }
@@ -767,9 +785,30 @@ function drawInspector() {
       fact("Length", `${fmt(sceneLength(d))}  ·  ${Math.round(sceneLength(d) * fps)} frames`),
       fact("Frame rate", `${fps} a second`),
     );
+    // D5a: the set, an EDGEbuilder scene the scene plays on.
+    if (!seqMode) {
+      const ask = (what: "choose" | "remove" | "add") => () => vscode.postMessage({ type: "set", do: what });
+      box.append(heading("Set"));
+      if (!stage) box.append(note("No set: the scene plays in front of V. A set is an EDGEbuilder scene, the stage with its props and people."), action("Choose Set...", "Pick an EDGEbuilder scene from the Library or the open project for this scene to play on", ask("choose")));
+      else {
+        const p = fact("Set", stage.name || "No name");
+        p.id = "f-set";
+        p.dataset.state = stage.state;
+        box.append(p);
+        if (stage.state === "missing") box.append(note(`${stage.why ?? "The set was not found"}. The scene keeps the places it last read.`));
+        else {
+          box.append(fact("On it", `${count(stage.people, "person", "people")}, ${count(stage.props.length, "prop")}${stage.vehicles ? `, ${count(stage.vehicles, "vehicle")}` : ""}`), note("The scene plays where the set is. Props show as plain boxes."));
+          if (stage.vehicles) box.append(note("Vehicles have no track yet."));
+          if (stage.fresh) box.append(action(`Add ${count(stage.fresh, "Person", "People")} from the Set`, "Add an actor track for each person of the set that has none", ask("add")));
+        }
+        box.append(action("Choose Set...", "Pick another EDGEbuilder scene for this scene to play on", ask("choose")), action("Remove Set", "The scene plays in front of V again. Its tracks and their places stay", ask("remove")));
+      }
+    }
   }
   if (focus) document.getElementById(focus)?.focus();
 }
+
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** Whether a clip follows another with no transition over its start. */
 function bareJoin(track: Track, clip: Clip): boolean {

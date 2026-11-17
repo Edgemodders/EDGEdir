@@ -6,6 +6,7 @@
 // The kind is `act`: EDGEbuilder's Library already uses `scene`. A sequence (D4b) is kept the same
 // way, as kind `sequence`: <desk>\<name>.sequence.asset\source\raw\edgedir\<name>.edgeseq.
 // No VS Code in here.
+import type { SceneDoc } from "./doc";
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -68,7 +69,7 @@ export function fileName(name: string): string {
 const mainOf = (file: string, kind: DeskKind = Kind) => `source/raw/edgedir/${file}${extensionOf(kind)}`;
 
 /** A new scene on the Desk, with an empty document. Throws when the name is taken. */
-export function newScene(name: string, base = deskDir()): DeskScene {
+export function newScene(name: string, base = deskDir(), first?: SceneDoc): DeskScene {
   const file = fileName(name);
   const folder = path.join(base, file + Ending);
   if (fs.existsSync(folder)) throw new Error(`The Desk already has a scene named "${file}"`);
@@ -77,7 +78,7 @@ export function newScene(name: string, base = deskDir()): DeskScene {
   const doc = path.join(folder, ...main.split("/"));
   fs.mkdirSync(path.dirname(doc), { recursive: true });
   fs.writeFileSync(path.join(folder, "asset.json"), JSON.stringify(asset, null, 2) + "\n");
-  fs.writeFileSync(doc, formatDoc(newDoc(name.trim())));
+  fs.writeFileSync(doc, formatDoc(first ? { ...first, name: name.trim() } : newDoc(name.trim())));
   return { kind: Kind, name: asset.name, folder, file: doc, id: asset.id, modified: Date.now() };
 }
 

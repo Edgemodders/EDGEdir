@@ -3,6 +3,7 @@
 // page asks for each by a key and loads it from the address in the answer. Which clip plays and
 // where an actor stands are src/pose.ts's and src/doc.ts's rules; this file only draws them.
 // The way of loading and playing is REDcode's animation view's (its webview/animViewer.ts at 6d62625).
+import type { Stage } from "../src/set";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -18,13 +19,16 @@ export interface Got {
   error?: string;
 }
 
+/** One of the set's props (D5a), from the scene's origin, in the game's axes. */
+type Prop = Stage["props"][number];
+
 export interface Preview {
   /** The scene as it is now (or as a drag would leave it), the playhead and the selected track. */
-  sync(doc: SceneDoc | null, time: number, selected: string): void;
+  sync(doc: SceneDoc | null, time: number, selected: string, props?: Prop[]): void;
   got(m: Got): void;
   frame(): void;
   /** What the preview has, for tests of the page: bodies standing, files waited for, and the note. */
-  state(): { bodies: number; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
+  state(): { bodies: number; props: number; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
 }
 
 interface Loaded {
@@ -74,7 +78,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   } catch (e) {
     noteEl.textContent = `The 3D preview could not start (${e instanceof Error ? e.message : String(e)}). The timeline works as before.`;
-    return { sync: () => undefined, got: () => undefined, frame: () => undefined, state: () => ({ bodies: 0, waiting: 0, failed: 0, note: noteEl.textContent ?? "", poses: {} }) };
+    return { sync: () => undefined, got: () => undefined, frame: () => undefined, state: () => ({ bodies: 0, props: 0, waiting: 0, failed: 0, note: noteEl.textContent ?? "", poses: {} }) };
   }
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setClearColor(0x000000, 0);
@@ -131,6 +135,33 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
   let doc: SceneDoc | null = null;
   let time = 0;
   let selected = "";
+  // D5a: the set's props, as plain boxes.
+  const boxes = new THREE.Group();
+  scene.add(boxes);
+  const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x566178, roughness: 0.9, metalness: 0, transparent: true, opacity: 0.55 });
+  const boxLines = new THREE.LineBasicMaterial({ color: 0x8793ab });
+  let boxesKey = "";
+  const setProps = (props: Prop[]) => {
+    const key = JSON.stringify(props);
+    if (key === boxesKey) return;
+    boxesKey = key;
+    for (const o of [...boxes.children]) {
+      boxes.remove(o);
+      o.traverse((x) => (x as THREE.Mesh).geometry?.dispose());
+    }
+    for (const p of props) {
+      // The game's x is right, y forward and z up; here y is up and the game's y is -z.
+      const g = new THREE.BoxGeometry(Math.max(p.size[0], 0.02), Math.max(p.size[2], 0.02), Math.max(p.size[1], 0.02));
+      const holder = new THREE.Group();
+      holder.position.set(p.x, p.z, -p.y);
+      holder.rotation.y = (p.yaw * Math.PI) / 180;
+      const box = new THREE.Mesh(g, boxMaterial);
+      box.position.set(p.centre[0], p.centre[2], -p.centre[1]);
+      box.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), boxLines));
+      holder.add(box);
+      boxes.add(holder);
+    }
+  };
   /** The modder moved the view: it is theirs now, and new bodies no longer fit it again. */
   let touched = false;
   controls.addEventListener("start", () => (touched = true));
@@ -378,6 +409,8 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       box.expandByPoint(new THREE.Vector3(s.group.position.x - 0.9, -0.1, s.group.position.z - 0.9));
       box.expandByPoint(new THREE.Vector3(s.group.position.x + 0.9, Height, s.group.position.z + 0.9));
     }
+    // The set's props are part of the picture.
+    if (boxes.children.length) box.union(new THREE.Box3().setFromObject(boxes));
     if (box.isEmpty()) box.set(new THREE.Vector3(-0.5, 0, -0.5), new THREE.Vector3(0.5, Height, 0.5));
     const centre = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
@@ -391,7 +424,8 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
   }
 
   return {
-    sync(next, t, sel) {
+    sync(next, t, sel, props) {
+      setProps(next ? (props ?? []) : []);
       doc = next;
       time = t;
       selected = sel;
@@ -404,6 +438,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
     },
     state: () => ({
       bodies: [...standing.values()].filter((s) => s.root).length,
+      props: boxes.children.length,
       waiting: [...files.values()].filter((f) => f.state === "asked").length,
       failed: [...files.values()].filter((f) => f.state === "failed").length,
       note: noteEl.textContent ?? "",

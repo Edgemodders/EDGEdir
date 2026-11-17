@@ -2,6 +2,7 @@
 // undo, redo and the dirty mark are VS Code's own. The page (webview/editor.ts) draws the timeline
 // and posts each change back as a whole new document, which is written into the text here.
 // The pattern is EDGEwave's (src/editor.ts at f39a787), copied, without its audio.
+import type { Stage } from "./set";
 import * as fs from "node:fs";
 import * as vscode from "vscode";
 import type { PreviewFile } from "./core/preview";
@@ -34,7 +35,9 @@ type FromPage =
   | { type: "want"; key: string; body?: BodyWant; clip?: ClipWant }
   /** Save the clips named as a sequence on the Desk; open a block's sequence (D4b). */
   | { type: "saveSeq"; clips: string[] }
-  | { type: "openSeq"; id: string };
+  | { type: "openSeq"; id: string }
+  /** The scene's set (D5a): choose one, take it off, or add tracks for its people. */
+  | { type: "set"; do: "choose" | "remove" | "add" };
 
 /** A scene open in the editor, with where its page's cursor is. */
 /** What the editor asks of the Desk's sequences (D4b). */
@@ -47,6 +50,17 @@ export interface SequenceHost {
   saveAs(document: vscode.TextDocument, clipIds: string[]): Promise<void>;
   /** Opens a sequence by its id. */
   open(id: string): Promise<void>;
+}
+
+/** What the editor asks about a scene's set, an EDGEbuilder scene it plays on (D5a). */
+export interface SetHost {
+  /** How a scene stands to its set, read from disk now; undefined when it has none. */
+  stage(doc: SceneDoc): Stage | undefined;
+  /** Brings a scene up to its set: marks, the link's name and hash. */
+  sync(document: vscode.TextDocument): Promise<void>;
+  choose(document: vscode.TextDocument): Promise<void>;
+  remove(document: vscode.TextDocument): Promise<void>;
+  addPeople(document: vscode.TextDocument): Promise<void>;
 }
 
 /** The scene a text document holds: a scene's own text, or a sequence shown as one lane. Throws when it is neither. */
@@ -93,6 +107,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly chooseActor: (document: vscode.TextDocument, trackId: string) => Promise<void>,
     private readonly preview: PreviewSource,
     private readonly sequences: SequenceHost,
+    private readonly sets: SetHost,
   ) {}
 
   /** Every scene and sequence open in an editor. */
@@ -138,7 +153,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
           // Not on disk (yet): unsaved.
         }
         const doc = readScene(document.uri.path, text);
-        post({ type: "doc", doc, dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc) });
+        post({ type: "doc", doc, dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc), stage: isSeqFile(document.uri.path) ? undefined : this.sets.stage(doc) });
       } catch (e) {
         post({ type: "invalid", text: (e as Error).message });
       }
@@ -165,12 +180,15 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         case "ready":
           this.senders.set(panel, sendDoc);
           sendDoc();
-          // Blocks that link a sequence take what the Desk has now.
-          return this.sequences.sync(document);
+          // Blocks that link a sequence take what the Desk has now, and people of the set stand where it has them now.
+          await this.sequences.sync(document);
+          return this.sets.sync(document);
         case "saveSeq":
           return this.sequences.saveAs(document, m.clips);
         case "openSeq":
           return this.sequences.open(m.id);
+        case "set":
+          return m.do === "choose" ? this.sets.choose(document) : m.do === "remove" ? this.sets.remove(document) : this.sets.addPeople(document);
         case "edit": {
           const text = writeScene(document.uri.path, m.doc, document.getText());
           if (text === document.getText()) return;

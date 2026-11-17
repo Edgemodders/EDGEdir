@@ -4,7 +4,7 @@ title: D5 Play in game
 
 # <span class="y">D5</span> Play in game
 
-**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). D5b The cue sheet is built (EDGEdir 0.0.16), not run in VS Code yet. D5a, D5c and D5d are not built.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
+**Status: agreed by the owner on 2026-11-17 (all seven questions as recommended, and the six on sets). D5b The cue sheet (EDGEdir 0.0.16) and D5a Sets (0.0.17) are built, not run in VS Code yet. D5c and D5d are not built.** What is built is at the end. The part about sets rests on the design's [Sets](design.html#sets-the-stage-from-edgebuilder) section.
 
 D5 is the fifth phase of the [design](design.html). A scene's actor tracks play on real people in the running game, started from VS Code. Audio, camera and weather tracks are D6. A mod a player installs is D7.
 
@@ -193,6 +193,34 @@ All agreed as recommended on 2026-11-17.
 | The cue sheet and its notes | `src/cues.ts`: `cuesOf(doc)` answers `{ sheet, notes }`, a pure function with no VS Code, page or game in it. `notesFor(notes, track, clip)` picks the notes of one clip; a sequence block gets those of the clips in it, and a clip on a track that is left out gets the track's reason |
 | The inspector | `webview/editor.ts`: a selected clip on an actor track shows **In the game**, with one line for each note (`p.game`, its kind in `data-kind`). The cut at a join with no transition is not repeated there: the line D4 put above it already says it |
 | Unit tests | `test/cues.test.ts`, 7 tests: entries and jumps, two actors in time order, `in`, `speed` and loops, transitions, who is left out, made animations, sequence blocks |
+
+**D5a Sets, EDGEdir 0.0.17 (2026-11-17). Not run in VS Code yet.**
+
+| Part | Where |
+|---|---|
+| Reading a set | `src/set.ts`, pure: `parseSet` reads EDGEbuilder's scene format 1 and 2 into people (`npc`), props (everything else; a size where the file gives `bounds`) and a count of vehicles. `yawOf` turns a rotation into degrees about the up axis |
+| The link | `src/set.ts`: the scene keeps `"set": { where, path, name, hash, origin }` and `"anchor": { "mode": "set" }`; a track from the set keeps `"from": "<object id>"`. `chooseSet`, `removeSet`, `addSetPeople`, `syncSet` (marks follow the set; the same document comes back when nothing changed, so an unchanged scene is not unsaved), `stageOf` (what the page is told) |
+| The origin | The middle of the set's people, on the lowest one's ground; of all objects when it has no people. Marks are metres from it, so they stay small numbers |
+| A placed actor | `setMark` in `src/doc.ts` refuses a track that came from the set: the inspector shows its place as facts, and says to move the person in EDGEbuilder |
+| Finding sets | `src/setFiles.ts`: `findSets` walks the Library and the project's `source/scenes` as EDGEbuilder does; `readSet` reads a link's file or says why it cannot; a link never leads out of its root |
+| The view | `src/setsView.ts`: **Sets**, between Desk and Library. Groups Project and Library; each set with its people, vehicles and props counted, and under it the Desk's scenes that play on it. **New Scene on This Set** on each row; Refresh |
+| In the editor | `src/extension.ts` (the `SetHost`): on open the scene is brought up to its set; the inspector's **Set** section (`#f-set`, its state in `data-state`) has Choose Set, Remove Set and Add People from the Set. The page's message is `set`, the `doc` message carries `stage` |
+| The preview | `webview/preview.ts`: each prop with a size is a grey box at its place, turned about the up axis only; `edgedirPreview.state().props` counts them; Frame takes them in |
+| An actor from the set | Read from the game as the picker does (the record's entity, its rig); the set's appearance when the entity has it, else the game picks. Without the game's files the track has the record alone |
+| Unit tests | `test/set.test.ts`, 4 tests |
+
+Looked at in a plain browser with the page harness: the Set section, a placed actor's facts and note, and two boxes counted by the preview. The boxes were not seen by eye (the browser tool's screenshot failed). **Unverified until the hand test:** the Sets view and its commands in VS Code, a real EDGEbuilder scene from the Library, and how the boxes look.
+
+Not built, against the design's Sets section:
+
+| Left out | Why |
+|---|---|
+| Vehicle tracks | EDGEbuilder has no vehicle kind yet (its #6). A set's vehicles are counted and said to have no track |
+| A box turned as the prop is, in all three axes | Only the turn about the up axis is used. A tilted prop's box stands upright |
+| Lights and props with no `bounds` | Not drawn |
+| The set in the game | D5c, and REDnode #48's answer on directing a person who is already there |
+
+### D5b, looked at
 
 Looked at in a plain browser with the page harness and real clips: a clip given an In of 1 s and a Speed of 2 shows both lines under In the game.
 
