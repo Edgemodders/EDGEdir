@@ -12,11 +12,12 @@ Last updated 2026-11-16.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 47 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-16 | Pass, 53 tests |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
 | [D2 Cast, part 1](#d2-cast-part-1) | Hand, in VS Code, with the game's files | D2.1 to D2.4 | 2026-11-16 | By script: 15 of 15 pass (0.0.6, REDbridge 0.13.0) |
 | [D2 Clips, part 2](#d2-clips-part-2) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D2.5, D2.6 | 2026-11-16 | By script: 17 of 17 pass (0.0.6, REDbridge 0.14.0) |
 | [D2 Made animations, part 3](#d2-made-animations-part-3) | Hand, in VS Code, with an EDGE Library | D2.7 | 2026-11-16 | By script: 6 of 6 pass (0.0.6) |
+| [D4a Transitions](#d4a-transitions) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D4a | | Not run yet (0.0.12) |
 | [D3 Preview](#d3-preview) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D3 | 2026-11-16 | By script: round 1, 17 of 17 (0.0.9); round 2, the four fixes of 0.0.10 pass |
 
 ## The release gate
@@ -34,13 +35,13 @@ The rounds by script are there so that work does not wait for the owner's testin
 
 Every hand test (D1, D2, D3) has passed a round run by script in another session (2026-11-16). Still open before a release:
 
-- Nothing of the hand tests: D3's four fixes of 0.0.10 passed their round. (0.0.11 only takes a doubled full stop out of one line of the viewport.)
-- **The owner's spot tests** S1 to S8 below: none run yet.
+- **D4a Transitions**, 15 steps, on EDGEdir 0.0.12: not run yet, by script or by hand.
+- **The owner's spot tests** S1 to S9 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
 ## Spot tests for the owner
 
-One short test per major feature, about 20 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
+One short test per major feature, about 25 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
 
 **Before you start:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
 
@@ -54,6 +55,7 @@ One short test per major feature, about 20 minutes in all. Each one names the fu
 | S6 | The rig rule | **Change Actor...** on Judy's track to a man. Then save, close and reopen the scene | Every clip is hatched red and the inspector says Unfit and why; nothing is removed. Reopened, it is the same | Part 2, 13, 16 |
 | S7 | A made animation | Run `node tools/made-anim-sample.mjs`, click **Refresh** in the Animations view, click the **+** on `Sample wave`. Then run it with `--remove` | A **Library** group with `Sample wave`, 2.40 s; the clip `sample_wave` lands on the track as a made animation. After the remove and a Refresh the group is gone and the clip stays | Part 3, 1 to 3, 6 |
 | S8 | The 3D preview | Open the scene of S4 to S6 with Judy's track set back to Judy. Drag the playhead through her clips, then press Space. Select V's track and set **Turn (°)** to 180. Drag in the view, then click **Frame** | Two grey bodies stand side by side above the timeline; V's has no head and the line says it stands in for your V. Judy takes the pose under the playhead and plays in time. V turns round. The view orbits, and Frame fits both | D3, 2 to 8, 12 |
+| S9 | Transitions | In the scene of S8, give Judy two clips end to end. Put the playhead near the join, **Add Transition**. Drag the playhead through it, then play. Set **Method** to Inertial and play again. Drag the transition off the second clip's start | The body moves from one clip into the other with no jump, with both methods; say which looks better. Off the second clip's start the transition gets a yellow bar and the inspector says Preview only | D4a, 3 to 8 |
 
 | Round | Date | Spots | Result |
 |---|---|---|---|
@@ -67,7 +69,7 @@ npm run build
 npm test
 ```
 
-The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
+The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D4a's 6 tests (`test/transition.test.ts`) check a transition's method and ease, where Add Transition puts one, which clips it joins, the pose under a Blend and an Inertial one, and what it says about the game. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
 
 ## D1 Timeline
 
@@ -266,3 +268,31 @@ What round 1 found, and what was done:
 | Step 16: a reopened scene has the playhead at 0 and the view at its first height, not as left | Left: neither is kept with the scene yet. The step now says so |
 | Bodies 0.8 m apart pass through each other in the arms-out rest pose | Left as it is: a mark moves them apart |
 | Step 15: the tooltip was read from the page, not seen drawn | Nothing: a script cannot see a native tooltip |
+
+## D4a Transitions
+
+EDGEdir 0.0.12, built 2026-11-16. Not run yet. It covers D4a: transitions in the 3D preview.
+
+**Before you start:** as for D3 Preview: the game installed (not running), REDbridge 0.14.0, F5 (**Run EDGEdir**), **Read the Game** done.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | New Scene `Join test`. Add an Actor track, choose Judy Álvarez. With the fits filter on, add two animations one after the other, so the second starts where the first ends | Two clips end to end, and her body in the view. Select the second clip: the inspector says no transition leads into it, the preview cuts here and the game will blend it |
+| 2 | Drag the playhead across the join | The body jumps from the first clip's pose to the second's |
+| 3 | Put the playhead near the join and click **Add Transition** | A dashed band 0.4 s long lies at the start of the second clip, selected. The inspector shows Method Blend, Ease Smooth, **Joins** with the two clips' names, and says it starts where the game makes its own join |
+| 4 | Drag the playhead slowly through the transition, then press Home and Space | No jump: the body moves from the first clip's pose into the second's. Played, the two clips view as one movement |
+| 5 | Set **Length (s)** to 1.2 and play again. Set **Ease** to Linear, then Ease in | The change takes longer. The preview follows each ease |
+| 6 | Set **Method** to Inertial and drag the playhead through | At the second clip's start the pose is the same as just before it, then the second clip's own movement takes over. The inspector says what Inertial does |
+| 7 | Open the Method list | **AI (no provider yet)** is there, greyed, and cannot be chosen |
+| 8 | Set Method back to Blend. Drag the transition 0.3 s to the left, so it lies over the join | A yellow bar shows at the transition's start. The inspector says **Preview only** and why. The preview still blends: before the second clip starts, it is mixed in at its first pose |
+| 9 | Drag the transition to the middle of the first clip | It is dimmed. The inspector says it joins nothing. The preview plays the first clip as if it were not there |
+| 10 | Drag it back to the start of the second clip. Press Ctrl+Z several times, then Ctrl+Y | Each change goes back and comes again, the method and ease too |
+| 11 | Move the second clip 1 s to the right, leaving a gap, and put the transition at its new start. Play | Over the transition the first clip, still looping in the gap, blends into the second |
+| 12 | Add the same animation twice, end to end, with a transition between | It blends from the animation's end into its own start, without an error |
+| 13 | **Change Actor...** to a man | The clips are hatched red, and the transition is dimmed: it joins nothing on this actor. Change back: as before |
+| 14 | Save, close the tab, open the scene from the Desk | The transition is there with its method, ease and length, and the preview blends |
+| 15 | Open a scene from before this version that has a transition (or delete `"method"` and `"ease"` from one in the text) | It reads as Blend, Smooth |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet |

@@ -4,7 +4,7 @@ title: D4 Transitions
 
 # <span class="y">D4</span> Transitions and sequences
 
-**Status: plan, written 2026-11-16, for the owner's review. Nothing of D4 is built.** Five questions for the owner are below.
+**Status: agreed by the owner on 2026-11-16 (all five questions as recommended). D4a Transitions is built (EDGEdir 0.0.12), looked at in a plain browser with real clips, not run in VS Code yet. D4b Sequences is not built.** What is built is at the end.
 
 D4 is the fourth phase of the [design](design.html). It makes the transition clip do something: two animation clips joined by one view as one movement in the 3D preview. And it makes a run of clips and transitions a thing that is stored by itself and used again: a sequence. Nothing in D4 plays in the game (D5), and nothing in D4 makes new game files (D7).
 
@@ -85,6 +85,8 @@ The design's "Sequences" section, agreed on 2026-11-16 (Q8), is what D4 builds. 
 
 ## Questions for the owner
 
+All five answered on 2026-11-16: as recommended.
+
 | # | Question | Recommendation |
 |---|---|---|
 | 1 | May a transition sit anywhere over a join, with a mark when the game will not match it? Or only where the game can match it (at the next clip's start)? | **Anywhere, with the mark.** The preview is for judging movement, and baking (D7) will bring the rest to the game. Add Transition starts it where the game matches |
@@ -128,6 +130,28 @@ Asked on REDnode #46 and answered the same day, from the game's files and its 2.
 REDnode also found the game's own authored transition in a workspot (`customTransitionAnims`: an animation that leads from one idle to another), which `world.writeWorkspot` leaves empty today. It may be how a made transition reaches the game one day.
 
 **What this changes in the plan.** The game's own join looks like this plan's **Inertial**, not its Blend, and about half a second long. So the mark's rule above is a first guess: which method and which length match the game is settled when REDnode has measured, and until then the mark's sentence says "not yet measured in the game" where it would claim a match. Blend and Inertial are both built for the preview either way, as the owner asked for both. If the game's blend time can be set for each clip, a transition's length becomes that time in D5.
+
+## What is built
+
+**D4a Transitions, EDGEdir 0.0.12 (2026-11-16).** D4b Sequences is not built yet.
+
+| Part | Where | What it does |
+|---|---|---|
+| D4.1 Rules | `src/doc.ts`, `src/pose.ts` | `transitionOf`, `setTransition` (`method`, `ease`), `addTransition` (at the start of the clip whose join is nearest, 0.4 s). `joinOf` (A and B), `easeAt`, `transitionNote` (joins or not, the mark, the sentence). `poseAt` gives a `mix` under a transition: the first clip, its moment, and its share |
+| D4.2 Blend | `webview/preview.ts` | Both clips play in the page's player, each at its moment, weighted by the share. When both sides are the same animation, the first side plays a copy |
+| D4.3 Inertial | the same | The difference between A's pose and B's pose where B starts is measured once for a join, bone by bone (rotation and place), and the share of it is added on top of B's pose. What is added is taken back before the player sets the next pose |
+| D4.4 Inspector and lane | `webview/editor.ts` | Method (AI greyed, "no provider yet"), Ease, Length, **Joins**, a sentence on the method and one on the game. A transition that joins nothing is dimmed; one the game will not match has a yellow bar at its start. A clip with no transition leading into it says the preview cuts and the game will blend. **Add Transition** goes to the nearest join |
+
+Checked: 6 unit tests (`test/transition.test.ts`). In a plain browser with real clips from the game (`tools/preview-sample.ts` now adds a Blend and an Inertial transition): under the Blend, both clips show in `edgedirPreview.state()` with the share running from 1 to 0; under the Inertial, the body's pose where the second clip starts is the same as the frame before (no jump), halfway it is between, and at the end it is the second clip's own.
+
+What differs from the plan, or was settled in building:
+
+| Point | As built |
+|---|---|
+| Inertial and speed | Only the difference in pose fades. The first clip's speed at the join is not carried over, as the design's wording ("pose and speed") had it. To be judged in the spot test; it can be added |
+| Inertial before B starts | Nothing: A plays alone until B's start, though the transition has begun. The fade runs from B's start to the transition's end |
+| The mark | By the place alone, as the plan says: it shows on a transition that does not start at B's start, and on AI. It does not tell Blend from Inertial until REDnode has measured the game's join |
+| A clip made for another rig | It is not joined to: a transition over it reaches the next clip that fits, or joins nothing |
 
 ## Out of D4
 
