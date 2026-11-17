@@ -32,6 +32,8 @@ nav:
     url: /d3-preview.html
   - title: D4 Transitions
     url: /d4-transitions.html
+  - title: D5 Play in game
+    url: /d5-play-in-game.html
   - title: Extension API
     url: /api.html
   - title: Tests
