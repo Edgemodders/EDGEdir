@@ -283,6 +283,11 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
   const agreed = new Map<string, string>();
   let watching: ReturnType<typeof setInterval> | undefined;
   let telling: ((news: PlayNews) => void) | undefined;
+  /** The play is over, or its player is gone: nobody is told more. */
+  const over = () => {
+    clearInterval(watching);
+    telling = undefined;
+  };
   /** Passes on what the player says of the play `id`, until it is over. */
   const follow = (id: string, tell: (news: PlayNews) => void) => {
     clearInterval(watching);
@@ -293,12 +298,12 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       const s = readState();
       if (!s || s.id !== id) {
         if (Date.now() - began < 8000) return;
-        clearInterval(watching);
+        over();
         return tell({ text: `The player did not answer. ${SwitchOn}`, bad: true, active: false });
       }
       // A player that stopped says nothing more (REDnode ends it without notice, and removes its people).
       if (!alive()) {
-        clearInterval(watching);
+        over();
         return tell({ text: "The player stopped: its people are gone from the game", bad: true, active: false });
       }
       const text = JSON.stringify(s);
@@ -306,7 +311,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       last = text;
       const active = !["failed", "stopped", "idle"].includes(s.state);
       tell({ ...lineOf(s), active, startedAt: s.state === "playing" || s.state === "ended" ? s.startedAt : undefined, length: s.length });
-      if (!active) clearInterval(watching);
+      if (!active) over();
     }, 250);
   };
   context.subscriptions.push({ dispose: () => clearInterval(watching) });
@@ -369,6 +374,9 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
           stage = stageFor(doc, fs.readFileSync(file, "utf8"));
         }
         if (!(await playerReady())) return;
+        // The player plays one scene at a time: the tab whose scene was playing hears that it was taken over.
+        telling?.({ text: "Another scene plays in the game now", bad: false, active: false });
+        over();
         tell({ text: "Sent to the game", bad: false, active: true });
         follow(request({ do: "play", sheet, stage }), tell);
       } catch (e) {
@@ -385,8 +393,9 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
           if (!alive()) break;
           await new Promise((r) => setTimeout(r, 500));
         }
-        clearInterval(watching);
-        telling?.({ text: "The player is not running: nothing is left to stop", bad: false, active: false });
+        const tell = telling;
+        over();
+        tell?.({ text: "The player is not running: nothing is left to stop", bad: false, active: false });
       } catch (e) {
         fail("Stop in Game", e);
       }
