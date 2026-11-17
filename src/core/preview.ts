@@ -140,7 +140,7 @@ export class PreviewStore {
     return this.once(game, bodyKey(want), async (file) => {
       if (want.player) {
         const base = baseBodyFor(want.rig ?? "");
-        if (!base) throw new Error("EDGEdir knows no base body for V's rig");
+        if (!base) throw new Error("EDGEdir knows no base body for this rig (only the feminine and masculine base rigs have one)");
         await this.export(bridge, base.mesh, { rigs: base.rigs, meshMaterials: false }, file);
         return [`${base.label}, standing in for your V`];
       }

@@ -1,7 +1,7 @@
 // The preview's rules (D3), as pure functions the page, the host and the unit tests share: which
 // clip an actor plays at a time and where in its animation, where an actor stands, and the names
 // the preview's files are asked for by. No VS Code, no page, no files. docs/d3-preview.md.
-import { clipEnd, playOf, transitionOf, unfit, type Actor, type Clip, type ClipAnim, type Ease, type Method, type Play, type SceneDoc, type Track } from "./doc";
+import { clipEnd, playOf, seqOf, transitionOf, unfit, type Actor, type Clip, type ClipAnim, type Ease, type Method, type Play, type SceneDoc, type Track } from "./doc";
 
 /** What an actor shows at a time. */
 export interface Pose {
@@ -40,7 +40,8 @@ export interface Mix {
  * speed`, wrapped over `in` to `out`. In a gap the last clip goes on looping. A clip with no
  * animation, a transition, and a clip made for another rig are passed over.
  */
-export function poseAt(track: Track, time: number): Pose {
+export function poseAt(lane: Track, time: number): Pose {
+  const track = flat(lane);
   let clip: Clip | undefined;
   let play: Play | undefined;
   let passed: Clip | undefined;
@@ -69,6 +70,21 @@ function momentIn(clip: Clip, play: Play, time: number): number {
   return span > 0 ? play.in + (run % span) : play.in;
 }
 
+/**
+ * A lane with its sequence blocks opened out: each block's clips and transitions at the block's
+ * place, so a block plays as its clips do. The ids are the block's and the clip's, joined.
+ */
+export function flat(track: Track): Track {
+  if (!track.clips.some((c) => c.kind === "sequence")) return track;
+  const clips: Clip[] = [];
+  for (const c of track.clips) {
+    const seq = seqOf(c);
+    if (c.kind !== "sequence") clips.push(c);
+    else if (seq) for (const inner of seq.clips) if (inner.kind !== "sequence") clips.push({ ...inner, id: `${c.id}/${inner.id}`, start: inner.start + c.start });
+  }
+  return { ...track, clips: clips.sort((a, b) => a.start - b.start) };
+}
+
 /** A clip that plays on its track's actor: it has an animation, made for the actor's rig. */
 function playable(track: Track, c: Clip): Play | undefined {
   const p = playOf(c);
@@ -87,7 +103,7 @@ export function easeAt(ease: Ease, u: number): number {
 /** The clips a transition joins: B is the first that starts inside it or at its end, A the one that plays before B. */
 export function joinOf(track: Track, transition: Clip): { a?: Clip; b?: Clip } {
   const end = clipEnd(transition);
-  const clips = track.clips.filter((c) => playable(track, c));
+  const clips = flat(track).clips.filter((c) => playable(track, c));
   const b = clips.find((c) => c.start >= transition.start - 1e-6 && c.start <= end + 1e-6);
   if (!b) return {};
   let a: Clip | undefined;
@@ -154,6 +170,8 @@ const low = (s: string | undefined) => (s ?? "").replace(/\//g, "\\").toLowerCas
 export function bodyWant(actor: Actor | undefined): BodyWant | undefined {
   if (!actor) return undefined;
   if (actor.player) return actor.rig ? { player: actor.player, rig: actor.rig } : undefined;
+  // A sequence's stand-in: the game's base body for its rig, as V's is.
+  if (actor.standIn) return actor.rig ? { player: "wa", rig: actor.rig as string } : undefined;
   if (!actor.entity) return undefined;
   return { entity: actor.entity, ...(actor.appearance ? { appearance: actor.appearance } : {}) };
 }
@@ -172,7 +190,8 @@ export const clipKey = (w: ClipWant) => (w.id ? `m|${w.id}` : `a|${low(w.set)}|$
  * The clips an actor track will show soon: the one at the time, and those that start within `ahead`
  * seconds, so they are loaded before the playhead reaches them.
  */
-export function clipsNear(track: Track, time: number, ahead: number): ClipWant[] {
+export function clipsNear(lane: Track, time: number, ahead: number): ClipWant[] {
+  const track = flat(lane);
   const out = new Map<string, ClipWant>();
   const now = poseAt(track, time).play;
   const add = (p: Play | undefined) => {

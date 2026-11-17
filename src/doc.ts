@@ -15,7 +15,7 @@ export const TrackKinds = ["actor", "audio", "camera", "weather", "script", "vid
 export type TrackKind = (typeof TrackKinds)[number];
 
 /** What a clip on an actor track is; on any other track a clip's kind is the track's. */
-export type ClipKind = TrackKind | "anim" | "transition";
+export type ClipKind = TrackKind | "anim" | "transition" | "sequence";
 
 export interface Clip {
   id: string;
@@ -180,7 +180,7 @@ export function formatDoc(doc: SceneDoc): string {
 
 /** The kinds of clip a track of a kind holds; the first is what Add Clip makes. */
 export function clipKinds(kind: TrackKind): ClipKind[] {
-  return kind === "actor" ? ["anim", "transition"] : [kind];
+  return kind === "actor" ? ["anim", "transition", "sequence"] : [kind];
 }
 
 // ---- Time ----
@@ -316,11 +316,12 @@ const samePath = (a: string, b: string) => a.replace(/\//g, "\\").toLowerCase() 
  * known yet). The rule is strict: the same rig. EDGEdir does not retarget.
  */
 export function unfit(track: Track, clip: Clip): string | undefined {
-  const rig = (clip.anim as ClipAnim | undefined)?.rig;
+  const block = clip.kind === "sequence";
+  const rig = block ? seqOf(clip)?.rig : (clip.anim as ClipAnim | undefined)?.rig;
   const actor = track.actor;
-  if (clip.kind !== "anim" || !rig || !actor?.rig || samePath(rig, actor.rig)) return undefined;
+  if ((clip.kind !== "anim" && !block) || !rig || !actor?.rig || samePath(rig, actor.rig)) return undefined;
   const short = (r: string) => (r.replace(/\//g, "\\").split("\\").pop() ?? r).replace(/\.rig$/i, "");
-  return `This animation is made for the rig ${short(rig)}; ${actor.name ?? "the actor"}'s rig is ${short(actor.rig)}`;
+  return `This ${block ? "sequence" : "animation"} is made for the rig ${short(rig)}; ${actor.name ?? "the actor"}'s rig is ${short(actor.rig)}`;
 }
 
 /** A game or made animation as a new clip on an actor track, at `start` or the first free time after it, at its full length. */
@@ -458,6 +459,114 @@ export function addTransition(doc: SceneDoc, trackId: string, near: number): { d
   }
   const made = addClip(doc, trackId, { start: at, length, kind: "transition" });
   return { doc: setTransition(made.doc, made.id, {}), id: made.id };
+}
+
+// ---- Sequence blocks (D4b) ----
+
+/** The sequence a block on a lane plays: its id on the Desk, and a copy of it as it was when last read. */
+export interface SeqRef {
+  id: string;
+  name: string;
+  rig?: string;
+  clips: Clip[];
+}
+
+/** A block's sequence, or undefined for any other clip. */
+export function seqOf(clip: Clip): SeqRef | undefined {
+  const s = clip.seq as Partial<SeqRef> | undefined;
+  if (clip.kind !== "sequence" || !s || typeof s !== "object" || typeof s.id !== "string" || !Array.isArray(s.clips)) return undefined;
+  return { id: s.id, name: typeof s.name === "string" ? s.name : "", ...(typeof s.rig === "string" && s.rig ? { rig: s.rig } : {}), clips: s.clips };
+}
+
+const runEnd = (clips: Clip[]) => clips.reduce((end, c) => Math.max(end, clipEnd(c)), 0);
+const sameSeq = (a: SeqRef, b: SeqRef) => JSON.stringify([a.name, a.rig ?? "", a.clips]) === JSON.stringify([b.name, b.rig ?? "", b.clips]);
+
+/** A sequence as one block on an actor track, at `start` or the first free time after it, as long as the sequence. */
+export function addSeqClip(doc: SceneDoc, trackId: string, seq: SeqRef, start: number): { doc: SceneDoc; id: string } {
+  const length = round(runEnd(seq.clips));
+  if (length <= 0) throw new EditError("That sequence has no clips yet");
+  const id = nextClipId(doc);
+  const next = changeTrack(doc, trackId, (t) => {
+    open(t);
+    if (t.kind !== "actor") throw new EditError("A sequence goes on an actor track");
+    if ((t.actor as Actor | undefined)?.standIn) throw new EditError("A sequence cannot hold another sequence");
+    const made: Clip = { id, kind: "sequence", start: freeStart(t, "sequence", toFrame(doc, start), length), length, seq };
+    return { ...t, clips: sorted([...t.clips, made]) };
+  });
+  return { doc: next, id };
+}
+
+/** A block turned into its clips and transitions on the lane, with no link. Gives the new ids. */
+export function unpackSeq(doc: SceneDoc, clipId: string): { doc: SceneDoc; ids: string[] } {
+  const f = findClip(doc, clipId);
+  const seq = f && seqOf(f.clip);
+  if (!f || !seq) throw new EditError("That is not a sequence block");
+  open(f.track);
+  const taken = new Set<string>();
+  const ids: string[] = [];
+  const out = seq.clips.map((c) => {
+    const id = nextId(doc, "c", taken);
+    taken.add(id);
+    ids.push(id);
+    return { ...c, id, start: round(c.start + f.clip.start) };
+  });
+  return { doc: changeTrack(doc, f.track.id, (t) => ({ ...t, clips: sorted([...t.clips.filter((c) => c.id !== clipId), ...out]) })), ids };
+}
+
+/**
+ * Every block that links a sequence takes the sequence as it is now. A block whose new length
+ * would run into the next clip keeps its copy. Locked tracks are left alone.
+ */
+export function refreshSeqs(doc: SceneDoc, seq: SeqRef): { doc: SceneDoc; updated: number; blocked: number } {
+  let updated = 0;
+  let blocked = 0;
+  const length = round(runEnd(seq.clips));
+  const tracks = doc.tracks.map((t) => {
+    if (t.lock || !t.clips.some((c) => seqOf(c)?.id === seq.id)) return t;
+    let clips = t.clips;
+    for (const c of t.clips) {
+      const now = seqOf(c);
+      if (!now || now.id !== seq.id || sameSeq(now, seq)) continue;
+      if (length <= 0 || !fits({ ...t, clips }, "sequence", c.start, length, [c.id])) {
+        blocked++;
+        continue;
+      }
+      updated++;
+      clips = clips.map((x) => (x.id === c.id ? { ...x, length, seq } : x));
+    }
+    return clips === t.clips ? t : { ...t, clips: sorted(clips) };
+  });
+  return { doc: updated ? withTracks(doc, tracks) : doc, updated, blocked };
+}
+
+/** Whether a block's copy differs from the sequence as it is now. */
+export const seqDiffers = (clip: Clip, seq: SeqRef) => {
+  const now = seqOf(clip);
+  return !!now && now.id === seq.id && !sameSeq(now, seq);
+};
+
+/**
+ * The clips picked on one actor track as a run for a new sequence: the animation clips, and every
+ * transition that lies between the first one's start and the last one's end. The run starts at 0.
+ */
+export function runOf(doc: SceneDoc, clipIds: Iterable<string>): { trackId: string; start: number; rig: string; clips: Clip[]; ids: string[] } {
+  const found = [...new Set(clipIds)].map((id) => findClip(doc, id)).filter((f) => !!f);
+  const anims = found.filter((f) => f.clip.kind === "anim");
+  if (!anims.length) throw new EditError("Select the animation clips the sequence is made of");
+  const track = anims[0].track;
+  if (found.some((f) => f.track.id !== track.id)) throw new EditError("A sequence is made from clips on one track");
+  if (found.some((f) => f.clip.kind === "sequence")) throw new EditError("A sequence cannot hold another sequence. Unpack the block first");
+  const start = Math.min(...anims.map((f) => f.clip.start));
+  const end = Math.max(...anims.map((f) => clipEnd(f.clip)));
+  const picked = new Set(anims.map((f) => f.clip.id));
+  const run = track.clips.filter((c) => picked.has(c.id) || (c.kind === "transition" && c.start >= start - Eps && clipEnd(c) <= end + Eps));
+  const rig = track.actor?.rig ?? (anims.map((f) => (f.clip.anim as ClipAnim | undefined)?.rig).find(Boolean) as string | undefined) ?? "";
+  return { trackId: track.id, start, rig, clips: run.map((c) => ({ ...c, start: round(c.start - start) })), ids: run.map((c) => c.id) };
+}
+
+/** The clips a sequence was made from, replaced by the sequence's block. */
+export function replaceWithSeq(doc: SceneDoc, ids: Iterable<string>, trackId: string, start: number, seq: SeqRef): { doc: SceneDoc; id: string } {
+  return addSeqClip(removeClips(doc, ids), trackId, seq, start);
 }
 
 // ---- Marks (D3) ----
@@ -623,6 +732,7 @@ export function trimClip(doc: SceneDoc, clipId: string, edge: "start" | "end", t
   if (!f) throw new EditError("That clip is no longer in the scene");
   open(f.track);
   const { clip } = f;
+  if (clip.kind === "sequence") throw new EditError("A sequence block is as long as its sequence. Unpack it to change its clips");
   const end = clipEnd(clip);
   const others = f.track.clips.filter((c) => c.id !== clip.id && !mayOverlap(clip.kind, c.kind));
   let start = clip.start;
@@ -667,6 +777,7 @@ export function splitClip(doc: SceneDoc, clipId: string, time: number): { doc: S
   open(f.track);
   const { clip } = f;
   if (clip.kind === "transition") throw new EditError("A transition cannot be split");
+  if (clip.kind === "sequence") throw new EditError("A sequence block cannot be split. Unpack it first");
   const at = toFrame(doc, time);
   if (at <= clip.start + Eps || at >= clipEnd(clip) - Eps) throw new EditError("The playhead is not inside the clip");
   const id = nextClipId(doc);

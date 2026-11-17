@@ -1,5 +1,5 @@
 // The Desk view: the Desk's scenes, the last changed first, and under Recent the scenes opened from
-// anywhere else (a project, a folder). The folders are src/desk.ts's.
+// anywhere else (a project, a folder). Sequences (D4b) have their own heading. The folders are src/desk.ts's.
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
@@ -8,7 +8,7 @@ import { deskSceneOf, listDesk, type DeskScene } from "./desk";
 const RecentKey = "edgedir.recentScenes";
 const RecentMax = 20;
 
-export type DeskItem = { kind: "scene"; scene: DeskScene } | { kind: "recentGroup" } | { kind: "recent"; file: string };
+export type DeskItem = { kind: "scene"; scene: DeskScene } | { kind: "seqGroup" } | { kind: "recentGroup" } | { kind: "recent"; file: string };
 
 export class DeskView implements vscode.TreeDataProvider<DeskItem> {
   private readonly changed = new vscode.EventEmitter<void>();
@@ -46,8 +46,11 @@ export class DeskView implements vscode.TreeDataProvider<DeskItem> {
 
   getChildren(item?: DeskItem): DeskItem[] {
     if (item?.kind === "recentGroup") return this.recent().map((file) => ({ kind: "recent", file }));
+    const all = listDesk();
+    if (item?.kind === "seqGroup") return all.filter((s) => s.kind === "sequence").map((scene) => ({ kind: "scene", scene }));
     if (item) return [];
-    const scenes: DeskItem[] = listDesk().map((scene) => ({ kind: "scene", scene }));
+    const scenes: DeskItem[] = all.filter((s) => s.kind !== "sequence").map((scene) => ({ kind: "scene", scene }));
+    if (all.some((s) => s.kind === "sequence")) scenes.push({ kind: "seqGroup" });
     return this.recent().length ? [...scenes, { kind: "recentGroup" }] : scenes;
   }
 
@@ -57,12 +60,18 @@ export class DeskView implements vscode.TreeDataProvider<DeskItem> {
       t.tooltip = "Scenes opened from a project or another folder. Scenes on the Desk are listed above";
       return t;
     }
+    if (item.kind === "seqGroup") {
+      const t = new vscode.TreeItem("Sequences", vscode.TreeItemCollapsibleState.Expanded);
+      t.tooltip = "Runs of clips and transitions for one rig. Add to Track puts one on the selected actor track as a block";
+      return t;
+    }
     const file = item.kind === "scene" ? item.scene.file : item.file;
+    const seq = item.kind === "scene" && item.scene.kind === "sequence";
     const t = new vscode.TreeItem(item.kind === "scene" ? item.scene.name : path.basename(file, path.extname(file)));
-    t.iconPath = new vscode.ThemeIcon(item.kind === "scene" ? "device-camera-video" : "history");
+    t.iconPath = new vscode.ThemeIcon(seq ? "list-ordered" : item.kind === "scene" ? "device-camera-video" : "history");
     t.description = item.kind === "scene" ? when(item.scene.modified) : path.basename(path.dirname(file));
     t.tooltip = file;
-    t.contextValue = item.kind === "scene" ? "deskScene" : "recentScene";
+    t.contextValue = seq ? "deskSequence" : item.kind === "scene" ? "deskScene" : "recentScene";
     t.resourceUri = vscode.Uri.file(file);
     t.command = { command: "edgedir.openScene", title: "Open", arguments: [vscode.Uri.file(file)] };
     return t;

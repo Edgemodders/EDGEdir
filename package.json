@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -107,6 +107,9 @@
         "selector": [
           {
             "filenamePattern": "*.edgedir"
+          },
+          {
+            "filenamePattern": "*.edgeseq"
           }
         ],
         "priority": "default"
@@ -116,7 +119,8 @@
       {
         "id": "json",
         "extensions": [
-          ".edgedir"
+          ".edgedir",
+          ".edgeseq"
         ]
       }
     ],
@@ -124,6 +128,18 @@
       {
         "command": "edgedir.newScene",
         "title": "New Scene",
+        "category": "EDGEdir",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edgedir.newSequence",
+        "title": "New Sequence",
+        "category": "EDGEdir",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "edgedir.addSequenceToTrack",
+        "title": "Add to Track",
         "category": "EDGEdir",
         "icon": "$(add)"
       },
@@ -240,9 +256,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "edgedir.refreshDesk",
+          "command": "edgedir.newSequence",
           "when": "view == edgedir.desk",
           "group": "navigation@2"
+        },
+        {
+          "command": "edgedir.refreshDesk",
+          "when": "view == edgedir.desk",
+          "group": "navigation@3"
         },
         {
           "command": "edgedir.searchAnimations",
@@ -297,18 +318,28 @@
       ],
       "view/item/context": [
         {
+          "command": "edgedir.addSequenceToTrack",
+          "when": "view == edgedir.desk && viewItem == deskSequence",
+          "group": "inline"
+        },
+        {
+          "command": "edgedir.addSequenceToTrack",
+          "when": "view == edgedir.desk && viewItem == deskSequence",
+          "group": "0@1"
+        },
+        {
           "command": "edgedir.renameScene",
-          "when": "view == edgedir.desk && viewItem == deskScene",
+          "when": "view == edgedir.desk && viewItem =~ /^desk(Scene|Sequence)$/",
           "group": "1@1"
         },
         {
           "command": "edgedir.revealScene",
-          "when": "view == edgedir.desk && viewItem =~ /Scene$/",
+          "when": "view == edgedir.desk && viewItem =~ /(Scene|Sequence)$/",
           "group": "1@2"
         },
         {
           "command": "edgedir.deleteScene",
-          "when": "view == edgedir.desk && viewItem == deskScene",
+          "when": "view == edgedir.desk && viewItem =~ /^desk(Scene|Sequence)$/",
           "group": "2@1"
         },
         {
@@ -380,6 +411,10 @@
         },
         {
           "command": "edgedir.animCarriedOff",
+          "when": "false"
+        },
+        {
+          "command": "edgedir.addSequenceToTrack",
           "when": "false"
         }
       ]

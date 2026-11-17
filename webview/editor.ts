@@ -28,6 +28,8 @@ import {
   trimClip,
   playOf,
   setPlay,
+  seqOf,
+  unpackSeq,
   addTransition,
   setTransition,
   transitionOf,
@@ -61,6 +63,10 @@ let doc: SceneDoc | null = null;
 let sel = new Set<string>();
 let selTrack = "";
 let playhead = 0;
+/** The file is a sequence (D4b): one actor lane, a stand-in body, and no tracks to add. */
+let seqMode = false;
+/** How each linked sequence stands, by its id: linked, missing from the Desk, or newer there than the block's copy. */
+let links: Record<string, string> = {};
 let playing = false;
 let playFrom = 0;
 let lastTick = 0;
@@ -155,12 +161,16 @@ window.addEventListener("message", (e) => {
   $("invalid").hidden = true;
   $("work").hidden = false;
   const before = doc;
+  const mode = `${seqMode}|${JSON.stringify(links)}`;
+  seqMode = !!m.sequence;
+  links = (m.links as Record<string, string> | undefined) ?? {};
+  document.body.classList.toggle("sequence", seqMode);
   doc = m.doc as SceneDoc;
   // What undo or a text edit took away is no longer selected; a clip that is new (redo, paste in the text) is not either.
   sel = new Set([...sel].filter((id) => findClip(doc!, id)));
   if (!findTrack(doc, selTrack)) selTrack = doc.tracks[0]?.id ?? "";
   if (!fitted && sceneLength(doc) > 0) fit();
-  if (!before || JSON.stringify(before) !== text) render();
+  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}`) render();
   applyPendingSelect();
 });
 
@@ -269,7 +279,7 @@ const laneTop = (i: number) => Ruler + i * Lane;
 /** The colour of a clip that does not fit its actor's rig. */
 const Unfit = "#ff5a5a";
 
-const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (c.kind === "transition" ? "transition" : c.kind);
+const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (c.kind === "sequence" ? `▸ ${seqOf(c)?.name || "sequence"}` : c.kind === "transition" ? "transition" : c.kind);
 
 /** A clip's box in the lane: a transition is a thin band along the top, over the join, clear of the clips' names. */
 function box(c: Clip, lane: number) {
@@ -469,7 +479,9 @@ function drawHeads() {
     const text = document.createElement("span");
     text.className = "text";
     text.append(name, tag);
-    row.append(text, mute, lock);
+    // A sequence's one lane has no mute or lock: the file keeps only its clips.
+    if (seqMode) row.append(text);
+    else row.append(text, mute, lock);
     list.append(row);
   }
 }
@@ -608,7 +620,7 @@ function drawInspector() {
     const { clip, track } = found;
     const play = playOf(clip);
     box.append(
-      heading(clip.kind === "transition" ? "Transition" : "Clip"),
+      heading(clip.kind === "transition" ? "Transition" : clip.kind === "sequence" ? "Sequence block" : "Clip"),
       field("Name", textInput("f-name", clip.name ?? "", (v) => change((x) => renameClip(x, clip.id, v)))),
       field("Start (s)", numberInput("f-start", clip.start, frame(d), (v) => change((x) => moveClips(x, [clip.id], toFrame(x, v) - clip.start)))),
       ...(play
@@ -619,7 +631,9 @@ function drawInspector() {
             field("Speed", numberInput("f-speed", play.speed, 0.05, (v) => change((x) => setPlay(x, clip.id, { speed: v })))),
             field("Loops", numberInput("f-loops", play.loops, 1, (v) => change((x) => setPlay(x, clip.id, { loops: Math.round(v) })))),
           ]
-        : [field("Length (s)", numberInput("f-length", clip.length, frame(d), (v) => change((x) => trimClip(x, clip.id, "end", toFrame(x, clip.start + v)))))]),
+        : clip.kind === "sequence"
+          ? [fact("Length", `${Number(clip.length.toFixed(3))} s`)]
+          : [field("Length (s)", numberInput("f-length", clip.length, frame(d), (v) => change((x) => trimClip(x, clip.id, "end", toFrame(x, clip.start + v)))))]),
       fact("Frames", `${Math.round(clip.start * fps)} to ${Math.round(clipEnd(clip) * fps)} (${Math.round(clip.length * fps)})`),
       fact("Track", `${track.name}${track.lock ? " (locked)" : ""}`),
     );
@@ -633,6 +647,33 @@ function drawInspector() {
       const why = unfit(track, clip);
       if (why) box.append(note(`Unfit: ${why}. It stays on the track, and will not play on this actor.`));
     } else if (clip.kind === "anim") box.append(note("A named block with no animation yet. Add one from the Animations view with Add to Track."));
+    const seq = seqOf(clip);
+    if (clip.kind === "sequence" && seq) {
+      const state = links[seq.id] ?? "linked";
+      box.append(
+        fact("Sequence", seq.name || "No name"),
+        fact("Clips", String(seq.clips.filter((c) => c.kind !== "transition").length)),
+        fact("Its rig", seq.rig ? rigName(seq.rig) : "Not known"),
+        note(
+          state === "missing"
+            ? "The sequence is not on this PC's Desk. The block plays the copy the scene keeps."
+            : state === "newer"
+              ? "The sequence on the Desk has changed, and its new length does not fit here. The block plays its older copy. Make room, then open the scene again."
+              : "Linked to the sequence on the Desk: a change saved there shows here. The scene keeps a copy, so it opens without it.",
+        ),
+      );
+      const why = unfit(track, clip);
+      if (why) box.append(note(`Unfit: ${why}. It stays on the track, and will not play on this actor.`));
+      box.append(
+        action("Open Sequence", "Open the sequence in its own tab (or double-click the block)", () => vscode.postMessage({ type: "openSeq", id: seq.id })),
+        action("Unpack", "Turn the block into its clips and transitions on this lane, with no link to the sequence", () => {
+          const made = attempt((x) => unpackSeq(x, clip.id));
+          if (!made) return;
+          sel = new Set(made.ids);
+          commit(made.doc);
+        }),
+      );
+    }
     if (clip.kind === "transition") {
       const now = transitionOf(clip);
       const { a, b } = joinOf(track, clip);
@@ -658,12 +699,21 @@ function drawInspector() {
   } else {
     const track = findTrack(d, selTrack);
     if (track) {
-      box.append(
-        heading(`${TrackKindNames[track.kind]} track`),
-        field("Name", textInput("f-name", track.name, (v) => change((x) => setTrack(x, track.id, { name: v })))),
-        fact("Clips", String(track.clips.length)),
-      );
-      if (track.kind === "actor") {
+      if (seqMode) {
+        const rig = track.actor?.rig;
+        box.append(
+          heading("Sequence"),
+          fact("Clips", String(track.clips.filter((c) => c.kind !== "transition").length)),
+          fact("Rig", rig ? rigName(rig) : "Not known"),
+          note("A run of clips and transitions for one rig. The body is the game's base body for the rig. Add to Track on the Desk puts the sequence on an actor's track in a scene, as one block."),
+        );
+      } else
+        box.append(
+          heading(`${TrackKindNames[track.kind]} track`),
+          field("Name", textInput("f-name", track.name, (v) => change((x) => setTrack(x, track.id, { name: v })))),
+          fact("Clips", String(track.clips.length)),
+        );
+      if (track.kind === "actor" && !seqMode) {
         const a = track.actor;
         if (a) {
           box.append(fact("Actor", actorLabel(a)));
@@ -686,7 +736,7 @@ function drawInspector() {
         } else box.append(note("Nobody acts on this track yet."));
         box.append(action(a ? "Change Actor..." : "Choose Actor...", "Pick one of the game's characters, or V, for this track. Its clips stay", () => vscode.postMessage({ type: "chooseActor", track: track.id })));
       }
-      box.append(
+      if (!seqMode) box.append(
         action("Remove Track", "Take this track and its clips out of the scene. Undo brings it back", () => {
           sel = new Set();
           change((x) => removeTrack(x, track.id));
@@ -695,8 +745,9 @@ function drawInspector() {
       if (track.kind === "ai") box.append(note("What an AI track does is not decided yet. It holds named blocks for now."));
     }
     box.append(
-      heading("Scene"),
-      field("Name", textInput("f-scene", d.name, (v) => commit({ ...d, name: v.trim() }))),
+      heading(seqMode ? "The file" : "Scene"),
+      // A sequence is named by its item on the Desk: Rename there.
+      seqMode ? fact("Name", d.name) : field("Name", textInput("f-scene", d.name, (v) => commit({ ...d, name: v.trim() }))),
       fact("Length", `${fmt(sceneLength(d))}  ·  ${Math.round(sceneLength(d) * fps)} frames`),
       fact("Frame rate", `${fps} a second`),
     );
@@ -743,7 +794,10 @@ function render() {
   const one = sel.size === 1 ? findClip(doc, [...sel][0]) : undefined;
   $<HTMLButtonElement>("addClip").disabled = !track;
   $("addTransition").hidden = track?.kind !== "actor";
-  $<HTMLButtonElement>("split").disabled = !one || one.clip.kind === "transition";
+  $<HTMLButtonElement>("split").disabled = !one || one.clip.kind === "transition" || one.clip.kind === "sequence";
+  $("addTrack").hidden = seqMode;
+  $("saveSeq").hidden = seqMode || track?.kind !== "actor";
+  $<HTMLButtonElement>("saveSeq").disabled = ![...sel].some((id) => findClip(doc!, id)?.clip.kind === "anim");
   $<HTMLButtonElement>("remove").disabled = !sel.size;
   $("snap").classList.toggle("on", snapOn);
   $("loop").classList.toggle("on", looping);
@@ -922,6 +976,8 @@ canvas.addEventListener("dblclick", (ev) => {
   const { px, py } = at(ev);
   const h = hit(px, py);
   if (!h) return;
+  const block = h.clip && seqOf(h.clip);
+  if (block) return vscode.postMessage({ type: "openSeq", id: block.id });
   if (h.clip) return $<HTMLInputElement>("f-name")?.select();
   // An empty place in a lane: a new clip there, a second long.
   newClip(h.track.id, timeAt(px));
@@ -1041,6 +1097,7 @@ function newClip(trackId: string, at: number, kind?: "transition") {
 }
 
 $("addClip").addEventListener("click", () => selTrack && newClip(selTrack, playhead));
+$("saveSeq").addEventListener("click", () => sel.size && vscode.postMessage({ type: "saveSeq", clips: [...sel] }));
 $("addTransition").addEventListener("click", () => {
   if (!selTrack) return;
   const made = attempt((d) => addTransition(d, selTrack, playhead));

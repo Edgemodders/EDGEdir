@@ -5,7 +5,8 @@
 import * as fs from "node:fs";
 import * as vscode from "vscode";
 import type { PreviewFile } from "./core/preview";
-import { formatDoc, parseDoc, type SceneDoc } from "./doc";
+import type { SceneDoc } from "./doc";
+import { isSeqFile, readScene, writeScene } from "./seq";
 import type { BodyWant, ClipWant } from "./pose";
 
 /** Where the 3D preview's files come from: the game, through the extension. */
@@ -30,9 +31,27 @@ type FromPage =
   /** The selected track and the playhead, when either changes: where Add to Track puts a clip. */
   | { type: "cursor"; track: string; playhead: number }
   /** The 3D preview asks for a body or an animation (D3); the answer is `got`, with the same key. */
-  | { type: "want"; key: string; body?: BodyWant; clip?: ClipWant };
+  | { type: "want"; key: string; body?: BodyWant; clip?: ClipWant }
+  /** Save the clips named as a sequence on the Desk; open a block's sequence (D4b). */
+  | { type: "saveSeq"; clips: string[] }
+  | { type: "openSeq"; id: string };
 
 /** A scene open in the editor, with where its page's cursor is. */
+/** What the editor asks of the Desk's sequences (D4b). */
+export interface SequenceHost {
+  /** How each sequence a scene links stands: `linked`, `missing` from the Desk, or `newer` there than the scene's copy. */
+  states(doc: SceneDoc): Record<string, string>;
+  /** Brings a scene's linked blocks up to the sequences on the Desk. */
+  sync(document: vscode.TextDocument): Promise<void>;
+  /** Saves clips of a scene as a new sequence on the Desk. */
+  saveAs(document: vscode.TextDocument, clipIds: string[]): Promise<void>;
+  /** Opens a sequence by its id. */
+  open(id: string): Promise<void>;
+}
+
+/** The scene a text document holds: a scene's own text, or a sequence shown as one lane. Throws when it is neither. */
+export const sceneIn = (document: vscode.TextDocument): SceneDoc => readScene(document.uri.path, document.getText());
+
 export interface OpenScene {
   document: vscode.TextDocument;
   track: string;
@@ -41,7 +60,7 @@ export interface OpenScene {
 
 /** Changes a scene document's text with one of src/doc.ts's edits. Undo takes it back as one step. */
 export async function applyEdit(document: vscode.TextDocument, change: (doc: SceneDoc) => SceneDoc): Promise<void> {
-  const text = formatDoc(change(parseDoc(document.getText())));
+  const text = writeScene(document.uri.path, change(sceneIn(document)), document.getText());
   if (text === document.getText()) return;
   const edit = new vscode.WorkspaceEdit();
   edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), text);
@@ -73,7 +92,19 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     /** Shows the actor picker for a track and writes the choice into the document. */
     private readonly chooseActor: (document: vscode.TextDocument, trackId: string) => Promise<void>,
     private readonly preview: PreviewSource,
+    private readonly sequences: SequenceHost,
   ) {}
+
+  /** Every scene and sequence open in an editor. */
+  documents(): vscode.TextDocument[] {
+    return [...new Set([...this.scenes.values()].map((s) => s.document))];
+  }
+
+  /** Sends every open scene its document again: the Desk's sequences changed. */
+  resend(): void {
+    for (const send of this.senders.values()) send();
+  }
+  private readonly senders = new Map<vscode.WebviewPanel, () => void>();
 
   resolveCustomTextEditor(document: vscode.TextDocument, panel: vscode.WebviewPanel): void {
     this.opened(document.uri);
@@ -106,7 +137,8 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         } catch {
           // Not on disk (yet): unsaved.
         }
-        post({ type: "doc", doc: parseDoc(text), dirty: text !== onDisk });
+        const doc = readScene(document.uri.path, text);
+        post({ type: "doc", doc, dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc) });
       } catch (e) {
         post({ type: "invalid", text: (e as Error).message });
       }
@@ -121,6 +153,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     });
     panel.onDidDispose(() => {
       this.scenes.delete(panel);
+      this.senders.delete(panel);
       if (this.last === panel) this.last = undefined;
       this.moved.fire();
       changed.dispose();
@@ -130,9 +163,16 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     webview.onDidReceiveMessage(async (m: FromPage) => {
       switch (m.type) {
         case "ready":
-          return sendDoc();
+          this.senders.set(panel, sendDoc);
+          sendDoc();
+          // Blocks that link a sequence take what the Desk has now.
+          return this.sequences.sync(document);
+        case "saveSeq":
+          return this.sequences.saveAs(document, m.clips);
+        case "openSeq":
+          return this.sequences.open(m.id);
         case "edit": {
-          const text = formatDoc(m.doc);
+          const text = writeScene(document.uri.path, m.doc, document.getText());
           if (text === document.getText()) return;
           const edit = new vscode.WorkspaceEdit();
           edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), text);
@@ -221,6 +261,7 @@ export const PageBody = `<header>
   <button id="addClip" title="Add a clip to the selected track at the playhead (or double-click a lane)">Add Clip</button>
   <button id="addTransition" title="Add a transition to the selected actor track, at the start of the clip nearest the playhead" hidden>Add Transition</button>
   <button id="split" title="Cut the selected clip in two at the playhead (S)">Split</button>
+  <button id="saveSeq" title="Save the selected clips, with the transitions between them, as a sequence on the Desk" hidden>Save as Sequence</button>
   <button id="remove" title="Remove the selected clips (Delete)">Delete</button>
   <span class="sep"></span>
   <button class="icon" id="zoomOut" title="Zoom out (Ctrl+wheel)">−</button>
