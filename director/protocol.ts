@@ -36,7 +36,7 @@ export interface Snapshot {
   from?: "director" | "editor";
   play: PlayNow;
   cast: CastNow[];
-  /** The actor marked in the world with a pin. */
+  /** The actor that is chosen: the one Adjust works on, marked in the world with a pin while in the game. */
   chosen?: string;
   /** The last thing that went wrong, in words. Gone with the next thing that goes right. */
   error?: string;
@@ -52,7 +52,13 @@ export type PageMessage =
   | { type: "loop"; on: boolean }
   | { type: "stop" }
   | { type: "choose"; track?: string }
-  | { type: "goTo"; track: string };
+  | { type: "goTo"; track: string }
+  // DR2 Adjust. Each one is a change to the scene's file.
+  | { type: "moveToV"; track: string }
+  | { type: "nudge"; track: string; right?: number; forward?: number; turn?: number }
+  | { type: "mark"; track: string; x?: number; y?: number; yaw?: number }
+  | { type: "here" }
+  | { type: "front" };
 
 export type ModMessage = { type: "state"; state: Snapshot };
 

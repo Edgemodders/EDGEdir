@@ -16,7 +16,7 @@ import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
 import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PlayHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
 import { cuesOf } from "./cues";
-import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor, writeRoots } from "./play";
+import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor, writeRoots, writeUnsaved } from "./play";
 import { Game } from "./game";
 import { castLabel } from "./core/cast";
 import { libraryRoot } from "./core/made";
@@ -361,6 +361,26 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     writeRoots({ library, project: project?.dir });
   };
   tellRoots();
+  // The Director may play a scene with unsaved changes here, and may not change it (DR2).
+  let unsavedWas = "";
+  const tellUnsaved = () => {
+    const files = vscode.workspace.textDocuments.filter((d) => d.isDirty && d.uri.scheme === "file" && /\.(edgedir|edgeseq)$/i.test(d.uri.fsPath)).map((d) => d.uri.fsPath);
+    const now = JSON.stringify(files);
+    // An empty list is written once; a list with scenes again and again, so it never looks old.
+    if (!files.length && now === unsavedWas) return;
+    unsavedWas = now;
+    writeUnsaved(files);
+  };
+  // isDirty is not yet true when the change event comes: look a moment later.
+  const soonUnsaved = () => setTimeout(tellUnsaved, 50);
+  const unsavedTimer = setInterval(tellUnsaved, 3000);
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(soonUnsaved),
+    vscode.workspace.onDidSaveTextDocument(soonUnsaved),
+    vscode.workspace.onDidCloseTextDocument(soonUnsaved),
+    { dispose: () => (clearInterval(unsavedTimer), writeUnsaved([])) },
+  );
+  tellUnsaved();
   const plays: PlayHost = {
     async play(document, tell) {
       try {

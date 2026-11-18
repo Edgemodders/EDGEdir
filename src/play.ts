@@ -109,6 +109,22 @@ export function writeRoots(roots: { library?: string; project?: string }, dir = 
   }
 }
 
+/**
+ * Tells the Director which scenes VS Code has open with changes that are not saved (`editor.json`):
+ * it plays those and does not change them, so neither tool overwrites the other. Written at each
+ * change, and every few seconds while there are any, since a list that is old counts as empty.
+ */
+export function writeUnsaved(files: string[], dir = playDir(), now = Date.now()): void {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const tmp = path.join(dir, `editor.${process.pid}.tmp`);
+    fs.writeFileSync(tmp, JSON.stringify({ at: now, dirty: files }));
+    fs.renameSync(tmp, path.join(dir, "editor.json"));
+  } catch {
+    // The Director then takes the scenes as saved.
+  }
+}
+
 /** The stage for a scene on a set: `setText` is the set's file as EDGEbuilder saved it. Undefined for a scene with no set. */
 export function stageFor(doc: SceneDoc, setText: string): PlayStage | undefined {
   const link = setOf(doc);

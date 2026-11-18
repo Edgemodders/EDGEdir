@@ -12,8 +12,9 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 78 tests |
-| [D5 in the game](#d5-in-the-game) | In the game, on the owner's PC | D5c, D5d, DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 80 tests |
+| [The owner's tests, A to F](#the-owners-tests) | By hand, the owner: A to D in VS Code, E and F in the game | D1 to D5, DR1, DR2 | | None run yet |
+| [DR2 Adjust](#dr2-adjust) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR2 | | Not run yet (0.0.25, EDGE Director 0.3.0) |
 | [DR1 The Director's window](#dr1-the-directors-window) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
 | [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes. Step 3 changed in 0.0.24 (no copy into the game's folder): not run |
 | [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | By script: round 1, 11 of 14 (0.0.18: steps 2, 7 and 9 each missed one expectation); round 2, those and step 11 pass on 0.0.19. Every step has passed |
@@ -33,7 +34,7 @@ The owner's rule, set on 2026-11-16. A release needs both:
 | What | Who | Counts when |
 |---|---|---|
 | Every hand test of the changes since the last release, in full | A Claude session by script (real mouse and key events in a VS Code window), or the owner | Every step passed in its latest round |
-| The [spot tests](#spot-tests-for-the-owner) of the major features changed since the last release | The owner, by hand | Each one passed |
+| [The owner's tests](#the-owners-tests), Test A onward, for the major features changed since the last release | The owner, by hand | Each one passed |
 
 The rounds by script are there so that work does not wait for the owner's testing. They do not replace the owner's look at the main features.
 
@@ -45,37 +46,125 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
-- **D5 in the game**, 14 steps, on the owner's PC, now run with EDGE Director's window (the owner's choice, 2026-11-18): not run yet. Nothing of EDGEdir has run in the game at all.
+- **The owner's Tests E and F**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust): not run yet. Nothing of EDGEdir has run in the game at all.
+- **DR2 Adjust**, 12 steps with a stand-in for the game: not run yet.
 - **DR1 The Director's window**, 13 steps with a stand-in for the game: not run yet. With it, D5d's changed step 3 (EDGEdir 0.0.24 asks for EDGE Director's download and copies nothing).
-- **The owner's spot tests** S1 to S14 below: none run yet.
+- **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
-## Spot tests for the owner
+## The owner's tests
 
-One short test per major feature, about 30 minutes in all. Each one names the full test it is drawn from, which has the detail. A new phase adds its own rows.
+What the owner tests by hand, in lettered sections: **Test A**, **Test B** and so on (the owner, 2026-11-18). Each section is one sitting, with what it needs, its steps and its own result line. Do them in order: a later test uses what an earlier one made. A new phase adds to a section or adds the next letter; a letter keeps its meaning.
 
-**Before you start:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
+| Test | What | Needs | About | Result |
+|---|---|---|---|---|
+| [A](#test-a-the-editor) | The editor: the timeline, play, save, the Desk | VS Code | 10 minutes | Not run yet |
+| [B](#test-b-cast-and-animations) | Actors and animations | VS Code, the game's files | 15 minutes, after the first read of the game | Not run yet |
+| [C](#test-c-preview-transitions-and-sequences) | The 3D preview, transitions, sequences | As B | 10 minutes | Not run yet |
+| [D](#test-d-sets-and-what-the-game-will-not-match) | Sets, and what the game will not match | As B, and an EDGEbuilder scene in the Library | 5 minutes | Not run yet |
+| [E](#test-e-edge-director-in-the-game-play) | EDGE Director in the game: open and play a scene | The game running, REDnode, EDGE Director | 30 minutes | Not run yet |
+| [F](#test-f-edge-director-in-the-game-adjust) | EDGE Director in the game: adjust a scene | As E | 15 minutes | Not run yet |
+
+Tests A to D are the spot tests S1 to S12, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
+
+**Before Tests A to D:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
+
+### Test A: The editor
 
 | Spot | Feature | Do | Expect | From |
 |---|---|---|---|---|
 | S1 | The timeline | In the Desk, **New Scene** `Spot`. **Add Track**: Actor, then Audio. Add two clips to the Actor lane. Drag one, drag an edge, put the playhead in one and press **S**. Press Ctrl+Z three times | Clips move, snap and never overlap; the edge trims by frames; S cuts in two; each Ctrl+Z takes one change back | D1, 1 to 7, 14 |
 | S2 | Play, save, the Desk | Press Space, then Space again. Ctrl+S, close the tab, click `Spot` in the Desk | The playhead runs in real time and stops. The scene opens as it was left | D1, 11, 15 |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
+### Test B: Cast and animations
+
+| Spot | Feature | Do | Expect | From |
+|---|---|---|---|---|
 | S3 | The game's animations | Open the **Animations** view, **Read the Game**. When the status bar's count is done, open **Game** down to an animation file and open it. Search `sit chair` | About 14,000 files in folders; a file opens to its animations with their lengths; the search lists animations with both words | Part 1, 1 to 4; part 2, 1 to 3 |
 | S4 | The actor picker | Click the Actor lane's head, **Choose Actor...**, type `judy`, pick Judy Álvarez and an appearance. On a second Actor track choose **V (the player), feminine body** | The track takes the actor's name and the inspector shows Record, Appearance and Rig (`woman_base`). V needs no appearance; V is not offered on the other track | Part 1, 6, 7, 10, 11 |
 | S5 | Animations on a track | Select Judy's track, turn on **Only What Fits the Selected Actor**, click the **+** on an animation. On the clip set Speed to 2, then Loops to 3. Add a second clip right after it, then set the first one's Loops to 9 | The clip lands at the playhead, as long as the animation, and is selected. It gets half as long, then three times that, with marks where it starts again. Loops 9 is refused with a message and the box goes back to 3 | Part 2, 4, 5, 9; the fix of 0.0.8 |
 | S6 | The rig rule | **Change Actor...** on Judy's track to a man. Then save, close and reopen the scene | Every clip is hatched red and the inspector says Unfit and why; nothing is removed. Reopened, it is the same | Part 2, 13, 16 |
 | S7 | A made animation | Run `node tools/made-anim-sample.mjs`, click **Refresh** in the Animations view, click the **+** on `Sample wave`. Then run it with `--remove` | A **Library** group with `Sample wave`, 2.40 s; the clip `sample_wave` lands on the track as a made animation. After the remove and a Refresh the group is gone and the clip stays | Part 3, 1 to 3, 6 |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
+### Test C: Preview, transitions and sequences
+
+| Spot | Feature | Do | Expect | From |
+|---|---|---|---|---|
 | S8 | The 3D preview | Open the scene of S4 to S6 with Judy's track set back to Judy. Drag the playhead through her clips, then press Space. Select V's track and set **Turn (°)** to 180. Drag in the view, then click **Frame** | Two grey bodies stand side by side above the timeline; V's has no head and the line says it stands in for your V. Judy takes the pose under the playhead and plays in time. V turns round. The view orbits, and Frame fits both | D3, 2 to 8, 12 |
 | S9 | Transitions | In the scene of S8, give Judy two clips end to end. Put the playhead near the join, **Add Transition**. Drag the playhead through it, then play. Set **Method** to Inertial and play again. Drag the transition off the second clip's start | The body moves from one clip into the other with no jump, with both methods; say which looks better. Off the second clip's start the transition gets a yellow bar and the inspector says Preview only | D4a, 3 to 8 |
 | S10 | Sequences | In the scene of S9, select Judy's two clips and click **Save as Sequence**; name it and keep the clips. Give a second actor track another woman, select it, and click the **+** on the sequence in the Desk. Play. Double-click the block | The Desk lists the sequence under **Sequences**. One block lands on the second track and that actor plays the same movement. The sequence opens in its own tab with one lane and a grey base body | D4b, 2 to 4, 7 |
-| S11 | What the game will not match | Select one of Judy's clips and type 1 in **In (s)** | **In the game** appears in the inspector and says the game starts the clip from its beginning. From [D5b](#d5b-the-cue-sheet) |
-| S12 | Sets | With an EDGEbuilder scene that has people saved in your EDGE Library: open the **Sets** view and click the **+** on it | A scene opens with a track for each person, their bodies standing in the preview as the set has them, and grey boxes for its props. From [D5a](#d5a-sets) |
-| S13 | Play in game | With the game running and a save loaded: in the scene of S9, click **Play in Game** (EDGE Director must be installed and switched on in the game: S14) | The scene's people stand in front of V and play their clips while the playhead runs. **Stop in Game** removes them. From [D5 in the game](#d5-in-the-game) |
-| S14 | EDGE Director | Install EDGE Director's zip with your mod manager. In the game, press F10, open the Mod Manager, switch **EDGE Director** on and allow its two permissions. In its window open a scene, press **Play**, drag the playhead on the strip, press **Start Again**, then **Go There** on an actor, then **Stop** | The Desk's scenes are listed. The scene's people appear and play; they jump to the moment the playhead is dragged to; Start Again spawns nobody anew; V stands in front of the actor; Stop removes everybody. From [D5 in the game](#d5-in-the-game) |
 
-| Round | Date | Spots | Result |
-|---|---|---|---|
-| 1 | | | Not run yet |
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
+### Test D: Sets and what the game will not match
+
+| Spot | Feature | Do | Expect | From |
+|---|---|---|---|---|
+| S11 | What the game will not match | Select one of Judy's clips and type 1 in **In (s)** | **In the game** appears in the inspector and says the game starts the clip from its beginning. | [D5b](#d5b-the-cue-sheet) |
+| S12 | Sets | With an EDGEbuilder scene that has people saved in your EDGE Library: open the **Sets** view and click the **+** on it | A scene opens with a track for each person, their bodies standing in the preview as the set has them, and grey boxes for its props. | [D5a](#d5a-sets) |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
+### Test E: EDGE Director in the game: play
+
+EDGEdir 0.0.25 with EDGE Director 0.3.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
+
+**Before Tests E and F:** REDnode 0.66.9 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.3.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
+
+| Step | Do | Expect, and say |
+|---|---|---|
+| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.3.0 |
+| E2 | Click the scene of Test C | Its name, "in front of V", a strip with a lane for each track and the clips' names, and under **In the game** what the game will not match. Say how the window sits over the game, and whether its size suits watching a scene |
+| E3 | Press **Play** | The line reads Writing 2 workspots (the first time about half a minute), Spawning, Starting the cast, Playing. Two people stand about 3 m in front of V and play. **G1:** are they at their marks, and in time with each other and with the playhead on the strip? **G7:** how long from the click to the first movement? |
+| E4 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
+| E5 | Look at where they stand and face | **G3:** is the first actor on V's left and the second on V's right, and do both face V? If not, say how they stand |
+| E6 | Watch each join, and the same join in VS Code's preview | **G4:** how does the game's blend look against the preview's Blend and Inertial? |
+| E7 | While it plays, drag the playhead on the strip's ruler to the middle. Then press **Start Again** | Both people go to the clips of that moment at once and play on from there; the time follows. Start Again: they go to their first clips; nobody is removed or spawned |
+| E8 | Switch **Loop** on and let the scene end | The scene starts again by itself, with the same people. Switch Loop off: at the next end the line says the scene has ended and the people go on with their last clips |
+| E9 | Under **Cast**, look at the rows; click one; press **Go There** on the other | Each actor with the clip they play now and their distance from V. The clicked actor has a pin with their name over them in the world, and their lane's name is lit. Go There puts V in front of that actor, facing them (say where V lands) |
+| E10 | In VS Code, trim one clip short and give another Loops 2; save. In the game press **Stop**, look at the strip, press **Play** | After Stop the strip shows the changed clips within a few seconds. **G5:** does the short clip end where the next begins, and does the repeated one repeat, as in the preview? **G7:** how long is the wait this time? |
+| E11 | Press **Stop**, then **Play** | **G6:** is everybody gone after Stop, and does the second play start clean, with two people only? |
+| E12 | In VS Code click **Play in Game**, then **Play Anyway** | The scene plays as from the window. VS Code's playhead runs; the Director's line reads Playing (from VS Code), and its list marks the scene In the game. **Stop in Game** in VS Code removes the people |
+| E13 | Open a scene made on a set near V (D5a), with clips on its people, and press **Play** | The header reads "on" and the set's name. The set's props and its other people appear where the set has them, and the directed people play at their places. **Stop** removes all of it |
+| E14 | While a scene plays from VS Code, switch **EDGE Director** off in the Mod Manager | Its people are gone. In VS Code, within about 7 s, the line says the player stopped and the button reads Play in Game |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
+### Test F: EDGE Director in the game: adjust
+
+EDGEdir 0.0.25 with EDGE Director 0.3.0. The in-game test of DR2. Go on from Test E, with its scene open in EDGE Director's window, and the same scene open and saved in VS Code beside the game.
+
+| Step | Do | Expect, and say |
+|---|---|---|
+| F1 | Press **Play**. Click the first actor's name at the left of the strip | Their lane's name is lit, a pin with their name is over them in the world, and **Adjust** shows their name with Right, Forward and Turn |
+| F2 | Walk V a few steps to one side and turn. Press **Move to V** | The actor stands where V stands, facing as V faces, and plays on. Say whether they move at once, whether the clip goes on or starts again, and whether they stand on the ground |
+| F3 | Press **Left**, **Right**, **Forward**, **Back**, then **Turn +15** and **Turn -15** | Each press moves the actor 10 cm, or turns them 15 degrees, at once. The numbers in Adjust follow. Say which way Left and Forward go, as V first saw the scene |
+| F4 | Look at VS Code | The scene there has the new mark: select the actor's track, and the inspector's Right, Forward and Turn are the Director's numbers; the body in the preview stands there. Ctrl+Z in VS Code takes the last change back (say whether it does) |
+| F5 | In the game press **The Scene Is Here** | Nobody moves. The header reads "at" with three numbers, and **In Front of V** appears beside it |
+| F6 | Press **Stop**, walk V 20 m away, press **Play** | The scene plays at the spot it had, not in front of V. **Go There** on an actor brings V to it |
+| F7 | Stopped, walk V to a new spot, choose an actor and press **Move to V**; then **Play** | The mark changes with nobody in the game, and the actor then plays at that spot |
+| F8 | In VS Code move a clip and do not save. Look at the Director | Within a few seconds a yellow box says the scene has unsaved changes in VS Code; the Adjust buttons and The Scene Is Here are off; **Play** still plays, with the unsaved change |
+| F9 | Save in VS Code | The yellow box goes within a few seconds and the buttons are on again |
+| F10 | While it plays press **In Front of V** | The cast moves to stand in front of V, and the header reads "in front of V" |
+
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
 
 ## Type check, build and unit tests
 
@@ -89,7 +178,7 @@ The **Check** workflow runs the same on every push to `main`. The tests are pure
 
 D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with a developer's copy of the Director into a made-up game folder.
 
-DR1's 3 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
+DR1's and DR2's 5 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, a mark and a place in the world turned into each other in each kind of frame, Adjust (a change to the file made with EDGEdir's own edits and the person moved in the game, the scene's place, what VS Code has unsaved played and not changed, an edit refused in EDGEdir's words), and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
 
 ## D1 Timeline
 
@@ -484,30 +573,7 @@ What round 1 found, and what was done:
 
 ## D5 in the game
 
-EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18; first written for 0.0.21 on 2026-11-17). The in-game test of D5c, D5d and DR1, on the owner's PC, run with EDGE Director's window as the owner chose on 2026-11-18. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
-
-**Before you start:** REDnode 0.66.9 or later with REDbridge and Codeware. EDGE Director in the game: install its zip with EDGEdeck or Vortex (`npm run build`, then `npm run director-zip -- --draft` makes `dist/EDGE-Director-0.2.0-draft.zip`), or, for work on EDGEdir, run the command **Copy the Development Director into the Game** in VS Code. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, D4's scene, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
-
-| Step | Do | Expect, and say |
-|---|---|---|
-| 1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.2.0 |
-| 2 | Click D4's scene | Its name, "in front of V", a strip with a lane for each track and the clips' names, and under **In the game** what the game will not match. Say how the window sits over the game, and whether its size suits watching a scene |
-| 3 | Press **Play** | The line reads Writing 2 workspots (the first time about half a minute), Spawning, Starting the cast, Playing. Two people stand about 3 m in front of V and play. **G1:** are they at their marks, and in time with each other and with the playhead on the strip? **G7:** how long from the click to the first movement? |
-| 4 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
-| 5 | Look at where they stand and face | **G3:** is the first actor on V's left and the second on V's right, and do both face V? If not, say how they stand |
-| 6 | Watch each join, and the same join in VS Code's preview | **G4:** how does the game's blend look against the preview's Blend and Inertial? |
-| 7 | While it plays, drag the playhead on the strip's ruler to the middle. Then press **Start Again** | Both people go to the clips of that moment at once and play on from there; the time follows. Start Again: they go to their first clips; nobody is removed or spawned |
-| 8 | Switch **Loop** on and let the scene end | The scene starts again by itself, with the same people. Switch Loop off: at the next end the line says the scene has ended and the people go on with their last clips |
-| 9 | Under **Cast**, look at the rows; click one; press **Go There** on the other | Each actor with the clip they play now and their distance from V. The clicked actor has a pin with their name over them in the world, and their lane's name is lit. Go There puts V in front of that actor, facing them (say where V lands) |
-| 10 | In VS Code, trim one clip short and give another Loops 2; save. In the game press **Stop**, look at the strip, press **Play** | After Stop the strip shows the changed clips within a few seconds. **G5:** does the short clip end where the next begins, and does the repeated one repeat, as in the preview? **G7:** how long is the wait this time? |
-| 11 | Press **Stop**, then **Play** | **G6:** is everybody gone after Stop, and does the second play start clean, with two people only? |
-| 12 | In VS Code click **Play in Game**, then **Play Anyway** | The scene plays as from the window. VS Code's playhead runs; the Director's line reads Playing (from VS Code), and its list marks the scene In the game. **Stop in Game** in VS Code removes the people |
-| 13 | Open a scene made on a set near V (D5a), with clips on its people, and press **Play** | The header reads "on" and the set's name. The set's props and its other people appear where the set has them, and the directed people play at their places. **Stop** removes all of it |
-| 14 | While a scene plays from VS Code, switch **EDGE Director** off in the Mod Manager | Its people are gone. In VS Code, within about 7 s, the line says the player stopped and the button reads Play in Game |
-
-| Round | Date | Steps | Result |
-|---|---|---|---|
-| 1 | | | Not run yet |
+The in-game test of D5c, D5d and DR1 is the owner's [Test E](#test-e-edge-director-in-the-game-play), and DR2's is [Test F](#test-f-edge-director-in-the-game-adjust), under [The owner's tests](#the-owners-tests). Not run yet: nothing of EDGEdir has run in the game.
 
 ## DR1 The Director's window
 
@@ -534,3 +600,28 @@ EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18). The window and its steps w
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1 to 6, 8 and 9 once by script in a browser against a hand-made scratch Desk, and they showed what is written here; that was not a round |
+
+## DR2 Adjust
+
+EDGEdir 0.0.25 with EDGE Director 0.3.0 (2026-11-18). Adjust with no game, as [DR1's test](#dr1-the-directors-window) is run: the stand-in (`node dist/director-standin.mjs`), its page in a browser, and a VS Code window (F5) on the same scratch `LOCALAPPDATA`. In the stand-in V stands at 0, 0 facing north, and **Go There** moves V.
+
+**Before you start:** DR1's Desk. Talk is saved and open in VS Code. A scene on a set with one of the set's people directed (D5a's), saved.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | In the page open Talk and click the second actor's name at the left of the strip | The lane's name is lit. **Adjust** shows the actor's name and Right, Forward and Turn as VS Code's inspector has them, with Move to V, Left, Right, Forward, Back, Turn -15, Turn +15 |
+| 2 | Click **Right** | Right is 0.1 more. In VS Code, within a moment and with no click, the track's inspector shows the same number, the body in the preview moved, and the tab is not marked unsaved |
+| 3 | In VS Code press Ctrl+Z | The mark goes back to what it was, and the tab is now unsaved. (Unverified until this round: that VS Code takes the file's change as an edit Undo reaches.) Then save, or revert the file |
+| 4 | With nothing playing, click **Move to V** | The line turns red: the scene plays in front of V, so press Play first, or The Scene Is Here. Nothing changes |
+| 5 | Click **Play**; when it plays, click **Go There** on the first actor, then **Move to V** with the second chosen | The stand-in prints one `move` of the second actor to V's place, with V's turn. Adjust's numbers change; VS Code follows |
+| 6 | Click **Turn +15** | One `move` to the same place with the turn 15 more |
+| 7 | Click **The Scene Is Here** | No `move`. The header reads "at" and three numbers, and **In Front of V** shows. In VS Code the file has `"anchor": { "mode": "world", ... }` |
+| 8 | Click **Stop**, then **Move to V** | It works with nobody in the game: the numbers change, no `move` is printed |
+| 9 | Click **In Front of V** | The header reads "in front of V" again and the button goes |
+| 10 | In VS Code move a clip and do not save | Within about 4 s the page shows a yellow box about unsaved changes in VS Code; Adjust's buttons and The Scene Is Here are off. **Play** plays, and the stand-in's `write` has the moved clip's scene. Clicking an Adjust button does nothing |
+| 11 | Save in VS Code | Within about 4 s the box goes and the buttons are on |
+| 12 | Open the scene on a set and click the directed person's name on the strip | Adjust says the actor is placed by the set, with no buttons. The header has no The Scene Is Here |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1, 2 (the page's side), 4 to 9 once by script in a browser, and they showed what is written here; that was not a round. Nothing of it has run with VS Code |

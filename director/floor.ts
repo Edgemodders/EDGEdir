@@ -7,10 +7,10 @@ import * as path from "node:path";
 import { libraryRoot } from "../src/core/made";
 import { cuesOf, type CueSheet } from "../src/cues";
 import { deskDir, Kind, listDesk } from "../src/desk";
-import { clipEnd, sceneLength, type Clip, type SceneDoc } from "../src/doc";
+import { clipEnd, markOf, sceneLength, type Clip, type Mark, type SceneDoc } from "../src/doc";
 import { stageFor, type PlayStage } from "../src/play";
-import { readScene } from "../src/seq";
-import { setOf } from "../src/set";
+import { readScene, writeScene } from "../src/seq";
+import { fromOf, setOf } from "../src/set";
 import { fileOf } from "../src/setFiles";
 
 /** A scene on the Desk, as the window lists it. */
@@ -39,6 +39,10 @@ export interface StripTrack {
   who?: string;
   /** In the cast: the game spawns this actor. */
   cast: boolean;
+  /** An actor's mark: metres right and forward of the scene's origin, and the turn. */
+  mark?: Mark;
+  /** The set places this actor: the mark is not the Director's to change. */
+  placed?: boolean;
   clips: StripClip[];
 }
 
@@ -53,6 +57,10 @@ export interface SceneView {
   notes: string[];
   /** The set the scene is on, and whether its file was found. */
   set?: { name: string; found: boolean };
+  /** The scene's own place in the world, when it has one: neither on a set nor in front of V. */
+  place?: { at: [number, number, number]; yaw: number };
+  /** VS Code has changes to this scene that are not saved: the Director plays it and does not change it. */
+  unsaved?: boolean;
   /** Why the scene cannot be played, in words; absent when it can. */
   why?: string;
 }
@@ -101,9 +109,12 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     kind: t.kind,
     ...(t.actor?.name ? { who: t.actor.name } : {}),
     cast: cast.has(t.id),
+    ...(t.kind === "actor" && t.actor ? { mark: markOf(doc, t.id), ...(doc.set && fromOf(t) ? { placed: true } : {}) } : {}),
     clips: t.clips.map((c) => ({ id: c.id, start: c.start, end: clipEnd(c), label: String(label(c)), played: jumps.has(`${t.id} ${c.start}`) || c.kind === "sequence" })),
   }));
   const view: SceneView = { file, name: doc.name, length: Math.max(sheet.length, sceneLength(doc)), tracks, notes: notes.map((n) => n.text) };
+  const anchor = doc.anchor as { mode: string; at?: [number, number, number]; yaw?: number };
+  if (anchor.mode === "world" && Array.isArray(anchor.at)) view.place = { at: anchor.at, yaw: Number(anchor.yaw ?? 0) };
   const link = setOf(doc);
   let stage: PlayStage | undefined;
   if (link) {
@@ -126,4 +137,47 @@ export function open(file: string, roots: Roots): { view: SceneView; play?: Play
     throw new Error(`${path.basename(file)} is not on the Desk any more`);
   }
   return viewOf(file, readScene(file, text), roots);
+}
+
+/**
+ * The scenes VS Code has open with changes that are not saved. EDGEdir writes the list into the play
+ * folder (`editor.json`) at each change and every few seconds while there are any: a list older
+ * than `within` milliseconds is from a VS Code that is gone, and counts as empty.
+ */
+export function unsavedIn(playDir: string, now = Date.now(), within = 10000): string[] {
+  try {
+    const said = JSON.parse(fs.readFileSync(path.join(playDir, "editor.json"), "utf8")) as { at?: number; dirty?: unknown };
+    if (typeof said.at !== "number" || now - said.at > within || !Array.isArray(said.dirty)) return [];
+    return said.dirty.filter((f): f is string => typeof f === "string");
+  } catch {
+    return [];
+  }
+}
+
+const same = (a: string, b: string) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+
+/** Whether VS Code has unsaved changes to this scene's file. */
+export const isUnsaved = (file: string, playDir: string, now = Date.now()) => unsavedIn(playDir, now).some((f) => same(f, file));
+
+/**
+ * One change to a scene's file, as the editor would make it: the file is read, changed with one of
+ * EDGEdir's own edits (which throws with words fit to show), and written whole through a temp
+ * file. Refused while VS Code has unsaved changes to it, so neither tool overwrites the other.
+ */
+export function edit(file: string, change: (doc: SceneDoc) => SceneDoc, playDir: string): SceneDoc {
+  if (isUnsaved(file, playDir)) throw new Error("This scene has unsaved changes in VS Code. Save it there first");
+  let was: string;
+  try {
+    was = fs.readFileSync(file, "utf8");
+  } catch {
+    throw new Error(`${path.basename(file)} is not on the Desk any more`);
+  }
+  const doc = change(readScene(file, was));
+  const text = writeScene(file, doc, was);
+  if (text !== was) {
+    const tmp = `${file}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, text);
+    fs.renameSync(tmp, file);
+  }
+  return doc;
 }

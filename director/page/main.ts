@@ -57,7 +57,25 @@ function drawScenes(s: Snapshot) {
 function drawScene(s: Snapshot) {
   const v = s.view!;
   $("name").textContent = v.name;
-  $("set").textContent = v.set ? `on ${v.set.name}${v.set.found ? "" : " (not found)"}` : "in front of V";
+  const n = (x: number) => String(Math.round(x * 100) / 100);
+  $("set").textContent = v.set ? `on ${v.set.name}${v.set.found ? "" : " (not found)"}` : v.place ? `at ${v.place.at.map(n).join(", ")}` : "in front of V";
+  // The scene's place: a scene on a set plays where the set is.
+  $("here").hidden = !!v.set;
+  $("front").hidden = !!v.set || !v.place;
+  setOff($("here"), !!v.unsaved);
+  setOff($("front"), !!v.unsaved);
+  $("unsaved").hidden = !v.unsaved;
+  // Adjust: the chosen actor's mark, and the buttons that change it.
+  const who = v.tracks.find((t) => t.id === s.chosen && t.mark);
+  $("noone").hidden = !!who;
+  $("adjust").hidden = !who;
+  if (who?.mark) {
+    $("whoName").textContent = who.who ?? who.name;
+    $("whoMark").textContent = `Right ${n(who.mark.x)} m, Forward ${n(who.mark.y)} m, Turn ${n(who.mark.yaw)}`;
+    $("placed").hidden = !who.placed;
+    $("moves").hidden = !!who.placed;
+    for (const b of document.querySelectorAll<HTMLElement>("#moves rn-button")) setOff(b, !!v.unsaved);
+  }
   $("why").hidden = !v.why;
   $("why").textContent = v.why ?? "";
   // The ruler: a mark every second, or fewer for a long scene.
@@ -74,8 +92,8 @@ function drawScene(s: Snapshot) {
       const lane = el("div", `lane${t.cast ? " cast" : ""}${s.chosen === t.id ? " on" : ""}`);
       lane.dataset.track = t.id;
       const name = el("div", "lane-name", t.who ?? t.name);
-      name.title = t.cast ? "Mark this actor in the world" : t.kind === "actor" ? "Not in the game: see In the game below" : `${t.kind} tracks do not play in the game yet`;
-      if (t.cast) name.addEventListener("click", () => post({ type: "choose", track: s.chosen === t.id ? undefined : t.id }));
+      name.title = t.mark ? "Choose this actor: Adjust works on them, and a pin marks them in the game" : t.kind === "actor" ? "No actor is chosen for this track yet" : `${t.kind} tracks do not play in the game yet`;
+      if (t.mark) name.addEventListener("click", () => post({ type: "choose", track: s.chosen === t.id ? undefined : t.id }));
       const clips = el("div", "lane-clips");
       for (const c of t.clips) {
         const clip = el("div", `clip${c.played && t.cast ? " played" : ""}`, c.label);
@@ -192,6 +210,23 @@ $("restart").addEventListener("click", () => {
   from = 0;
   post(mine() ? { type: "seek", t: 0 } : { type: "play", from: 0, loop: looping() });
 });
+// Adjust: each one changes the scene's file through the mod, which answers with the new state.
+$("here").addEventListener("click", () => {
+  if (!off($("here"))) post({ type: "here" });
+});
+$("front").addEventListener("click", () => {
+  if (!off($("front"))) post({ type: "front" });
+});
+$("toV").addEventListener("click", () => {
+  if (!off($("toV")) && state?.chosen) post({ type: "moveToV", track: state.chosen });
+});
+for (const b of document.querySelectorAll<HTMLElement>(".nudge")) {
+  b.addEventListener("click", () => {
+    if (off(b) || !state?.chosen) return;
+    const d = b.dataset;
+    post({ type: "nudge", track: state.chosen, right: Number(d.right ?? 0), forward: Number(d.forward ?? 0), turn: Number(d.turn ?? 0) });
+  });
+}
 $("loop").addEventListener("change", (e) => {
   const on = !!(e as CustomEvent<{ checked?: boolean }>).detail?.checked;
   if (on) $("loop").setAttribute("checked", "");

@@ -13,29 +13,53 @@ export const slug = (text, max = 40) =>
 /** The name the set is loaded under, so Stop can unload it. */
 export const SET = "edgedir-set";
 
+const norm = (deg) => ((deg % 360) + 360) % 360;
+/** The turn that faces along a direction: a turn of 0 faces north. */
+export const turnOf = (fx, fy) => norm((Math.atan2(-fx, fy) * 180) / Math.PI);
+
 /**
- * Where each cast member stands in the world, and which way they face.
- * On a set: the mark is metres east and north of the set's origin, and the turn is the world's.
- * In front of V (`v`: V's place and the way V faces): the anchor is `distance` metres ahead; Right
- * and Forward are as V sees them, and a Turn of 180 faces V.
+ * The scene's frame in the world: its origin `o`, the way its Forward points `f`, and that way as a turn.
+ * On a set: the set's origin, Forward is north. At a place (`anchor.mode: "world"`): the place and its
+ * yaw. In front of V (`v`: V's place and the way V faces): `distance` metres ahead of V, Forward as V
+ * faces, so Right and Forward are as V sees them and a Turn of 180 faces V.
  */
+export function frameOf(sheet, stage, v) {
+  const mode = sheet.anchor?.mode;
+  if (mode === "set" && Array.isArray(stage?.origin)) return { mode, o: { x: stage.origin[0], y: stage.origin[1], z: stage.origin[2] }, f: { x: 0, y: 1 }, turn: 0 };
+  if (mode === "world" && Array.isArray(sheet.anchor.at)) {
+    const turn = norm(Number(sheet.anchor.yaw ?? 0));
+    const r = (turn * Math.PI) / 180;
+    return { mode, o: { x: sheet.anchor.at[0], y: sheet.anchor.at[1], z: sheet.anchor.at[2] }, f: { x: -Math.sin(r), y: Math.cos(r) }, turn };
+  }
+  if (!v) throw new Error("V was not found: load a save first");
+  const d = Number(sheet.anchor?.distance ?? 3);
+  return { mode: "player", o: { x: v.x + v.fx * d, y: v.y + v.fy * d, z: v.z }, f: { x: v.fx, y: v.fy }, turn: turnOf(v.fx, v.fy) };
+}
+
+/** Where a mark is in the world, in a frame: `z` is the height when the set gives one. */
+export function placeOf(frame, at, z) {
+  const x = Number(at?.x ?? 0);
+  const y = Number(at?.y ?? 0);
+  const { o, f } = frame;
+  return { position: { x: o.x + x * f.y + y * f.x, y: o.y - x * f.x + y * f.y, z: Number(z ?? o.z) }, yaw: norm(Number(at?.yaw ?? 0) + frame.turn) };
+}
+
+/** The mark of a place in the world, in a frame: the other way round from `placeOf`. Rounded to millimetres and tenths of a degree. */
+export function markAt(frame, position, yaw) {
+  const dx = position.x - frame.o.x;
+  const dy = position.y - frame.o.y;
+  const { f } = frame;
+  const r = (n, k) => Math.round(n * k) / k;
+  return { x: r(dx * f.y - dy * f.x, 1000), y: r(dx * f.x + dy * f.y, 1000), yaw: r(norm(yaw - frame.turn), 10) % 360 };
+}
+
+/** Where each cast member stands in the world, and which way they face. A person of the set stands at the height the set gives them. */
 export function placements(sheet, stage, v) {
-  const onSet = sheet.anchor?.mode === "set" && Array.isArray(stage?.origin);
-  if (!onSet && !v) throw new Error("V was not found: load a save first");
-  const f = onSet ? { x: 0, y: 1 } : { x: v.fx, y: v.fy };
-  const d = onSet ? 0 : Number(sheet.anchor?.distance ?? 3);
-  const o = onSet ? { x: stage.origin[0], y: stage.origin[1], z: stage.origin[2] } : { x: v.x + f.x * d, y: v.y + f.y * d, z: v.z };
-  // The turn that faces along `f`: a turn of 0 faces north.
-  const turn = (Math.atan2(-f.x, f.y) * 180) / Math.PI;
+  const frame = frameOf(sheet, stage, v);
   const out = {};
   for (const m of sheet.cast) {
-    const at = m.at ?? {};
-    const x = Number(at.x ?? 0);
-    const y = Number(at.y ?? 0);
-    // A person of the set stands at the height the set gives them.
-    const from = onSet ? stage.scene?.objects?.find((ob) => ob.id === stage.from?.[m.track]) : undefined;
-    const z = Number(from?.transform?.position?.[2] ?? o.z);
-    out[m.track] = { position: { x: o.x + x * f.y + y * f.x, y: o.y - x * f.x + y * f.y, z }, yaw: (((Number(at.yaw ?? 0) + turn) % 360) + 360) % 360 };
+    const from = frame.mode === "set" ? stage.scene?.objects?.find((ob) => ob.id === stage.from?.[m.track]) : undefined;
+    out[m.track] = placeOf(frame, m.at, from?.transform?.position?.[2]);
   }
   return out;
 }
@@ -176,6 +200,29 @@ export class Player {
     return true;
   }
 
+  /** The frame of the scene that is in the game: where its origin is and the way its Forward points. Undefined with none. */
+  frame() {
+    return this.ctx?.frame;
+  }
+
+  /** The scene in the game was given another place: later marks are measured in this frame. */
+  reframe(frame) {
+    if (this.ctx) this.ctx.frame = frame;
+  }
+
+  /**
+   * Puts an actor who is in the game somewhere else, as they play. False when they are not there.
+   * (Unverified in the game: `world.move` on a person who is in a workspot.)
+   */
+  async place(track, position, yaw) {
+    const a = this.ctx?.cast.find((x) => x.track === track);
+    if (!a) return false;
+    const ok = await this.deps.world.move(a.id, position, undefined, yaw);
+    a.position = position;
+    a.yaw = yaw;
+    return !!ok;
+  }
+
   /** Whether the play starts again at its end. */
   setLoop(on) {
     if (this.ctx) this.ctx.loop = !!on;
@@ -216,7 +263,10 @@ export class Player {
       // 2. Place.
       const onSet = sheet.anchor?.mode === "set";
       if (onSet && !Array.isArray(stage?.origin)) throw new Error("The scene plays on a set, and the set did not come with it.");
-      const places = placements(sheet, stage, onSet ? null : await step(this.deps.player()));
+      const v = onSet || sheet.anchor?.mode === "world" ? null : await step(this.deps.player());
+      ctx.frame = frameOf(sheet, stage, v);
+      ctx.v = v;
+      const places = placements(sheet, stage, v);
       if (onSet && stage.scene) {
         this.set({ state: "loading", text: `Loading the set "${stage.scene.name ?? "set"}"` });
         ctx.loaded = true;

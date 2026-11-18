@@ -6,11 +6,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { open, rootsOf, scenes } from "../director/floor";
-import { entryAt, Player } from "../director/play.mjs";
+import type { Snapshot } from "../director/protocol";
+import { Stage, type PlayerLike } from "../director/stage";
+import { entryAt, frameOf, markAt, placeOf, Player, turnOf } from "../director/play.mjs";
 import type { CueSheet } from "../src/cues";
 import { newScene, newSequence } from "../src/desk";
-import { addAnimClip, addTrack, formatDoc, newDoc, setActor, type SceneDoc } from "../src/doc";
-import { writeRoots } from "../src/play";
+import { addAnimClip, addTrack, formatDoc, markOf, newDoc, parseDoc, setActor, type SceneDoc } from "../src/doc";
+import { writeRoots, writeUnsaved } from "../src/play";
 import { newSeq } from "../src/seq";
 import { addSetPeople, chooseSet, linkTo, parseSet } from "../src/set";
 
@@ -41,6 +43,7 @@ function fakeWorld() {
       useWorkspot: (id: { hash: string }, o: { entry: string }) => note(`use ${o.entry}`, { id, started: true }),
       jumpWorkspot: (_id: unknown, to: string) => note(`jump ${to}`, true),
       remove: () => note("remove", true),
+      move: (_id: unknown, position: unknown, _o: unknown, yaw: number) => note(`move ${JSON.stringify(position)} ${yaw}`, true),
       load: () => note("load", {}),
       unload: () => note("unload", 1),
     },
@@ -144,6 +147,112 @@ test("the Director lists the Desk's scenes and reads one as the editor would", (
     const found = open(talk.file, roots);
     assert.deepEqual([found.view.set, found.view.why, (found.play!.stage!.scene as { name: string }).name], [{ name: "My Alley", found: true }, undefined, "My Alley"]);
     assert.throws(() => open(path.join(desk, "gone.edgedir"), roots), /not on the Desk any more/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---- DR2 Adjust ---------------------------------------------------------------------------------
+
+test("a mark and a place in the world turn into each other, in each kind of frame", () => {
+  // In front of V, who faces east: the origin is 3 m east of V, Forward is east, Right is south.
+  const front = frameOf({ anchor: { mode: "player", distance: 3 } }, undefined, { x: 10, y: 20, z: 1, fx: 1, fy: 0 });
+  assert.deepEqual([front.o, front.turn], [{ x: 13, y: 20, z: 1 }, 270]);
+  const p = placeOf(front, { x: 2, y: 1, yaw: 180 });
+  assert.deepEqual([p.position, p.yaw], [{ x: 14, y: 18, z: 1 }, 90]);
+  assert.deepEqual(markAt(front, p.position, p.yaw), { x: 2, y: 1, yaw: 180 });
+  // At a place: the origin and the turn are the document's.
+  const at = frameOf({ anchor: { mode: "world", at: [5, 5, 2], yaw: 90 } }, undefined, null);
+  assert.deepEqual(markAt(at, placeOf(at, { x: -1.5, y: 0.25, yaw: 30 }).position, placeOf(at, { x: -1.5, y: 0.25, yaw: 30 }).yaw), { x: -1.5, y: 0.25, yaw: 30 });
+  assert.equal(turnOf(0, 1), 0);
+  assert.throws(() => frameOf({ anchor: { mode: "player" } }, undefined, null), /load a save/);
+});
+
+test("Adjust changes the scene's file with EDGEdir's own edits, and moves the people in the game", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "edgedir-adjust-"));
+  try {
+    const desk = path.join(root, "desk");
+    const playDir = path.join(root, "play");
+    let doc: SceneDoc = addTrack(newDoc("Talk"), "actor");
+    const id = doc.tracks[0].id;
+    doc = setActor(doc, id, { record: "Character.Ana", name: "Ana", rig: "w.rig" });
+    doc = addAnimClip(doc, id, { set: "a.anims", name: "stand", rig: "w.rig", seconds: 5 }, 0).doc;
+    const talk = newScene("Talk", desk, doc);
+    fs.writeFileSync(talk.file, formatDoc(doc));
+    const onDisk = () => parseDoc(fs.readFileSync(talk.file, "utf8"));
+
+    const { world, calls } = fakeWorld();
+    let v = { x: 100, y: 200, z: 5, fx: 0, fy: 1 };
+    const player = new Player({ world, player: async () => v, warmMs: 2, leadMs: 2 });
+    const states: Snapshot[] = [];
+    const stage = new Stage({
+      player: player as unknown as PlayerLike,
+      version: "0.0.0",
+      desk,
+      playDir,
+      publish: (s) => states.push(s),
+      whereV: async () => v,
+      teleport: async () => undefined,
+      pin: async () => 1,
+      unpin: async () => undefined,
+    });
+    const last = () => states[states.length - 1];
+    await stage.handle({ type: "open", file: talk.file });
+    assert.deepEqual(last().view!.tracks[0].mark, { x: 0, y: 0, yaw: 0 });
+
+    // In front of V and not in the game: a place in the world is no mark yet.
+    await stage.handle({ type: "choose", track: id });
+    assert.equal(last().chosen, id);
+    await stage.handle({ type: "moveToV", track: id });
+    assert.match(last().error ?? "", /Press Play first, or The Scene Is Here/);
+    // A nudge needs no frame: 10 cm to the right, in the file.
+    await stage.handle({ type: "nudge", track: id, right: 0.1 });
+    assert.deepEqual([last().error, markOf(onDisk(), id)], [undefined, { x: 0.1, y: 0, yaw: 0 }]);
+
+    // In the game: Ana stands 3 m north of V, 10 cm to the right. V walks 2 m east and 1 m north, facing east.
+    await stage.handle({ type: "play" });
+    assert.equal(last().play.state, "playing");
+    v = { x: 102, y: 201, z: 5, fx: 1, fy: 0 };
+    calls.length = 0;
+    await stage.handle({ type: "moveToV", track: id });
+    assert.deepEqual(markOf(onDisk(), id), { x: 2, y: -2, yaw: 270 });
+    assert.deepEqual(calls, ['move {"x":102,"y":201,"z":5} 270']);
+    // A turn by 15 degrees moves nobody from their spot, and turns them.
+    calls.length = 0;
+    await stage.handle({ type: "nudge", track: id, turn: 15 });
+    assert.deepEqual([markOf(onDisk(), id).yaw, calls], [285, ['move {"x":102,"y":201,"z":5} 285']]);
+
+    // The Scene Is Here: the scene keeps the spot it plays at; nobody moves, and the file has the place.
+    calls.length = 0;
+    await stage.handle({ type: "here" });
+    assert.deepEqual([(onDisk().anchor as { mode: string; at: number[]; yaw: number }), calls], [{ mode: "world", at: [100, 203, 5], yaw: 0 }, []]);
+    assert.deepEqual(last().view!.place, { at: [100, 203, 5], yaw: 0 });
+    // Stopped, the scene has its frame by itself now: Move to V works with nobody in the game.
+    await stage.handle({ type: "stop" });
+    v = { x: 100, y: 204, z: 5, fx: 0, fy: -1 };
+    await stage.handle({ type: "moveToV", track: id });
+    assert.deepEqual([last().error, markOf(onDisk(), id)], [undefined, { x: 0, y: 1, yaw: 180 }]);
+    // In Front of V takes the place off again.
+    await stage.handle({ type: "front" });
+    assert.deepEqual([onDisk().anchor, last().view!.place], [{ mode: "player", distance: 3 }, undefined]);
+
+    // What VS Code has unsaved is played and not changed.
+    writeUnsaved([talk.file], playDir);
+    const before = fs.readFileSync(talk.file, "utf8");
+    await stage.handle({ type: "nudge", track: id, forward: 1 });
+    assert.match(last().error ?? "", /unsaved changes in VS Code/);
+    assert.equal(last().view!.unsaved, true);
+    assert.equal(fs.readFileSync(talk.file, "utf8"), before);
+    await stage.handle({ type: "play" });
+    assert.equal(last().play.state, "playing");
+    await stage.handle({ type: "stop" });
+    // A list that is old is from a VS Code that is gone.
+    writeUnsaved([talk.file], playDir, Date.now() - 60000);
+    await stage.handle({ type: "nudge", track: id, forward: 1 });
+    assert.deepEqual([last().error, markOf(onDisk(), id).y], [undefined, 2]);
+    // An edit EDGEdir refuses is said in its words, and nothing is written.
+    await stage.handle({ type: "mark", track: id, x: 5000 });
+    assert.match(last().error ?? "", /within 1000 m/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

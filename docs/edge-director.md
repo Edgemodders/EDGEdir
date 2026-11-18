@@ -4,7 +4,7 @@ title: EDGE Director
 
 # <span class="y">EDGE</span> Director
 
-**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window is built (EDGEdir 0.0.24, EDGE Director 0.2.0): not run in the game, and its hand test with a stand-in has not run. See [What is built](#what-is-built).**
+**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window and DR2 Adjust are built (EDGEdir 0.0.25, EDGE Director 0.3.0): not run in the game, and their hand tests with a stand-in have not run. See [What is built](#what-is-built).**
 
 The owner's words: an "EDGE Director" REDnode app that is part of the EDGEdir tool set. It can place and manage pins if it needs to, but its main purpose is to carry the workflow of directing, playing and adjusting a scene over to inside the game.
 
@@ -124,6 +124,26 @@ Left out of DR1, against the plan:
 | A loop over a stretch of the scene | The whole scene loops. A stretch needs two marks on the ruler: with DR4 |
 | VS Code following a play started in the Director | VS Code's line and playhead follow only plays it sent. With DR2, when the editor learns of the Director's changes |
 | The kit's look, checked | The page was only seen in a plain browser, without REDnode's kit. How it looks in the game is for the in-game test |
+
+**DR2 Adjust, EDGEdir 0.0.25 with EDGE Director 0.3.0 (2026-11-18). Not run in the game or with VS Code. Its hand test with a stand-in ([Tests](testing.html), "DR2 Adjust") has not run; the owner's is Test F.**
+
+| Part | Where | What it does |
+|---|---|---|
+| The scene's place | `setPlace` in `src/doc.ts`; `frameOf` in `director/play.mjs` | `"anchor": { "mode": "world", "at": [x, y, z], "yaw": turn }`: the scene's origin at a spot in the world, its Forward pointing along the turn. The mode was in the document's type since D1 and unused |
+| A frame | `frameOf`, `placeOf`, `markAt`, `turnOf` in `director/play.mjs` | The scene's origin and the way its Forward points, for a scene on a set, at a place, or in front of V. A mark to a place in the world and back. The player keeps the frame of the scene in the game (`frame()`, `reframe()`), and `place()` moves an actor as they play (`world.move`) |
+| One change to the file | `edit` in `director/floor.ts` | Reads the file, applies one of EDGEdir's own edits (`setMark`, `setPlace`), writes it whole through a temp file. An edit's refusal is shown in its own words |
+| The unsaved rule | `writeUnsaved` in `src/play.ts`, `tellUnsaved` in `src/extension.ts`; `unsavedIn`, `isUnsaved` in `director/floor.ts` | EDGEdir writes the scenes it has unsaved into the play folder (`editor.json`), at each change and every 3 s while there are any; a list older than 10 s counts as empty. The Director plays such a scene and refuses to change it |
+| Adjust | `director/stage.ts` (`moveToV`, `nudge`, `mark`, `here`, `front`), the window's **Adjust** section | Move to V; Left, Right, Forward, Back by 10 cm; Turn by 15 degrees; **The Scene Is Here** and **In Front of V**. After each change the people in the game are put where the scene now has them |
+| In VS Code | Nothing new | The scene editor is a text editor underneath, and VS Code reads a file again when it changes on disk and the tab has nothing unsaved. **Unverified:** that the editor shows it at once, and that Undo takes it back |
+
+How DR2 differs from the plan:
+
+| Plan | Built |
+|---|---|
+| The Scene Is Here: the scene's place is V's place | A scene in the game keeps the spot it plays at, so nobody moves; with none in the game, the spot a play would use now (3 m in front of V). V's own place would put an actor with no mark on top of V |
+| "Unsaved in VS Code", with the adjust buttons off | As planned, as a yellow box. The list is EDGEdir's, in the play folder |
+| The numbers, typed | Shown, not typed: the window has no number boxes yet. The stage manager takes typed numbers (`mark`); VS Code's inspector is where they are typed |
+| A change to clips takes effect at Start Again | Not in DR2: the Director changes no clips yet (DR4) |
 
 Unverified until the game, beside the list below: that a page and its mod of one package hear each other over `channel` as EDGEbuilder's do (read from EDGEbuilder's source, not run here); `world.pin` on a spawned person and `game.player.teleport` from this mod; a jump to a clip the actor already plays (Start Again with one clip).
 

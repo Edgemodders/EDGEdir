@@ -42,18 +42,19 @@ const world = {
   useWorkspot: (id: Id, o: unknown) => call("use", [id.hash, o], { id, started: true }),
   jumpWorkspot: (id: Id, to: string) => call("jump", [id.hash, to], true, 5),
   remove: (id: Id) => call("remove", [id.hash], true, 5),
+  move: (id: Id, position: unknown, _orientation: unknown, yaw: number) => call("move", [id.hash, position, yaw], true, 5),
   load: (scene: { objects: { id: string }[] }, o: unknown) => call("load", [scene.objects.map((x) => x.id), o], { skipped: [], notes: [] }),
   unload: (name: string) => call("unload", [name], 1, 5),
 };
 // V stands at the world's middle, facing north, until Go There moves them.
-let v = { x: 0, y: 0, z: 0 };
+let v = { x: 0, y: 0, z: 0, fx: 0, fy: 1 };
 
 const listeners = new Set<http.ServerResponse>();
 let lastState: Snapshot | undefined;
 let stage: Stage | undefined;
 const player = new Player({
   world,
-  player: async () => ({ ...v, fx: 0, fy: 1 }),
+  player: async () => v,
   report: (state: PlayNow) => {
     put(playDir(), "state.json", { ...state, version });
     said("state", state.state, state.text);
@@ -72,7 +73,8 @@ stage = new Stage({
   whereV: async () => v,
   teleport: async (to) => {
     said("teleport", to);
-    v = { x: to.x, y: to.y, z: to.z };
+    const r = (to.yaw * Math.PI) / 180;
+    v = { x: to.x, y: to.y, z: to.z, fx: -Math.sin(r), fy: Math.cos(r) };
   },
   pin: (at, title) => call("pin", [at, title], ++n, 5),
   unpin: (id) => call("unpin", [id], true, 5),

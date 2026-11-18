@@ -14,6 +14,7 @@ declare module "rednode" {
     useWorkspot(id: Id, options: unknown): Promise<{ id?: Id; started?: boolean; why?: string }>;
     jumpWorkspot(id: Id, entry: string): Promise<boolean>;
     remove(id: Id): Promise<boolean>;
+    move(id: Id, position: Point, orientation?: unknown, yaw?: number): Promise<boolean>;
     load(scene: unknown, options: unknown): Promise<{ skipped?: { object: string; why: string }[]; notes?: string[] }>;
     unload(name: string): Promise<number>;
     onRespawn(handler: (before: { hash: string }, after: { hash: string }) => void): void;

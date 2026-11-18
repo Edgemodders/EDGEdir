@@ -624,6 +624,18 @@ export function setMark(doc: SceneDoc, trackId: string, change: Partial<Mark>): 
   return changeTrack(doc, trackId, (t) => ({ ...t, actor: { ...t.actor, at: mark } }));
 }
 
+/**
+ * Where the scene plays (EDGE Director, DR2). A place puts its origin at a spot in the world, with
+ * the way its Forward points as a turn (0 is north): `anchor: { mode: "world", at: [x, y, z], yaw }`.
+ * No place puts it back in front of V. A scene on a set plays where the set is.
+ */
+export function setPlace(doc: SceneDoc, place: { at: [number, number, number]; yaw: number } | undefined): SceneDoc {
+  if (doc.set) throw new EditError("This scene plays where its set is. Take the set off in VS Code to place the scene by itself");
+  if (!place) return { ...doc, anchor: { mode: "player", distance: 3 } };
+  if (place.at.length !== 3 || !place.at.every(isNumber) || !isNumber(place.yaw)) throw new EditError("That is not a place");
+  return { ...doc, anchor: { mode: "world", at: place.at.map((n) => round(n)) as [number, number, number], yaw: round(((place.yaw % 360) + 360) % 360) } };
+}
+
 /** A new track at the end, named after its kind and numbered when the name is taken. */
 export function addTrack(doc: SceneDoc, kind: TrackKind, name?: string): SceneDoc {
   let label = name?.trim() || TrackKindNames[kind];
