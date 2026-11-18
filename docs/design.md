@@ -347,7 +347,7 @@ All agreed as recommended on 2026-11-17.
 
 ## Pins: named places from REDnode
 
-**Proposed on 2026-11-18, from the owner's note of the same day. Not agreed, nothing built.** The owner's idea: pins are named places a scene's timeline can use, for example to spawn at, to walk to, and to trigger when V is near.
+**Proposed on 2026-11-18, from the owner's note of the same day. N1 to N3 were agreed that day with [EDGE Director](edge-director.html)'s plan (its R5), and pins are built as its part DR3. N4 to N6 are still open. Nothing built.** The owner's idea: pins are named places a scene's timeline can use, for example to spawn at, to walk to, and to trigger when V is near.
 
 ### What a pin is today
 

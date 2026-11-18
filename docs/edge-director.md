@@ -4,7 +4,7 @@ title: EDGE Director
 
 # <span class="y">EDGE</span> Director
 
-**Status: a plan for the owner's review, written 2026-11-18 from the owner's note of the same day. Not agreed, nothing built.** Twelve questions are at the end.
+**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. Written the same day from the owner's notes. Nothing built yet; DR1 is first.**
 
 The owner's words: an "EDGE Director" REDnode app that is part of the EDGEdir tool set. It can place and manage pins if it needs to, but its main purpose is to carry the workflow of directing, playing and adjusting a scene over to inside the game.
 
@@ -118,9 +118,11 @@ How REDnode does it (its `packs/`, `tools/release/pack-zip.mjs` and Release work
 | How a window of this size sits with the game behind it while a scene is watched (it may want a small "watching" form) | DR1's in-game test |
 | That VS Code takes a file's change into an open custom editor as an edit without asking | DR2, in VS Code |
 
-## Questions for the owner
+## Questions and the owner's answers
 
-| # | Question | Recommended |
+All agreed as recommended on 2026-11-18.
+
+| # | Question | Agreed |
 |---|---|---|
 | R1 | Is this the shape: one scene file, opened by either tool, with the Director able to work with VS Code closed? | Yes |
 | R2 | The player package becomes EDGE Director (id `edge-director`), one package with a window, rather than a second package beside the player? | Yes: the player was never released, and one package is one thing to install and keep current |
