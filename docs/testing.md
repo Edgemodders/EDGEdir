@@ -75,7 +75,7 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 
 Tests A to D are the spot tests S1 to S12 and S15, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
 
-**Before Tests A to D:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
+**Before Tests A to D:** the game installed (not running) and REDbridge 0.14.0 or later (REDcode's **Install REDbridge** fetches the latest, 0.15.0 on 2026-11-18). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
 
 ### Test A: The editor
 
