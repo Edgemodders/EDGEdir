@@ -19,16 +19,23 @@ export interface Got {
   error?: string;
 }
 
+/** One of the scene's pins (DR3): its title, and metres right and forward of the scene's origin. */
+export interface Post {
+  title: string;
+  x: number;
+  y: number;
+}
+
 /** One of the set's props (D5a), from the scene's origin, in the game's axes. */
 type Prop = Stage["props"][number];
 
 export interface Preview {
   /** The scene as it is now (or as a drag would leave it), the playhead and the selected track. */
-  sync(doc: SceneDoc | null, time: number, selected: string, props?: Prop[]): void;
+  sync(doc: SceneDoc | null, time: number, selected: string, props?: Prop[], pins?: Post[]): void;
   got(m: Got): void;
   frame(): void;
   /** What the preview has, for tests of the page: bodies standing, files waited for, and the note. */
-  state(): { bodies: number; props: number; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
+  state(): { bodies: number; props: number; pins?: number; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
 }
 
 interface Loaded {
@@ -160,6 +167,51 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       box.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), boxLines));
       holder.add(box);
       boxes.add(holder);
+    }
+  };
+  // DR3: the scene's pins, as thin posts with their titles.
+  const posts = new THREE.Group();
+  scene.add(posts);
+  const postMaterial = new THREE.MeshBasicMaterial({ color: 0xf2e600 });
+  let postsKey = "";
+  const setPins = (pins: Post[]) => {
+    const key = JSON.stringify(pins);
+    if (key === postsKey) return;
+    postsKey = key;
+    for (const o of [...posts.children]) {
+      posts.remove(o);
+      o.traverse((x) => {
+        (x as THREE.Mesh).geometry?.dispose();
+        const m = (x as THREE.Sprite).material as THREE.SpriteMaterial | undefined;
+        if (x instanceof THREE.Sprite && m) {
+          m.map?.dispose();
+          m.dispose();
+        }
+      });
+    }
+    for (const p of pins) {
+      const holder = new THREE.Group();
+      // The game's x is right and y forward; here y is up and the game's y is -z.
+      holder.position.set(p.x, 0, -p.y);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 2.2, 6), postMaterial);
+      post.position.y = 1.1;
+      holder.add(post);
+      const canvas = document.createElement("canvas");
+      const c = canvas.getContext("2d");
+      if (c) {
+        canvas.width = 512;
+        canvas.height = 64;
+        c.font = "600 34px system-ui, sans-serif";
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.fillStyle = "#f2e600";
+        c.fillText(p.title.length > 26 ? `${p.title.slice(0, 25)}…` : p.title, 256, 32);
+        const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthTest: false }));
+        label.scale.set(2, 0.25, 1);
+        label.position.y = 2.36;
+        holder.add(label);
+      }
+      posts.add(holder);
     }
   };
   /** The modder moved the view: it is theirs now, and new bodies no longer fit it again. */
@@ -424,8 +476,9 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
   }
 
   return {
-    sync(next, t, sel, props) {
+    sync(next, t, sel, props, pins) {
       setProps(next ? (props ?? []) : []);
+      setPins(next ? (pins ?? []) : []);
       doc = next;
       time = t;
       selected = sel;
@@ -439,6 +492,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
     state: () => ({
       bodies: [...standing.values()].filter((s) => s.root).length,
       props: boxes.children.length,
+      pins: posts.children.length,
       waiting: [...files.values()].filter((f) => f.state === "asked").length,
       failed: [...files.values()].filter((f) => f.state === "failed").length,
       note: noteEl.textContent ?? "",

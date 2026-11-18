@@ -12,9 +12,10 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 82 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 83 tests |
 | [The owner's tests, A to G](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to G in the game | D1 to D5, DR1 to DR3 | | None run yet |
 | [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | | Not run yet (0.0.26, EDGE Director 0.4.0) |
+| [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | | Not run yet (0.0.27) |
 | [DR2 Adjust](#dr2-adjust) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR2 | | Not run yet (0.0.25, EDGE Director 0.3.0) |
 | [DR1 The Director's window](#dr1-the-directors-window) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
 | [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes. Step 3 changed in 0.0.24 (no copy into the game's folder): not run |
@@ -50,6 +51,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **The owner's Tests E, F and G**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins): not run yet. Nothing of EDGEdir has run in the game at all.
 - **DR2 Adjust**, 12 steps with a stand-in for the game: not run yet.
 - **DR3 Pins**, 10 steps with a stand-in for the game: not run yet. The owner's is Test G.
+- **DR3 Pins in the editor**, 10 steps in VS Code: not run yet. The owner's is step D3 of Test D.
 - **DR1 The Director's window**, 13 steps with a stand-in for the game: not run yet. With it, D5d's changed step 3 (EDGEdir 0.0.24 asks for EDGE Director's download and copies nothing).
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
@@ -63,12 +65,12 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 | [A](#test-a-the-editor) | The editor: the timeline, play, save, the Desk | VS Code | 10 minutes | Not run yet |
 | [B](#test-b-cast-and-animations) | Actors and animations | VS Code, the game's files | 15 minutes, after the first read of the game | Not run yet |
 | [C](#test-c-preview-transitions-and-sequences) | The 3D preview, transitions, sequences | As B | 10 minutes | Not run yet |
-| [D](#test-d-sets-and-what-the-game-will-not-match) | Sets, and what the game will not match | As B, and an EDGEbuilder scene in the Library | 5 minutes | Not run yet |
+| [D](#test-d-sets-and-what-the-game-will-not-match) | Sets, what the game will not match, and pins in the editor (its last spot, S15, is best done after Test G) | As B, and an EDGEbuilder scene in the Library | 10 minutes | Not run yet |
 | [E](#test-e-edge-director-in-the-game-play) | EDGE Director in the game: open and play a scene | The game running, REDnode, EDGE Director | 30 minutes | Not run yet |
 | [F](#test-f-edge-director-in-the-game-adjust) | EDGE Director in the game: adjust a scene | As E | 15 minutes | Not run yet |
 | [G](#test-g-edge-director-in-the-game-pins) | EDGE Director in the game: pins | As E | 10 minutes | Not run yet |
 
-Tests A to D are the spot tests S1 to S12, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
+Tests A to D are the spot tests S1 to S12 and S15, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
 
 **Before Tests A to D:** the game installed (not running) and REDbridge 0.14.0 (REDcode's **Install REDbridge** fetches it). Open the EDGEdir folder in VS Code, run `npm run build`, press F5 (**Run EDGEdir**). The first **Read the Game** takes a few minutes, once.
 
@@ -115,6 +117,7 @@ Tests A to D are the spot tests S1 to S12, one short test for each major feature
 |---|---|---|---|---|
 | S11 | What the game will not match | Select one of Judy's clips and type 1 in **In (s)** | **In the game** appears in the inspector and says the game starts the clip from its beginning. | [D5b](#d5b-the-cue-sheet) |
 | S12 | Sets | With an EDGEbuilder scene that has people saved in your EDGE Library: open the **Sets** view and click the **+** on it | A scene opens with a track for each person, their bodies standing in the preview as the set has them, and grey boxes for its props. | [D5a](#d5a-sets) |
+| S15 | Pins in the editor | After Test G (the scene then has pins), or with a pin set of yours from the game: open the scene in VS Code, click an empty part of the timeline, and under **Pins** click **Choose Pins...** and pick a file. Set **The scene's place** to a pin. Select an actor's track and set **At pin** to another | The Pins section lists the pins. The pins stand in the 3D preview as yellow posts with their names, and the actor's body stands at its pin. The inspector's Right and Forward are the pin's place from the scene's origin | [DR3 Pins in the editor](#dr3-pins-in-the-editor) |
 
 | Round | Date | Result |
 |---|---|---|
@@ -200,7 +203,7 @@ The **Check** workflow runs the same on every push to `main`. The tests are pure
 
 D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with a developer's copy of the Director into a made-up game folder.
 
-DR1's, DR2's and DR3's 7 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, a mark and a place in the world turned into each other in each kind of frame, Adjust (a change to the file made with EDGEdir's own edits and the person moved in the game, the scene's place, what VS Code has unsaved played and not changed, an edit refused in EDGEdir's words), pins (a pin file read and written as REDnode's, a mark and the scene's place that follow a pin when it moves, a pin dropped where V stands into the scene's own file, drawn, dropped again with the actor in the game moved, moved by another hand, removed), and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
+DR1's, DR2's and DR3's 8 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, a mark and a place in the world turned into each other in each kind of frame, Adjust (a change to the file made with EDGEdir's own edits and the person moved in the game, the scene's place, what VS Code has unsaved played and not changed, an edit refused in EDGEdir's words), pins (a pin file read and written as REDnode's, a mark and the scene's place that follow a pin when it moves, a pin dropped where V stands into the scene's own file, drawn, dropped again with the actor in the game moved, moved by another hand, removed; the pin files a scene can choose), and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
 
 ## D1 Timeline
 
@@ -670,3 +673,26 @@ EDGEdir 0.0.26 with EDGE Director 0.4.0 (2026-11-18). The Director's pins with n
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1 to 3, 5 (with nothing playing) and 9 once by script in a browser, and they showed what is written here; that was not a round |
+
+## DR3 Pins in the editor
+
+EDGEdir 0.0.27 (2026-11-18). Pins in VS Code: the inspector's Pins section, a pin for the scene's place and for a mark, the posts in the preview, and the scene following its pin file. No game and no stand-in.
+
+**Before you start:** F5 (**Run EDGEdir**) with a scratch `LOCALAPPDATA` and `APPDATA`. On the Desk a saved scene Talk with two actors of the game, in front of V. Beside Talk's file, a pin file `Talk.pins.json` with two pins 4 m apart (write it by hand in REDnode's format, or drop them with the stand-in, [DR3 Pins](#dr3-pins), steps 1 and 4). In `%APPDATA%\@rednode\overlay\pins`, a second pin file with one pin.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Open Talk and click an empty part of the timeline | The inspector has a **Pins** section: a note that the scene has no pins, and **Choose Pins...** |
+| 2 | Click **Choose Pins...** | A list with Talk's own file ("Beside this scene") and the second file ("Your pins in the game (REDnode)"), each with its number of pins, and Browse for a pin file |
+| 3 | Pick Talk's own | Pins shows the name and "2 pins", a row for each pin with its place in the world, **The scene's place** set to In front of V, and a note that the pins are not in the preview while the scene plays in front of V. No posts in the preview |
+| 4 | Set **The scene's place** to the first pin | Two yellow posts with the pins' names stand in the preview, the first at the origin. The pins' rows read Right and Forward from the origin, and the first names "the scene" |
+| 5 | Select the second actor's track and set **At pin** to the second pin | The body stands at the second post. Right and Forward are that pin's. The pin's row in the scene's Pins names the actor |
+| 6 | Type another number in **Right (m)** | The body moves, and At pin reads None |
+| 7 | Set At pin to the second pin again and save. In a text editor move that pin 2 m in `Talk.pins.json` and save | Within about 3 s the post and the body move 2 m with no click; the status bar says the scene follows its pins; the tab is unsaved |
+| 8 | Ctrl+Z | The body and the post go back |
+| 9 | Click **Remove Pins** | The Pins section says no pins. The bodies stay where they are, the posts go, and At pin is gone from the track |
+| 10 | Ctrl+Z, then **Choose Pins...** and pick the file from the game | The scene has that file's one pin; the actor's At pin shows the old pin as gone and keeps its place |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet. While building (2026-11-18) Claude ran the page's side of steps 1 and 3 to 6 once by script in a plain browser (`tools/page-harness.mjs`), judged by the page's state; that was not a round. Choose Pins, the watch and Undo have not run |

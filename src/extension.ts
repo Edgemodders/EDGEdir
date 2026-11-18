@@ -14,7 +14,9 @@ import { addAnimClip, addSeqClip, EditError, findTrack, newDoc, refreshSeqs, lin
 import { rigName } from "./core/entity";
 import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
-import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PlayHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
+import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PinsHost, type PlayHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
+import { findPinFiles, pinFileOf, pinPathFor, readPinFile } from "../director/floor";
+import { linkPins, PinsEnding, pinsOf } from "./pins";
 import { cuesOf } from "./cues";
 import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor, writeRoots, writeUnsaved } from "./play";
 import { Game } from "./game";
@@ -436,6 +438,60 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     },
   };
 
+  // ---- Pins (DR3): a scene's pin file, named places in the world ----
+  const pinFile = (document: vscode.TextDocument): string | undefined => {
+    try {
+      const link = document.uri.scheme === "file" && !isSeqFile(document.uri.path) ? pinsOf(sceneIn(document)) : undefined;
+      return link ? pinFileOf(document.uri.fsPath, link) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const pins: PinsHost = {
+    file: pinFile,
+    async sync(document) {
+      try {
+        const file = pinFile(document);
+        const link = file ? pinsOf(sceneIn(document)) : undefined;
+        const info = file ? readPinFile(file) : undefined;
+        if (!link || !info) return;
+        const next = { name: info.name || link.name, pins: info.pins };
+        // Nothing is written when the scene already has these pins: the tab stays saved.
+        if (linkPins(sceneIn(document), link.path, next) === sceneIn(document)) return;
+        await applyEdit(document, (d) => linkPins(d, link.path, next));
+        vscode.window.setStatusBarMessage("EDGEdir: the scene follows its pins as they are now", 6000);
+      } catch {
+        // The text is not a scene just now, or the file is not a pin file.
+      }
+    },
+    async choose(document) {
+      try {
+        if (document.uri.scheme !== "file") return warn("save the scene first: its pins are found from where its file is.");
+        const rows = findPinFiles(document.uri.fsPath, roots().project?.dir);
+        const From = { scene: "Beside this scene", game: "Your pins in the game (REDnode)", project: "The open project" };
+        const Browse = "Browse for a pin file...";
+        const row = await vscode.window.showQuickPick(
+          [...rows.map((r) => ({ label: r.name, description: `${From[r.from]}  ·  ${r.pins} pin${r.pins === 1 ? "" : "s"}`, detail: r.file, file: r.file as string | undefined })), { label: Browse, description: "", detail: "A .pins.json file anywhere on this PC", file: undefined }],
+          { title: "Choose Pins", placeHolder: "A pin file: named places in the world, dropped in the game", matchOnDescription: true, matchOnDetail: true },
+        );
+        if (!row) return;
+        let file = row.file;
+        if (!file) {
+          const got = await vscode.window.showOpenDialog({ canSelectMany: false, title: "Choose Pins", filters: { "Pin files": ["json"] } });
+          file = got?.[0]?.fsPath;
+          if (!file) return;
+          if (!file.toLowerCase().endsWith(PinsEnding)) return warn(`a pin file's name ends in ${PinsEnding}.`);
+        }
+        const info = readPinFile(file);
+        if (!info) return warn("that pin file is gone.");
+        const link = pinPathFor(document.uri.fsPath, file);
+        await applyEdit(document, (d) => linkPins(d, link, { name: info.name || path.basename(file!, PinsEnding), pins: info.pins }));
+      } catch (e) {
+        fail("Choose Pins", e);
+      }
+    },
+  };
+
   const scenes: SceneEditorProvider = new SceneEditorProvider(
     context,
     (uri) => void desk.opened(uri),
@@ -448,6 +504,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     sequences,
     sets,
     plays,
+    pins,
   );
   /** The scene in front as a document, or undefined when its text is not a scene just now. */
   const frontDoc = (): SceneDoc | undefined => {

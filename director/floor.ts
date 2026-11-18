@@ -250,3 +250,56 @@ export function syncPins(sceneFile: string, playDir: string): boolean {
   edit(sceneFile, (d) => linkPins(d, link.path, { name: info!.name || link.name, pins: info!.pins }), playDir);
   return true;
 }
+
+/** REDnode's folder of the player's own pin sets: what **Drop a pin here** in its Pins window writes. Read only (REDnode #50). */
+export function rednodePinsDir(): string {
+  return path.join(process.env.APPDATA || path.join(process.env.USERPROFILE ?? "", "AppData", "Roaming"), "@rednode", "overlay", "pins");
+}
+
+/** A pin file found for a scene to choose, with where it is from. */
+export interface PinFileRow {
+  file: string;
+  from: "scene" | "game" | "project";
+  name: string;
+  pins: number;
+}
+
+/**
+ * The pin files a scene can choose: its own beside it, the player's sets in REDnode's folder, and
+ * those in the open project (8 folders deep at most, without dot folders and node_modules).
+ * A file that is not a pin file is left out.
+ */
+export function findPinFiles(sceneFile: string, projectDir: string | undefined, gameDir = rednodePinsDir()): PinFileRow[] {
+  const rows: PinFileRow[] = [];
+  const add = (file: string, from: PinFileRow["from"]) => {
+    if (rows.some((r) => path.resolve(r.file).toLowerCase() === path.resolve(file).toLowerCase())) return;
+    try {
+      const info = readPinFile(file);
+      if (info) rows.push({ file, from, name: info.name || path.basename(file, PinsEnding), pins: info.pins.length });
+    } catch {
+      // Not a pin file.
+    }
+  };
+  const list = (dir: string) => {
+    try {
+      return fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return [];
+    }
+  };
+  for (const e of list(path.dirname(sceneFile))) if (e.isFile() && e.name.toLowerCase().endsWith(PinsEnding)) add(path.join(path.dirname(sceneFile), e.name), "scene");
+  for (const e of list(gameDir)) if (e.isFile() && e.name.toLowerCase().endsWith(PinsEnding)) add(path.join(gameDir, e.name), "game");
+  const walk = (dir: string, deep: number) => {
+    for (const e of list(dir)) {
+      if (e.isFile() && e.name.toLowerCase().endsWith(PinsEnding)) add(path.join(dir, e.name), "project");
+      else if (e.isDirectory() && deep < 8 && !e.name.startsWith(".") && e.name !== "node_modules") walk(path.join(dir, e.name), deep + 1);
+    }
+  };
+  if (projectDir) walk(projectDir, 0);
+  return rows;
+}
+
+/** The path a scene's link names a pin file by: its name alone when it is beside the scene's file, else the full path. */
+export function pinPathFor(sceneFile: string, pinFile: string): string {
+  return path.resolve(path.dirname(pinFile)).toLowerCase() === path.resolve(path.dirname(sceneFile)).toLowerCase() ? path.basename(pinFile) : path.resolve(pinFile);
+}

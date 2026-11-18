@@ -35,6 +35,7 @@ import {
   transitionOf,
   markOf,
   setMark,
+  setPlace,
   unfit,
   type Actor,
   type Clip,
@@ -44,6 +45,7 @@ import {
 } from "../src/doc";
 import { cuesOf, notesFor } from "../src/cues";
 import { fromOf, type Stage } from "../src/set";
+import { frameOf as placeFrame, markAtPin, markFrom, markPin, pinsOf, placeAtPin, placePin, unlinkPins } from "../src/pins";
 import { joinOf, transitionNote } from "../src/pose";
 import { mountPreview } from "./preview";
 
@@ -295,7 +297,7 @@ function box(c: Clip, lane: number) {
 
 function draw() {
   // The preview shows the scene as a drag would leave it, at the playhead.
-  preview.sync(drag?.preview ?? doc, playhead, selTrack, stage?.props);
+  preview.sync(drag?.preview ?? doc, playhead, selTrack, stage?.props, postsOf(drag?.preview ?? doc));
   const k = colours();
   const w = width();
   const tracks = shown();
@@ -611,6 +613,14 @@ function action(label: string, title: string, click: () => void) {
   return b;
 }
 
+/** The scene's pins as the preview draws them: from the scene's origin, when the scene has a place, and no further than a street away. */
+function postsOf(d: SceneDoc | null | undefined) {
+  const link = d ? pinsOf(d) : undefined;
+  const frame = d ? placeFrame(d) : undefined;
+  if (!link || !frame) return [];
+  return link.pins.map((p) => ({ title: p.title, ...markFrom(frame, p.at) })).filter((p) => Math.hypot(p.x, p.y) <= 150);
+}
+
 function drawInspector() {
   const box = $("inspector");
   // Typing in a field is not thrown away by a redraw the field's own change caused.
@@ -771,6 +781,21 @@ function drawInspector() {
               field("Forward (m)", markInput("f-marky", "y", 0.1)),
               field("Turn (°)", markInput("f-markyaw", "yaw", 15)),
             );
+          // DR3: the mark can follow one of the scene's pins.
+          const pins = pinsOf(d);
+          if (pins && !placed) {
+            const at = markPin(track) ?? "";
+            const gone = at && !pins.pins.some((p) => p.title === at);
+            box.append(
+              field(
+                "At pin",
+                choice("f-markpin", at, [["", "None"], ...pins.pins.map((p): [string, string] => [p.title, p.title]), ...(gone ? [[at, `${at} (gone)`, true] as [string, string, boolean]] : [])], (v) =>
+                  change((x) => (v ? markAtPin(x, track.id, v) : setMark(x, track.id, {}))),
+                ),
+              ),
+            );
+            if (at) box.append(note("The actor stands at this pin and moves with it. Typing a number above lets go of the pin."));
+          }
         } else box.append(note("Nobody acts on this track yet."));
         box.append(action(a ? "Change Actor..." : "Choose Actor...", "Pick one of the game's characters, or V, for this track. Its clips stay", () => vscode.postMessage({ type: "chooseActor", track: track.id })));
       }
@@ -806,6 +831,37 @@ function drawInspector() {
           if (stage.fresh) box.append(action(`Add ${count(stage.fresh, "Person", "People")} from the Set`, "Add an actor track for each person of the set that has none", ask("add")));
         }
         box.append(action("Choose Set...", "Pick another EDGEbuilder scene for this scene to play on", ask("choose")), action("Remove Set", "The scene plays in front of V again. Its tracks and their places stay", ask("remove")));
+      }
+    }
+    // DR3: the scene's pins, named places in the world from a pin file.
+    if (!seqMode) {
+      const pins = pinsOf(d);
+      const askPins = () => vscode.postMessage({ type: "pins", do: "choose" });
+      box.append(heading("Pins"));
+      if (!pins) box.append(note("No pins. A pin is a named place in the world, dropped in the game with EDGE Director or REDnode's Pins window. An actor or the scene itself can stand at one."), action("Choose Pins...", "Pick a pin file for this scene: the scene's own, one of yours from the game, or one in the open project", askPins));
+      else {
+        const f = fact("Pins", `${pins.name || "No name"}, ${count(pins.pins.length, "pin")}`, pins.path);
+        f.id = "f-pins";
+        box.append(f);
+        const place = placePin(d) ?? "";
+        const world = (d.anchor as { mode: string }).mode === "world";
+        if (!d.set)
+          box.append(
+            field(
+              "The scene's place",
+              choice("f-placepin", place || (world ? "\u0000place" : ""), [["", "In front of V"], ...(world && !place ? [["\u0000place", "A place in the world", true] as [string, string, boolean]] : []), ...pins.pins.map((p): [string, string] => [p.title, `The pin ${p.title}`])], (v) =>
+                change((x) => (v ? placeAtPin(x, v) : setPlace(x, undefined))),
+              ),
+            ),
+          );
+        const frame = placeFrame(d);
+        for (const p of pins.pins) {
+          const who = [place === p.title ? "the scene" : "", ...d.tracks.filter((t) => markPin(t) === p.title).map((t) => t.actor?.name ?? t.name)].filter(Boolean);
+          const from = frame ? markFrom(frame, p.at) : undefined;
+          box.append(fact(p.title, `${from ? `Right ${from.x}, Forward ${from.y}` : p.at.map((n) => Math.round(n * 10) / 10).join(", ")}${who.length ? `  ·  ${who.join(", ")}` : ""}`));
+        }
+        if (!frame) box.append(note("The scene plays in front of V, wherever V is, so its pins are not in the preview and no actor can stand at one. Give the scene a place: one of its pins above, or The Scene Is Here in EDGE Director."));
+        box.append(action("Choose Pins...", "Pick another pin file for this scene", askPins), action("Remove Pins", "The scene forgets its pins. Actors and the scene keep their places and follow nothing", () => change((x) => unlinkPins(x))));
       }
     }
   }

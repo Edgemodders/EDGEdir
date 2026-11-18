@@ -39,7 +39,9 @@ type FromPage =
   /** The scene's set (D5a): choose one, take it off, or add tracks for its people. */
   | { type: "set"; do: "choose" | "remove" | "add" }
   /** Play in game, and Stop in game (D5d). */
-  | { type: "game"; do: "play" | "stop" };
+  | { type: "game"; do: "play" | "stop" }
+  /** The scene's pins (DR3): choose a pin file. */
+  | { type: "pins"; do: "choose" };
 
 /** A scene open in the editor, with where its page's cursor is. */
 /** What the editor asks of the Desk's sequences (D4b). */
@@ -63,6 +65,15 @@ export interface SetHost {
   choose(document: vscode.TextDocument): Promise<void>;
   remove(document: vscode.TextDocument): Promise<void>;
   addPeople(document: vscode.TextDocument): Promise<void>;
+}
+
+/** What the editor asks about a scene's pins, named places from a pin file (DR3). */
+export interface PinsHost {
+  /** Brings a scene up to its pin file, when the file's pins are not the ones it last read. */
+  sync(document: vscode.TextDocument): Promise<void>;
+  choose(document: vscode.TextDocument): Promise<void>;
+  /** The scene's pin file on this PC, to watch; undefined when it has none. */
+  file(document: vscode.TextDocument): string | undefined;
 }
 
 /** What the page is told of a play in the game: one line, whether a play is on, and when the scene started on this PC's clock. */
@@ -127,6 +138,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly sequences: SequenceHost,
     private readonly sets: SetHost,
     private readonly plays: PlayHost,
+    private readonly pins: PinsHost,
   ) {}
 
   /** Every scene and sequence open in an editor. */
@@ -181,6 +193,16 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     const changed = vscode.workspace.onDidChangeTextDocument((e) => {
       if (e.document.uri.toString() === document.uri.toString() && e.contentChanges.length) sendDoc();
     });
+    // DR3: the scene's pin file is looked at while the scene is open; a pin dropped again in the game moves what follows it.
+    let watched: string | undefined;
+    const onPins = () => void this.pins.sync(document);
+    const watchPins = () => {
+      const file = this.pins.file(document);
+      if (file === watched) return;
+      if (watched) fs.unwatchFile(watched, onPins);
+      watched = file;
+      if (file) fs.watchFile(file, { interval: 1500 }, onPins);
+    };
     // Saved: the page's unsaved copy is the saved one now.
     const saved = vscode.workspace.onDidSaveTextDocument((d) => {
       if (d.uri.toString() === document.uri.toString()) sendDoc();
@@ -192,6 +214,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
       this.moved.fire();
       changed.dispose();
       saved.dispose();
+      if (watched) fs.unwatchFile(watched, onPins);
     });
 
     webview.onDidReceiveMessage(async (m: FromPage) => {
@@ -201,13 +224,18 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
           sendDoc();
           // Blocks that link a sequence take what the Desk has now, and people of the set stand where it has them now.
           await this.sequences.sync(document);
-          return this.sets.sync(document);
+          await this.sets.sync(document);
+          watchPins();
+          return this.pins.sync(document);
         case "saveSeq":
           return this.sequences.saveAs(document, m.clips);
         case "openSeq":
           return this.sequences.open(m.id);
         case "set":
           return m.do === "choose" ? this.sets.choose(document) : m.do === "remove" ? this.sets.remove(document) : this.sets.addPeople(document);
+        case "pins":
+          await this.pins.choose(document);
+          return watchPins();
         case "game":
           return m.do === "play" ? this.plays.play(document, (news) => post({ type: "game", ...news })) : this.plays.stop();
         case "edit": {

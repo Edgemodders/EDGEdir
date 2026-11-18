@@ -5,7 +5,7 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { open, rootsOf, scenes, writePinFile } from "../director/floor";
+import { findPinFiles, open, pinPathFor, rootsOf, scenes, writePinFile } from "../director/floor";
 import type { Snapshot } from "../director/protocol";
 import { Stage, type PlayerLike } from "../director/stage";
 import { entryAt, frameOf, markAt, placeOf, Player, turnOf } from "../director/play.mjs";
@@ -382,6 +382,30 @@ test("the Director drops a scene's pins where V stands, into the scene's own pin
     pinned.length = 0;
     await stage.handle({ type: "close" });
     assert.equal(pinned.filter((p) => p.startsWith("unpin")).length, 1);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("the pin files a scene can choose: its own, the player's in the game, the project's", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "edgedir-pinfiles-"));
+  try {
+    const scene = path.join(root, "desk", "Talk.act.asset", "source", "Talk.edgedir");
+    const game = path.join(root, "rednode", "pins");
+    const project = path.join(root, "project");
+    const own = path.join(path.dirname(scene), "Talk.pins.json");
+    writePinFile(own, "Talk", [{ title: "Stairs", at: [1, 2, 3] }]);
+    writePinFile(path.join(game, "My pins.pins.json"), "", [{ title: "A", at: [0, 0, 0] }, { title: "B", at: [1, 1, 1] }]);
+    writePinFile(path.join(project, "source", "pins", "alley.pins.json"), "Alley", []);
+    writePinFile(path.join(project, "node_modules", "x", "no.pins.json"), "No", []);
+    fs.writeFileSync(path.join(game, "broken.pins.json"), "{}");
+    fs.writeFileSync(path.join(game, "notes.json"), "{}");
+    const rows = findPinFiles(scene, project, game);
+    assert.deepEqual(rows.map((r) => [r.from, r.name, r.pins]), [["scene", "Talk", 1], ["game", "My pins", 2], ["project", "Alley", 0]]);
+    // A file beside the scene is named alone, so the link holds when the scene's folder is renamed.
+    assert.equal(pinPathFor(scene, own), "Talk.pins.json");
+    assert.equal(pinPathFor(scene, rows[1].file), path.resolve(rows[1].file));
+    assert.deepEqual(findPinFiles(scene, undefined, path.join(root, "nothing")).map((r) => r.from), ["scene"]);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

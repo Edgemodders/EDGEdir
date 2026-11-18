@@ -4,7 +4,7 @@ title: EDGE Director
 
 # <span class="y">EDGE</span> Director
 
-**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window, DR2 Adjust and the first part of DR3 Pins are built (EDGEdir 0.0.26, EDGE Director 0.4.0): not run in the game, and their hand tests with a stand-in have not run. See [What is built](#what-is-built).**
+**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window, DR2 Adjust and DR3 Pins are built (EDGEdir 0.0.27, EDGE Director 0.4.0): not run in the game, and their hand tests have not run. See [What is built](#what-is-built).**
 
 The owner's words: an "EDGE Director" REDnode app that is part of the EDGEdir tool set. It can place and manage pins if it needs to, but its main purpose is to carry the workflow of directing, playing and adjusting a scene over to inside the game.
 
@@ -163,8 +163,20 @@ How it differs from the design's pins section, and what is left for part 2:
 | N1: pin files are read and never written by EDGEdir | The Director writes one kind: the scene's own pin file, which it made (R5). It never writes a set in REDnode's folder or any other file |
 | The Director draws and drops through REDnode's calls | It draws with `world.pin`. It writes the scene's file itself, in REDnode's format, rather than through `world.pinSet.save`: the stage manager then runs with no game, and the file is the same. **Unverified:** whether REDnode's Pins window lists these pins (Test G8) |
 | Rename a pin | `renamePin` is in the document's code; the window has no button yet. Drop Again and Remove cover moving and deleting |
-| In VS Code: the scene's pins in the inspector, a pin picked for a mark there, pins as posts in the preview, Choose Pins from REDnode's folder or the project, the file watched while the scene is open | Part 2. Until then VS Code keeps a scene's pins and what follows them untouched, and a mark typed there lets go of its pin |
+| In VS Code | Part 2, below |
 | A pin's id and facing | Waits for REDnode #50, part 3. Pins are named by title |
+
+**DR3 Pins, part 2: the editor. EDGEdir 0.0.27 (2026-11-18). Not run in VS Code. Its hand test ([Tests](testing.html), "DR3 Pins in the editor") has not run.**
+
+| Part | Where | What it does |
+|---|---|---|
+| The Pins section | `webview/editor.ts`, the scene's inspector | The pin file's name and its pins, each with its place and what follows it; **The scene's place** (In front of V, or a pin); **Choose Pins...**; **Remove Pins**. The edits are the document's own (`placeAtPin`, `setPlace`, `unlinkPins`), made in the page as every edit is |
+| At pin | The track's inspector | A list of the scene's pins for an actor's mark; None lets go. A typed Right, Forward or Turn lets go too |
+| Posts | `setPins` in `webview/preview.ts`; `postsOf` in the page | Each pin within 150 m of the scene's origin as a thin yellow post with its title. `edgedirPreview.state().pins` counts them. None while the scene plays in front of V |
+| Choose Pins | `findPinFiles`, `pinPathFor`, `rednodePinsDir` in `director/floor.ts`; the `PinsHost` in `src/editor.ts`, built in `src/extension.ts` | Offers the pin files beside the scene, the player's sets in REDnode's folder (`%APPDATA%\@rednode\overlay\pins`, read only, as REDnode agreed on its #50), those in the open project, and Browse. A file beside the scene is linked by its name alone, any other by its full path |
+| Following the file | `PinsHost.sync`, and `fs.watchFile` in `src/editor.ts` | When the scene opens, and within about 1.5 s of the pin file changing while it is open, the scene takes the file's pins as one edit. Nothing is written when the pins are the same, so the tab stays saved |
+
+Left out: a rename button for a pin, in either tool; a pin's own second line of text shown anywhere; pins further than 150 m from the origin in the preview (they are listed in the inspector).
 
 Unverified until the game, beside the list below: that a page and its mod of one package hear each other over `channel` as EDGEbuilder's do (read from EDGEbuilder's source, not run here); `world.pin` on a spawned person and `game.player.teleport` from this mod; a jump to a clip the actor already plays (Start Again with one clip).
 
