@@ -16,7 +16,7 @@ import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
 import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PlayHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
 import { cuesOf } from "./cues";
-import { alive, appsDir, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor } from "./play";
+import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor, writeRoots } from "./play";
 import { Game } from "./game";
 import { castLabel } from "./core/cast";
 import { libraryRoot } from "./core/made";
@@ -275,10 +275,9 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     },
   };
 
-  // ---- Play in game (D5d): the player is the REDnode package under player/, reached through a folder (src/play.ts) ----
-  const playerSource = path.join(context.extensionPath, "player");
+  // ---- Play in game (D5d): EDGE Director is the REDnode package under director/, reached through a folder (src/play.ts) ----
   const warn = (text: string) => void vscode.window.showWarningMessage(`EDGEdir: ${text}`);
-  const SwitchOn = "Start the game with a save loaded. In REDnode's Mod Manager (F10), switch EDGEdir Player on and allow its two permissions, bridge and archives.";
+  const SwitchOn = "Start the game with a save loaded. In REDnode's Mod Manager (F10), switch EDGE Director on and allow its two permissions, bridge and archives.";
   /** The notes each scene's play was agreed with: not asked again until they change. */
   const agreed = new Map<string, string>();
   let watching: ReturnType<typeof setInterval> | undefined;
@@ -315,39 +314,53 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     }, 250);
   };
   context.subscriptions.push({ dispose: () => clearInterval(watching) });
-  /** True when the player runs in the game. Offers to copy it there, once asked, when it is missing or older. */
+  /** True when the Director runs in the game. When it is missing or older, says so and offers its download: EDGEdir copies nothing into the game's folder. */
   const playerReady = async (): Promise<boolean> => {
-    const shipped = playerVersion(playerSource) ?? "0";
     const running = alive();
-    if (running && !older(running, shipped)) return true;
+    if (running && !older(running, DirectorVersion)) return true;
+    const get = async (text: string, detail: string) => {
+      const go = await vscode.window.showInformationMessage(text, { modal: true, detail }, "Open the Download");
+      if (go === "Open the Download") void vscode.env.openExternal(vscode.Uri.parse(DirectorDownload));
+      return false;
+    };
+    const How = `EDGE Director is its own download, EDGE-Director-${DirectorVersion}.zip, beside EDGEdir's on its release page. Install it with your mod manager (EDGEdeck or Vortex), or extract it into the game's folder.`;
+    if (running) return get(`The EDGE Director running in the game is ${running}. This EDGEdir needs ${DirectorVersion} or later.`, How);
     const gamePath = await game.gameFolder();
     if (!gamePath) return warn("no Cyberpunk 2077 folder is set (the setting edgedir.gamePath, or REDcode's)."), false;
-    const state = installState(playerSource, gamePath);
+    const state = installState(DirectorVersion, gamePath);
     if (state === "noRednode") return warn("REDnode is not in the game's folder (red4ext\\plugins\\REDnode). Play in game needs REDnode 0.66.9 or later, with REDbridge beside it."), false;
-    if (state === "none" || state === "older") {
-      const go = await vscode.window.showInformationMessage(
-        state === "none" ? `Play in game needs EDGEdir's player in the game. Copy EDGEdir Player ${shipped} into REDnode's apps folder?` : `The EDGEdir Player in the game is older than this EDGEdir's (${shipped}). Replace it?`,
-        { modal: true, detail: `${path.join(appsDir(gamePath), PlayerId)}\nIt is a REDnode package, and nothing of the game's own is changed. Remove it in that folder at any time.` },
-        "Copy",
-      );
-      if (go !== "Copy") return false;
-      install(playerSource, gamePath);
-      // A running REDnode picks a new package up by itself.
-      const up = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "EDGEdir: waiting for the player in the game" }, async () => {
-        for (let i = 0; i < 24; i++) {
-          const now = alive();
-          if (now && !older(now, shipped)) return true;
-          await new Promise((r) => setTimeout(r, 500));
-        }
-        return false;
-      });
-      if (!up) void vscode.window.showInformationMessage(`EDGEdir: the player is in the game's folder now. ${SwitchOn} Then press Play in Game again.`);
-      return up;
-    }
-    // An older one that runs from another folder (a development folder) is used as it is.
-    if (running) return true;
-    return warn(`the player is in the game's folder and is not running. ${SwitchOn}`), false;
+    if (state === "none") return get("Play in game needs EDGE Director, EDGEdir's app in the game.", How);
+    if (state === "older") return get(`The EDGE Director in the game's folder is older than this EDGEdir needs (${DirectorVersion}).`, How);
+    return warn(`EDGE Director is in the game's folder and is not running. ${SwitchOn}`), false;
   };
+  // For work on EDGEdir itself: puts this repo's built Director (dist/director) into the game.
+  context.subscriptions.push(
+    vscode.commands.registerCommand("edgedir.copyDevDirector", async () => {
+      try {
+        const gamePath = await game.gameFolder();
+        if (!gamePath) return warn("no Cyberpunk 2077 folder is set (the setting edgedir.gamePath, or REDcode's).");
+        if (installState(DirectorVersion, gamePath) === "noRednode") return warn("REDnode is not in the game's folder (red4ext\\plugins\\REDnode).");
+        const source = path.join(context.extensionPath, "dist", "director");
+        const to = path.join(appsDir(gamePath), PlayerId);
+        const go = await vscode.window.showWarningMessage(
+          `Copy the development build of EDGE Director ${playerVersion(source) ?? "(not built)"} into the game?`,
+          { modal: true, detail: `${to}\nFor work on EDGEdir itself. Your mod manager does not know files copied this way: a player installs EDGE Director's zip instead.` },
+          "Copy",
+        );
+        if (go !== "Copy") return;
+        install(source, gamePath);
+        void vscode.window.showInformationMessage(`EDGEdir: the development EDGE Director is in ${to}. ${SwitchOn}`);
+      } catch (e) {
+        fail("Copy the Development Director", e);
+      }
+    }),
+  );
+  /** The Director is told where sets are, for scenes it opens by itself. */
+  const tellRoots = () => {
+    const { library, project } = roots();
+    writeRoots({ library, project: project?.dir });
+  };
+  tellRoots();
   const plays: PlayHost = {
     async play(document, tell) {
       try {
@@ -374,11 +387,12 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
           stage = stageFor(doc, fs.readFileSync(file, "utf8"));
         }
         if (!(await playerReady())) return;
+        tellRoots();
         // The player plays one scene at a time: the tab whose scene was playing hears that it was taken over.
         telling?.({ text: "Another scene plays in the game now", bad: false, active: false });
         over();
         tell({ text: "Sent to the game", bad: false, active: true });
-        follow(request({ do: "play", sheet, stage }), tell);
+        follow(request({ do: "play", file: document.uri.fsPath, sheet, stage }), tell);
       } catch (e) {
         fail("Play in Game", e);
       }

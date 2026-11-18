@@ -1,9 +1,9 @@
-// EDGEdir Player's service: what another package, or EDGEdir through REDnode's editor channel
+// EDGE Director's service: what another package, or EDGEdir through REDnode's editor channel
 // (REDnode #48, when it is built), may call. It runs in this package's Node mod, after mod.mjs.
 
 const player = () => {
   const p = globalThis.edgedirPlayer;
-  if (!p) throw new Error("EDGEdir Player has not started yet");
+  if (!p) throw new Error("EDGE Director has not started yet");
   return p;
 };
 

@@ -28,6 +28,11 @@
 #                                               dev PC with the release's zip: it skips what is
 #                                               already done
 #
+# Every run also builds EDGE Director's zip (EDGEdir's app in the game, director/, with its own
+# version and changelog; tools/release/director-zip.mjs): a draft zip in the run's artifact, or with
+# "Make a release" the release's own file beside the .vsix. A release stops when
+# director/changelog.md has no section for the Director's version or has lines under Unreleased.
+#
 # One .vsix for every platform: EDGEdir has no native parts. The tokens are Edgemodders
 # organisation secrets, shared with REDnode's, REDcode's, EDGEdeck's and EDGEwave's workflows; if
 # they are limited to selected repos, EDGEdir must be added to them (Organisation settings >
@@ -140,12 +145,27 @@ jobs:
       - name: Nexus zip
         run: node tools/nexus-zip.mjs
 
+      # EDGE Director, EDGEdir's app in the game: its own file, with its own version and changelog
+      # (director/). Packaging built it into dist/director. A release needs its changelog released
+      # too; any other run makes a draft zip.
+      - name: EDGE Director's zip
+        run: |
+          director="$(node -p "require('./director/rednode-app.json').version")"
+          if [ "${RELEASE}" = "true" ]; then
+            node tools/release/director-zip.mjs
+            echo "DIRECTOR_ZIP=dist/EDGE-Director-${director}.zip" >> "$GITHUB_ENV"
+          else
+            node tools/release/director-zip.mjs --draft
+            echo "DIRECTOR_ZIP=dist/EDGE-Director-${director}-draft.zip" >> "$GITHUB_ENV"
+          fi
+
       - uses: actions/upload-artifact@v7
         with:
           name: edgedir-${{ env.VERSION }}
           path: |
             dist/edgedir-${{ env.VERSION }}.vsix
             dist/EDGEdir-${{ env.VERSION }}-nexus.zip
+            ${{ env.DIRECTOR_ZIP }}
           if-no-files-found: error
 
       - name: VS Code Marketplace
@@ -176,9 +196,9 @@ jobs:
         run: |
           if gh release view "v${VERSION}" >/dev/null 2>&1; then
             echo "Release v${VERSION} already exists; adding the files if they are missing"
-            gh release upload "v${VERSION}" "${VSIX}" "dist/EDGEdir-${VERSION}-nexus.zip" --clobber
+            gh release upload "v${VERSION}" "${VSIX}" "dist/EDGEdir-${VERSION}-nexus.zip" "${DIRECTOR_ZIP}" --clobber
           else
-            gh release create "v${VERSION}" "${VSIX}" "dist/EDGEdir-${VERSION}-nexus.zip" --target "${GITHUB_SHA}" --title "EDGEdir ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md"
+            gh release create "v${VERSION}" "${VSIX}" "dist/EDGEdir-${VERSION}-nexus.zip" "${DIRECTOR_ZIP}" --target "${GITHUB_SHA}" --title "EDGEdir ${VERSION}" --notes-file "${RUNNER_TEMP}/notes.md"
           fi
 
       # Skips what is already on Nexus, so a re-run is safe.

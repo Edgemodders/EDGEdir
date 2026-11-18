@@ -2,7 +2,7 @@
   "name": "edgedir",
   "displayName": "EDGEdir: Cyberpunk 2077 Animation Director",
   "description": "A director's tool for the video game Cyberpunk 2077: design and stitch animations and acting sequences for the game's characters, and play them in the running game. A game modding tool.",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "publisher": "edgemodders",
   "preview": true,
   "pricing": "Free",
@@ -268,6 +268,11 @@
         "icon": "$(add)"
       },
       {
+        "command": "edgedir.copyDevDirector",
+        "title": "Copy the Development Director into the Game",
+        "category": "EDGEdir (developer)"
+      },
+      {
         "command": "edgedir.refreshSets",
         "title": "Refresh Sets",
         "category": "EDGEdir",
@@ -506,6 +511,8 @@
     "vscode:prepublish": "node esbuild.mjs --production",
     "package": "vsce package --no-dependencies --readme-path README.marketplace.md",
     "nexus-zip": "node tools/nexus-zip.mjs",
+    "director-zip": "node tools/release/director-zip.mjs",
+    "director:standin": "node dist/director-standin.mjs",
     "nexus:pull": "node ../EDGErepo/tools/nexus/nexus.mjs pull",
     "nexus:status": "node ../EDGErepo/tools/nexus/nexus.mjs status",
     "release:notes": "node tools/release-notes.mjs"

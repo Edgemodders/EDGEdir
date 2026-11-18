@@ -4,7 +4,7 @@ title: EDGE Director
 
 # <span class="y">EDGE</span> Director
 
-**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. Written the same day from the owner's notes. Nothing built yet; DR1 is first.**
+**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window is built (EDGEdir 0.0.24, EDGE Director 0.2.0): not run in the game, and its hand test with a stand-in has not run. See [What is built](#what-is-built).**
 
 The owner's words: an "EDGE Director" REDnode app that is part of the EDGEdir tool set. It can place and manage pins if it needs to, but its main purpose is to carry the workflow of directing, playing and adjusting a scene over to inside the game.
 
@@ -98,6 +98,34 @@ How REDnode does it (its `packs/`, `tools/release/pack-zip.mjs` and Release work
 | `player/play.mjs` | Stays the steps of a play. New: start from a moment, loop, move a person while playing |
 | A mod a player installs (D7) | Needs a player with no window. D7's plan decides whether that is the Director's own mod part or a small package of its own, built from the same `play.mjs` |
 | "D5 in the game" | Its 10 steps are run with the Director's window once DR1 is built: its buttons are in the game, so the test needs fewer trips to VS Code (question R6) |
+
+## What is built
+
+**DR1 The window, EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18). Not run in the game. Its hand test with a stand-in ([Tests](testing.html), "DR1 The Director's window") has not run.**
+
+| Part | Where | What it does |
+|---|---|---|
+| The package | `director/` (was `player/`): `rednode-app.json` (id `edge-director`, a resizable window 620 by 760 at the right, off until switched on), `changelog.md` | One REDnode package with a window, a Node mod and a service |
+| The steps of a play | `director/play.mjs` | As D5c built them. New: a play from a moment (`from`), `seek` (the cast kept, each actor jumps to that moment's clip and the cues run on), the loop, `cast()` |
+| The Desk in the game | `director/floor.ts` | The Desk's scenes; a scene read with EDGEdir's own code (`src/doc.ts`, `src/seq.ts`, `src/cues.ts`, `src/set.ts`) as a strip, its notes, and what a play is given. Where sets are comes from `roots.json`, which EDGEdir writes into the play folder; with none, the Library alone |
+| The stage manager | `director/stage.ts` | What the window asks: open, play, seek, loop, stop, choose (a pin on the actor), Go There (V 1.8 m in front of the actor, facing them). The whole state after each. A request from VS Code plays the editor's sheet and opens the scene's file beside it |
+| The mod | `director/mod.ts` | Wires REDnode's `world`, `game`, `api` and `channel` to the above; the play folder as before; looks at the Desk and the open scene's file every 2 s |
+| The window | `director/index.html`, `director/page/main.ts`, `director/protocol.ts` | REDnode's kit window with Scenes, the transport, the strip with a ruler to drag the playhead on, Cast, In the game, and the line. It asks over `channel` and draws the state the mod answers with |
+| The build | `esbuild.mjs` | `dist/director` (`mod.mjs`, `app.js`, with `rednode` left outside) and `dist/director-standin.mjs` |
+| The release file | `tools/release/director-zip.mjs`, the Release workflow | `dist/EDGE-Director-<version>.zip`, laid out like the game folder, on each EDGEdir release beside the `.vsix`. A release stops when `director/changelog.md` has no section for the version or has lines under Unreleased; other runs make a draft zip |
+| In the extension | `src/play.ts`, `src/extension.ts` | `DirectorVersion` (the manifest's, built in). EDGEdir copies nothing into the game's folder: when the Director is missing or older it says so and offers **Open the Download**. The developer's command **Copy the Development Director into the Game** copies `dist/director`. The `.vsix` no longer carries the package |
+| The stand-in | `director/standin.ts` (`node dist/director-standin.mjs`) | The Director's own code against a made-up world that prints each call, the play folder, and the window's page for a browser on 127.0.0.1 only (requests from another site's page are refused by their Origin). It replaces `tools/player-standin.mjs` |
+
+Left out of DR1, against the plan:
+
+| Left out | Why |
+|---|---|
+| "The scene that VS Code last played is on top" of Scenes | The scene in the game is marked **In the game** in the list instead; the list is by last change |
+| A loop over a stretch of the scene | The whole scene loops. A stretch needs two marks on the ruler: with DR4 |
+| VS Code following a play started in the Director | VS Code's line and playhead follow only plays it sent. With DR2, when the editor learns of the Director's changes |
+| The kit's look, checked | The page was only seen in a plain browser, without REDnode's kit. How it looks in the game is for the in-game test |
+
+Unverified until the game, beside the list below: that a page and its mod of one package hear each other over `channel` as EDGEbuilder's do (read from EDGEbuilder's source, not run here); `world.pin` on a spawned person and `game.player.teleport` from this mod; a jump to a clip the actor already plays (Start Again with one clip).
 
 ## Tests
 

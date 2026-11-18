@@ -12,9 +12,10 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-17 | Pass, 75 tests |
-| [D5 in the game](#d5-in-the-game) | In the game, on the owner's PC | D5c, D5d | | Not run yet (0.0.23, EDGEdir Player 0.1.0) |
-| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 78 tests |
+| [D5 in the game](#d5-in-the-game) | In the game, on the owner's PC | D5c, D5d, DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
+| [DR1 The Director's window](#dr1-the-directors-window) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
+| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes. Step 3 changed in 0.0.24 (no copy into the game's folder): not run |
 | [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | By script: round 1, 11 of 14 (0.0.18: steps 2, 7 and 9 each missed one expectation); round 2, those and step 11 pass on 0.0.19. Every step has passed |
 | [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | 2026-11-17 | By script: 10 of 10 pass (0.0.16); the two changes of 0.0.18 from its notes pass too |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
@@ -44,8 +45,9 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
-- **D5 in the game**, 10 steps, on the owner's PC: not run yet. The player has not run in the game at all.
-- **The owner's spot tests** S1 to S13 below: none run yet.
+- **D5 in the game**, 14 steps, on the owner's PC, now run with EDGE Director's window (the owner's choice, 2026-11-18): not run yet. Nothing of EDGEdir has run in the game at all.
+- **DR1 The Director's window**, 13 steps with a stand-in for the game: not run yet. With it, D5d's changed step 3 (EDGEdir 0.0.24 asks for EDGE Director's download and copies nothing).
+- **The owner's spot tests** S1 to S14 below: none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
 ## Spot tests for the owner
@@ -68,7 +70,8 @@ One short test per major feature, about 30 minutes in all. Each one names the fu
 | S10 | Sequences | In the scene of S9, select Judy's two clips and click **Save as Sequence**; name it and keep the clips. Give a second actor track another woman, select it, and click the **+** on the sequence in the Desk. Play. Double-click the block | The Desk lists the sequence under **Sequences**. One block lands on the second track and that actor plays the same movement. The sequence opens in its own tab with one lane and a grey base body | D4b, 2 to 4, 7 |
 | S11 | What the game will not match | Select one of Judy's clips and type 1 in **In (s)** | **In the game** appears in the inspector and says the game starts the clip from its beginning. From [D5b](#d5b-the-cue-sheet) |
 | S12 | Sets | With an EDGEbuilder scene that has people saved in your EDGE Library: open the **Sets** view and click the **+** on it | A scene opens with a track for each person, their bodies standing in the preview as the set has them, and grey boxes for its props. From [D5a](#d5a-sets) |
-| S13 | Play in game | With the game running and a save loaded: in the scene of S9, click **Play in Game** (the first time it asks to copy its player into the game, and REDnode asks to allow it) | The scene's people stand in front of V and play their clips while the playhead runs. **Stop in Game** removes them. From [D5 in the game](#d5-in-the-game) |
+| S13 | Play in game | With the game running and a save loaded: in the scene of S9, click **Play in Game** (EDGE Director must be installed and switched on in the game: S14) | The scene's people stand in front of V and play their clips while the playhead runs. **Stop in Game** removes them. From [D5 in the game](#d5-in-the-game) |
+| S14 | EDGE Director | Install EDGE Director's zip with your mod manager. In the game, press F10, open the Mod Manager, switch **EDGE Director** on and allow its two permissions. In its window open a scene, press **Play**, drag the playhead on the strip, press **Start Again**, then **Go There** on an actor, then **Stop** | The Desk's scenes are listed. The scene's people appear and play; they jump to the moment the playhead is dragged to; Start Again spawns nobody anew; V stands in front of the actor; Stop removes everybody. From [D5 in the game](#d5-in-the-game) |
 
 | Round | Date | Spots | Result |
 |---|---|---|---|
@@ -84,7 +87,9 @@ npm test
 
 The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D4b's 6 tests (`test/seq.test.ts`) check a sequence's file, the block on a lane (as long as its clips, not trimmed or split, unpacked), the pose through a block, a linked block taking the sequence as it is now, what Save as Sequence takes, and the Desk's sequence items. D4a's 6 tests (`test/transition.test.ts`) check a transition's method and ease, where Add Transition puts one, which clips it joins, the pose under a Blend and an Inertial one, and what it says about the game. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
 
-D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with the player's copy into a made-up game folder.
+D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with a developer's copy of the Director into a made-up game folder.
+
+DR1's 3 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
 
 ## D1 Timeline
 
@@ -442,7 +447,7 @@ What round 2 found, and what was done:
 
 ## D5d Play in game, in VS Code
 
-EDGEdir 0.0.23 (first built as 0.0.21, 2026-11-17). It covers D5d's part in VS Code, and D5c's steps against a stand-in: the button, the list before the play, the ask before the player is copied, the line, the playhead, Stop. Nothing plays in the game: `tools/player-standin.mjs` stands in for the player and prints each call it would make.
+EDGEdir 0.0.23 (first built as 0.0.21, 2026-11-17). It covers D5d's part in VS Code, and D5c's steps against a stand-in: the button, the list before the play, the ask before the player is copied, the line, the playhead, Stop. Nothing plays in the game: a stand-in for EDGE Director (`node dist/director-standin.mjs`, after `npm run build`) runs the Director's own steps and prints each call it would make. Since 0.0.24 the player is EDGE Director, its own download: EDGEdir copies nothing into the game's folder, so step 3 changed; steps 3 and 4 as they are now have not run.
 
 **Before you start:** as for D5b The cue sheet, with its scene (Judy with two animation clips end to end, V with one clip), and D5a's scene on a set. The game is not running. A terminal in the repo's folder for the stand-in, with the same `LOCALAPPDATA` as the VS Code window.
 
@@ -450,8 +455,8 @@ EDGEdir 0.0.23 (first built as 0.0.21, 2026-11-17). It covers D5d's part in VS C
 |---|---|---|
 | 1 | Open the scene. Then open a sequence from the Desk | The scene's toolbar has **Play in Game** after the transport's buttons. The sequence's tab has none |
 | 2 | With no stand-in running, click **Play in Game** | A question: the game will not match the preview in 2 places, listing that the game blends where the preview cuts and that V does not play in the game yet. **Cancel**: nothing happens |
-| 3 | Click it again and choose **Play Anyway** | When the game's folder has no player: a question to copy EDGEdir Player into REDnode's apps folder, naming the folder. **Cancel**: nothing is copied, the button still reads Play in Game. (When the player is already there: a warning that it is not running, with what to do. Without REDnode in the game's folder: a warning that says so) |
-| 4 | Start the stand-in: `node tools/player-standin.mjs`. Click **Play in Game** | No question this time. The line at the right of the toolbar reads Writing 1 workspot, Spawning 1 person, Starting the cast, then **Playing in the game**. The button reads **Stop in Game**. The playhead runs from the scene's start. The stand-in prints one `write` with Judy's two clips, one `spawn` of Judy's record 3 m north of 0, 0, one `use`, and a `jump` at each clip's start |
+| 3 | Click it again and choose **Play Anyway** | When the game's folder has no EDGE Director: a message that Play in game needs EDGE Director, EDGEdir's app in the game, naming its zip and how to install it, with **Open the Download**. **Cancel**: nothing is opened and nothing is copied, the button still reads Play in Game. (When the Director is in the game's folder: a warning that it is not running, with what to do. When it is older than EDGEdir needs: the message says so. Without REDnode in the game's folder: a warning that says so) |
+| 4 | Start the stand-in: `node dist/director-standin.mjs`. Click **Play in Game** | No question this time. The line at the right of the toolbar reads Writing 1 workspot, Spawning 1 person, Starting the cast, then **Playing in the game**. The button reads **Stop in Game**. The playhead runs from the scene's start. The stand-in prints one `write` with Judy's two clips, one `spawn` of Judy's record 3 m north of 0, 0, one `use`, and a `jump` at each clip's start |
 | 5 | Press Space while it plays | The status says the game is playing this scene; the preview's own play does not start |
 | 6 | Wait for the scene's end | The playhead stays at the end. The line says the scene has ended and the cast holds its last clips until Stop. The button still reads Stop in Game |
 | 7 | Click **Stop in Game** | The line says Stopped: the cast is removed. The button reads Play in Game. The stand-in prints one `remove` |
@@ -479,23 +484,53 @@ What round 1 found, and what was done:
 
 ## D5 in the game
 
-EDGEdir 0.0.23 with EDGEdir Player 0.1.0 (2026-11-17). The in-game test of D5c and D5d, on the owner's PC. It answers the plan's questions G1 to G7. Say what you see at each step; the player's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
+EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18; first written for 0.0.21 on 2026-11-17). The in-game test of D5c, D5d and DR1, on the owner's PC, run with EDGE Director's window as the owner chose on 2026-11-18. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
 
-**Before you start:** REDnode 0.66.9 or later with REDbridge and Codeware. The game running with a save loaded, V standing somewhere open, outside combat. In VS Code, D4's scene: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block. In the inspector give the first actor Right -1 and the second Right 1, both Turn 180.
+**Before you start:** REDnode 0.66.9 or later with REDbridge and Codeware. EDGE Director in the game: install its zip with EDGEdeck or Vortex (`npm run build`, then `npm run director-zip -- --draft` makes `dist/EDGE-Director-0.2.0-draft.zip`), or, for work on EDGEdir, run the command **Copy the Development Director into the Game** in VS Code. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, D4's scene, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
 
 | Step | Do | Expect, and say |
 |---|---|---|
-| 1 | Click **Play in Game**, then **Play Anyway**, then **Copy** | The player is copied into the game's REDnode apps folder. If the line does not go on by itself: press F10 in the game, open the Mod Manager, switch **EDGEdir Player** on and allow **bridge** and **archives**; then click **Play in Game** again |
-| 2 | Watch the line and the game | Writing 2 workspots (the first time about half a minute), Spawning, Playing. Two people stand about 3 m in front of V and play their clips. **G1:** are they at their marks, and in time with each other and with the playhead? **G7:** how long from the click to the first movement? |
-| 3 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
-| 4 | Look at where they stand and face | **G3:** is the first actor on V's left and the second on V's right, and do both face V? If not, say how they stand |
-| 5 | Watch each join, and the same join in the preview | **G4:** how does the game's blend look against the preview's Blend and Inertial? |
-| 6 | Trim one clip short and give another Loops 2; save; **Play in Game** | **G5:** does the short clip end where the next begins, and does the repeated one repeat, as in the preview? **G7:** how long is the wait this time? |
-| 7 | Let the scene end | The playhead stays at the end; the people go on with their last clips |
-| 8 | Click **Stop in Game**, then **Play in Game** | **G6:** is everybody gone after Stop, and does the second play start clean, with two people only? |
-| 9 | Open a scene made on a set near V (D5a), with clips on its people; **Play in Game** | The set's props and its other people appear where the set has them, and the directed people play at their places. **Stop in Game** removes all of it |
-| 10 | While a scene plays, switch **EDGEdir Player** off in the Mod Manager | Its people are gone. In VS Code, within about 7 s, the line says the player stopped and the button reads Play in Game |
+| 1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.2.0 |
+| 2 | Click D4's scene | Its name, "in front of V", a strip with a lane for each track and the clips' names, and under **In the game** what the game will not match. Say how the window sits over the game, and whether its size suits watching a scene |
+| 3 | Press **Play** | The line reads Writing 2 workspots (the first time about half a minute), Spawning, Starting the cast, Playing. Two people stand about 3 m in front of V and play. **G1:** are they at their marks, and in time with each other and with the playhead on the strip? **G7:** how long from the click to the first movement? |
+| 4 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
+| 5 | Look at where they stand and face | **G3:** is the first actor on V's left and the second on V's right, and do both face V? If not, say how they stand |
+| 6 | Watch each join, and the same join in VS Code's preview | **G4:** how does the game's blend look against the preview's Blend and Inertial? |
+| 7 | While it plays, drag the playhead on the strip's ruler to the middle. Then press **Start Again** | Both people go to the clips of that moment at once and play on from there; the time follows. Start Again: they go to their first clips; nobody is removed or spawned |
+| 8 | Switch **Loop** on and let the scene end | The scene starts again by itself, with the same people. Switch Loop off: at the next end the line says the scene has ended and the people go on with their last clips |
+| 9 | Under **Cast**, look at the rows; click one; press **Go There** on the other | Each actor with the clip they play now and their distance from V. The clicked actor has a pin with their name over them in the world, and their lane's name is lit. Go There puts V in front of that actor, facing them (say where V lands) |
+| 10 | In VS Code, trim one clip short and give another Loops 2; save. In the game press **Stop**, look at the strip, press **Play** | After Stop the strip shows the changed clips within a few seconds. **G5:** does the short clip end where the next begins, and does the repeated one repeat, as in the preview? **G7:** how long is the wait this time? |
+| 11 | Press **Stop**, then **Play** | **G6:** is everybody gone after Stop, and does the second play start clean, with two people only? |
+| 12 | In VS Code click **Play in Game**, then **Play Anyway** | The scene plays as from the window. VS Code's playhead runs; the Director's line reads Playing (from VS Code), and its list marks the scene In the game. **Stop in Game** in VS Code removes the people |
+| 13 | Open a scene made on a set near V (D5a), with clips on its people, and press **Play** | The header reads "on" and the set's name. The set's props and its other people appear where the set has them, and the directed people play at their places. **Stop** removes all of it |
+| 14 | While a scene plays from VS Code, switch **EDGE Director** off in the Mod Manager | Its people are gone. In VS Code, within about 7 s, the line says the player stopped and the button reads Play in Game |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | | | Not run yet |
+
+## DR1 The Director's window
+
+EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18). The window and its steps with no game: `node dist/director-standin.mjs` (after `npm run build`) runs the Director's own code against a made-up world that prints every call, and serves the window's page at `http://127.0.0.1:4173/` to a browser on this PC only. The page there has no REDnode kit, so it is plain: this test is about what it shows and does, not how it looks. `window.edgeDirector.state()` in the page gives what it shows, for rounds by script.
+
+**Before you start:** a scratch `LOCALAPPDATA` shared by the stand-in and a VS Code window (F5, **Run EDGEdir**). On the Desk: a scene "Talk" with two actors of the game, the first with three animation clips end to end, the second with two and a gap between them; an empty scene; a sequence. The stand-in running, and its page open in a browser.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Look at the page | **Scenes** lists Talk and the empty scene, the last changed first, with how long ago; the sequence is not listed. The line reads Ready, and EDGE Director 0.2.0 at its right |
+| 2 | Click Talk | The scene's name, "in front of V", **Play** and **Start Again** on and **Stop** off, the time 0:00.0 of the scene's length. The strip has a lane for each track with its clips' names at their places; the actors' clips are lit. **In the game** lists a cut for each join |
+| 3 | Click **Play** | The line reads Writing 2 workspots, Spawning 2 people, Starting the cast, Playing. Play is off and Stop on. The playhead and the time run. The stand-in prints two `write`, two `spawn`, two `use` and a `jump` at each clip's start |
+| 4 | Look at **Cast** while it plays | Each actor with the clip they play now, which changes at each clip's start, and a distance in metres |
+| 5 | Press down on the ruler at about two thirds and let go | The time goes there and runs on. The stand-in prints one `jump` for each actor to that moment's clip, and no `spawn` |
+| 6 | Click **Start Again** | The time starts from 0. A `jump` for each actor to their first clip; no `spawn` |
+| 7 | Switch **Loop** on and wait for the end; then switch it off and wait again | At the end the scene starts again by itself. With Loop off, the line says the scene has ended and the cast holds its last clips until Stop, and the playhead stays at the end |
+| 8 | Click an actor's row; click it again; click **Go There** on the other | The row and the actor's lane are lit, and the stand-in prints a `pin` with the actor's name; again, an `unpin`. Go There prints a `teleport` 1.8 m in front of that actor, and the distances change |
+| 9 | Click **Stop** | The line reads Stopped: the cast is removed. A `remove` for each actor. Cast says nobody is in the game |
+| 10 | Press down on the ruler at a third, then click **Play** | The play starts there: the `use` of each actor names that moment's clip, and the time starts from that moment |
+| 11 | Click **Scenes**, then the empty scene | A red box says why it cannot play. Play and Start Again are off |
+| 12 | In VS Code, open Talk, move a clip and save. Then click **Play in Game** | Within about 3 s the strip in the browser shows the moved clip. Play in Game: no question about a player; VS Code's line reads Playing in the game and its playhead runs; the browser's line reads Playing (from VS Code), its playhead runs too, and the scene's row in Scenes says In the game. **Stop in Game** stops both |
+| 13 | Stop the stand-in and start it with `--fail spawn`; reload the page, open Talk, click **Play** | The line turns red: Not played, the actor could not be spawned, with the stand-in's reason. Play is on again |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1 to 6, 8 and 9 once by script in a browser against a hand-made scratch Desk, and they showed what is written here; that was not a round |

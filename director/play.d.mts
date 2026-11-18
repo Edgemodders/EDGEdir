@@ -4,11 +4,13 @@ export function slug(text: unknown, max?: number): string;
 export function placements(sheet: unknown, stage: unknown, v: { x: number; y: number; z: number; fx: number; fy: number } | null): Record<string, { position: { x: number; y: number; z: number }; yaw: number }>;
 export function sceneFor(stage: unknown, sheet: unknown): { objects: { id: string }[]; [more: string]: unknown };
 export function refusal(sheet: unknown): string | undefined;
+export function entryAt(sheet: unknown, member: unknown, from: number): string;
 export interface PlayerState {
   id?: string;
   state: string;
   text: string;
   startedAt?: number;
+  loop?: boolean;
   length?: number;
   late?: { t: number; track: string; jump: string; ms: number; ok: boolean }[];
   notes?: string[];
@@ -19,5 +21,8 @@ export class Player {
   state(): PlayerState;
   play(request: unknown): Promise<PlayerState>;
   stop(quiet?: boolean): Promise<PlayerState>;
+  seek(from: number, loop?: boolean): Promise<boolean>;
+  setLoop(on: boolean): void;
+  cast(): { track: string; name: string; id?: unknown; position: { x: number; y: number; z: number }; yaw: number }[];
   respawned(before: { hash: string }, after: { hash: string }): void;
 }

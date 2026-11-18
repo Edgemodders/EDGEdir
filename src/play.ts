@@ -1,5 +1,7 @@
-// Play in game (D5d): how EDGEdir reaches its player in the game, and how the player gets there.
-// The player is the REDnode package under player/ (edgedir-player). EDGEdir writes request.json
+// Play in game (D5d): how EDGEdir reaches its app in the game, EDGE Director, and which one it needs.
+// The Director is the REDnode package under director/ (edge-director), its own release file: a
+// player installs its zip with their mod manager, and EDGEdir copies nothing into the game's folder
+// (a developer's command aside). EDGEdir writes request.json
 // into %LOCALAPPDATA%\EDGEdir\play; the player writes state.json and alive.json beside it. The
 // folder is in the player's own Windows profile, so only their own programs can write it, and no
 // port is opened. No VS Code in here. docs/d5-play-in-game.md, "How VS Code reaches the player".
@@ -7,11 +9,18 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import manifest from "../director/rednode-app.json";
 import type { CueSheet } from "./cues";
 import type { SceneDoc } from "./doc";
 import { fromOf, setOf } from "./set";
 
-export const PlayerId = "edgedir-player";
+export const PlayerId = "edge-director";
+
+/** The Director this EDGEdir was built with: an older one in the game is asked to be updated. */
+export const DirectorVersion: string = manifest.version;
+
+/** Where the Director's zip is: each EDGEdir release on GitHub has it beside the extension. */
+export const DirectorDownload = "https://github.com/Edgemodders/EDGEdir/releases/latest";
 
 /** The folder EDGEdir and its player share: `%LOCALAPPDATA%\EDGEdir\play`. */
 export function playDir(): string {
@@ -46,6 +55,8 @@ export interface PlayRequest {
   /** When it was written: the player does not play one left from before it started. */
   at: number;
   do: "play" | "stop";
+  /** The scene's file, so the Director shows the scene that plays. The sheet is what plays: it may be newer than the file. */
+  file?: string;
   sheet?: CueSheet;
   stage?: PlayStage;
 }
@@ -83,6 +94,21 @@ export function request(what: Omit<PlayRequest, "id" | "at">, dir = playDir(), n
   return id;
 }
 
+/**
+ * Tells the Director where sets are looked for: the Library's root and the open project's folder.
+ * It reads them when it opens a scene by itself, with VS Code closed or open.
+ */
+export function writeRoots(roots: { library?: string; project?: string }, dir = playDir()): void {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const tmp = path.join(dir, `roots.${process.pid}.tmp`);
+    fs.writeFileSync(tmp, JSON.stringify(roots));
+    fs.renameSync(tmp, path.join(dir, "roots.json"));
+  } catch {
+    // The Director then looks in the Library alone.
+  }
+}
+
 /** The stage for a scene on a set: `setText` is the set's file as EDGEbuilder saved it. Undefined for a scene with no set. */
 export function stageFor(doc: SceneDoc, setText: string): PlayStage | undefined {
   const link = setOf(doc);
@@ -117,22 +143,25 @@ export function older(a: string, b: string): boolean {
 }
 
 /**
- * How the player in the game's folder stands to the one EDGEdir ships (`source`):
+ * How the Director in the game's folder stands to the version EDGEdir needs (`need`):
  * `noRednode` (REDnode is not in the game), `none`, `older`, or `ready` (the same or newer).
  */
-export function installState(source: string, gamePath: string): "noRednode" | "none" | "older" | "ready" {
+export function installState(need: string, gamePath: string): "noRednode" | "none" | "older" | "ready" {
   if (!fs.existsSync(path.join(gamePath, "red4ext", "plugins", "REDnode"))) return "noRednode";
   const there = playerVersion(path.join(appsDir(gamePath), PlayerId));
   if (!there) return "none";
-  return older(there, playerVersion(source) ?? "0") ? "older" : "ready";
+  return older(there, need) ? "older" : "ready";
 }
 
-/** Copies the player into the game's REDnode apps folder, over an older one. Answers the folder. */
+/**
+ * A developer's way in: copies a built Director (`source`, this repo's dist/director) into the game's
+ * REDnode apps folder, over the one there. A player installs the release's zip instead. Answers the folder.
+ */
 export function install(source: string, gamePath: string): string {
-  if (!playerVersion(source)) throw new Error("EDGEdir's player is missing from the extension: install EDGEdir again");
+  if (!playerVersion(source)) throw new Error(`No built EDGE Director is in ${source}: run npm run build in EDGEdir's repo first`);
   const to = path.join(appsDir(gamePath), PlayerId);
   fs.mkdirSync(to, { recursive: true });
-  // The player is a handful of files in one folder: its own are replaced, nothing else is touched.
+  // The Director is a handful of files in one folder: its own are replaced, nothing else is touched.
   for (const name of fs.readdirSync(source)) {
     if (fs.statSync(path.join(source, name)).isFile()) fs.copyFileSync(path.join(source, name), path.join(to, name));
   }

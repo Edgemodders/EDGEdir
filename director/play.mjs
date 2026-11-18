@@ -1,4 +1,4 @@
-// EDGEdir's player (D5c): plays a cue sheet on people in the game. No `rednode` import in here:
+// EDGE Director's player (D5c): plays a cue sheet on people in the game. No `rednode` import in here:
 // the world's calls are handed in, so the steps run in a unit test against a stand-in world.
 // The cue sheet is src/cues.ts's; the steps are docs/d5-play-in-game.md, "The player (D5c)".
 
@@ -112,12 +112,84 @@ export class Player {
     return this.st;
   }
 
-  /** Plays `request.sheet` from its start. Answers when the scene has started, or failed. */
+  /** The cast in the game now: who, and where each stands. */
+  cast() {
+    return (this.ctx?.cast ?? []).map((a) => ({ track: a.track, name: a.name, id: a.id, position: a.position, yaw: a.yaw }));
+  }
+
+  /** Sets the timers for the cues after `from` (seconds into the scene), all from one start time, and says Playing. */
+  begin(ctx, run, from, jumped = false) {
+    const { world, now } = this.deps;
+    const sheet = ctx.sheet;
+    for (const t of ctx.timers.splice(0)) clearTimeout(t);
+    const t0 = now() + this.deps.leadMs;
+    for (const cue of sheet.timeline) {
+      // A cue at the moment itself restarts its clip after the warm-up; after a seek the actor has just jumped to it.
+      if (cue.t < from || (jumped && cue.t === from)) continue;
+      const due = t0 + (cue.t - from) * 1000;
+      ctx.timers.push(
+        setTimeout(async () => {
+          const late = Math.round(now() - due);
+          const a = ctx.cast.find((x) => x.track === cue.track);
+          let ok = false;
+          let error;
+          try {
+            ok = !!a && (await world.jumpWorkspot(a.id, cue.jump));
+          } catch (e) {
+            error = e.message;
+          }
+          if (run !== this.run) return;
+          this.set({ late: [...this.st.late, { t: cue.t, track: cue.track, jump: cue.jump, ms: late, ok, ...(error ? { error } : {}) }] });
+        }, Math.max(0, due - now())),
+      );
+    }
+    // The end: the cast holds its last clips, looping, until Stop. A looping play starts again.
+    ctx.timers.push(
+      setTimeout(() => {
+        if (run !== this.run) return;
+        if (ctx.loop) void this.seek(0);
+        else this.set({ state: "ended", text: "The scene has ended: the cast holds its last clips until Stop" });
+      }, Math.max(0, t0 + (sheet.length - from) * 1000 - now())),
+    );
+    // startedAt is when the scene's time 0 was, or would have been: the time now is always now - startedAt.
+    this.set({ state: "playing", text: "Playing", startedAt: t0 - from * 1000, loop: ctx.loop, late: [] });
+  }
+
+  /**
+   * Goes to a moment of the scene that is in the game, with the cast it has: each actor jumps to the
+   * clip of that moment, and the cues run on from there. False when no scene is in the game.
+   */
+  async seek(from, loop) {
+    const ctx = this.ctx;
+    const run = this.run;
+    if (!ctx?.sheet || !["playing", "ended"].includes(this.st.state)) return false;
+    const { world } = this.deps;
+    const t = Math.min(Math.max(0, Number(from) || 0), ctx.sheet.length);
+    if (loop !== undefined) ctx.loop = !!loop;
+    for (const t of ctx.timers.splice(0)) clearTimeout(t);
+    for (const m of ctx.sheet.cast) {
+      const a = ctx.cast.find((x) => x.track === m.track);
+      if (a) await world.jumpWorkspot(a.id, entryAt(ctx.sheet, m, t)).catch(() => false);
+    }
+    if (run !== this.run || ctx !== this.ctx) return false;
+    this.begin(ctx, run, t, true);
+    return true;
+  }
+
+  /** Whether the play starts again at its end. */
+  setLoop(on) {
+    if (this.ctx) this.ctx.loop = !!on;
+    if (this.st.state === "playing") this.set({ loop: !!on });
+    else if (this.st.state === "ended" && on) void this.seek(0);
+  }
+
+  /** Plays `request.sheet` from its start, or from `request.from` seconds in. Answers when the scene has started, or failed. */
   async play(request) {
     await this.stop(true);
     const run = ++this.run;
     const ctx = { cast: [], timers: [], loaded: false };
     this.ctx = ctx;
+    const from = Math.max(0, Number(request?.from) || 0);
     const { world, now } = this.deps;
     const { sheet, stage } = request ?? {};
     /** Waits for a step, and gives up when a Stop or a new play came meanwhile. */
@@ -159,12 +231,12 @@ export class Player {
           throw new Error(`${m.name} could not be spawned: ${e.message}`);
         });
         // Kept before the check, so a Stop during the spawn still removes the person.
-        ctx.cast.push({ track: m.track, name: m.name, id });
+        ctx.cast.push({ track: m.track, name: m.name, id, ...places[m.track] });
         if (run !== this.run) throw Abandoned;
       }
       for (const m of sheet.cast) {
         const a = ctx.cast.find((x) => x.track === m.track);
-        const r = await step(world.useWorkspot(a.id, { entry: m.clips[0].name }));
+        const r = await step(world.useWorkspot(a.id, { entry: entryAt(sheet, m, from) }));
         if (r?.id) a.id = r.id;
         if (!r?.started) throw new Error(`${m.name} did not start playing: ${r?.why ?? "no reason given"}`);
       }
@@ -172,32 +244,9 @@ export class Player {
       await step(new Promise((done) => setTimeout(done, this.deps.warmMs)));
 
       // 4. Play: one timer for each cue, all from one start time.
-      const t0 = now() + this.deps.leadMs;
-      for (const cue of sheet.timeline) {
-        const due = t0 + cue.t * 1000;
-        ctx.timers.push(
-          setTimeout(async () => {
-            const late = Math.round(now() - due);
-            const a = ctx.cast.find((x) => x.track === cue.track);
-            let ok = false;
-            let error;
-            try {
-              ok = !!a && (await world.jumpWorkspot(a.id, cue.jump));
-            } catch (e) {
-              error = e.message;
-            }
-            if (run !== this.run) return;
-            this.set({ late: [...this.st.late, { t: cue.t, track: cue.track, jump: cue.jump, ms: late, ok, ...(error ? { error } : {}) }] });
-          }, Math.max(0, due - now())),
-        );
-      }
-      // 5. End: the cast holds its last clips, looping, until Stop.
-      ctx.timers.push(
-        setTimeout(() => {
-          if (run === this.run) this.set({ state: "ended", text: "The scene has ended: the cast holds its last clips until Stop" });
-        }, Math.max(0, t0 + sheet.length * 1000 - now())),
-      );
-      this.set({ state: "playing", text: "Playing", startedAt: t0 });
+      ctx.sheet = sheet;
+      ctx.loop = !!request.loop;
+      this.begin(ctx, run, from);
     } catch (e) {
       // A Stop or a new play took over: remove what this play still spawned after it.
       await this.clear(ctx);
@@ -208,6 +257,13 @@ export class Player {
     }
     return this.st;
   }
+}
+
+/** The clip an actor plays at a moment: the last jump at or before it, or their first clip. */
+export function entryAt(sheet, m, from) {
+  let entry = m.clips[0].name;
+  for (const cue of sheet.timeline) if (cue.track === m.track && cue.t <= from) entry = cue.jump;
+  return entry;
 }
 
 const nameOf = (sheet, m) => `${slug(sheet.scene)}_${slug(m.track, 20)}`;

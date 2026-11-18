@@ -15,6 +15,9 @@ dist-test/**
 dist/**/*.map
 dist/*.zip
 dist/nexus/**
+dist/director/**
+dist/director-standin.mjs
+director/**
 node_modules/**
 esbuild.mjs
 tsconfig.json

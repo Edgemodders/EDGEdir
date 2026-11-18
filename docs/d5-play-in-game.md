@@ -220,6 +220,8 @@ Not built, against the design's Sets section:
 | Lights and props with no `bounds` | Not drawn |
 | The set in the game | D5c, and REDnode #48's answer on directing a person who is already there |
 
+**Since EDGEdir 0.0.24 (2026-11-18) the player is [EDGE Director](edge-director.html), a package with a window, in `director/`, given as its own release file: the `.vsix` no longer carries it and EDGEdir copies nothing into the game's folder. What follows describes it as D5 built it.**
+
 **D5c The player and D5d Play in game, EDGEdir 0.0.21 (2026-11-17). The hand test in VS Code passed by script, 13 of 13, against a stand-in for the player ([Tests](testing.html)). Not run in the game yet.** Built on way B, the folder, after REDnode's answer on #48.
 
 | Part | Where |

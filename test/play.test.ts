@@ -1,13 +1,13 @@
-// D5c and D5d: the player's steps against a stand-in world (player/play.mjs), and the folder EDGEdir
+// D5c and D5d: the player's steps against a stand-in world (director/play.mjs), and the folder EDGEdir
 // reaches it through (src/play.ts). Made-up names and places; nothing is read from the game.
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { Player, placements, refusal, sceneFor, SET, slug } from "../player/play.mjs";
+import { Player, placements, refusal, sceneFor, SET, slug } from "../director/play.mjs";
 import type { CueSheet } from "../src/cues";
-import { alive, install, installState, lineOf, older, playerVersion, readState, request, stageFor } from "../src/play";
+import { alive, DirectorVersion, install, installState, lineOf, older, playerVersion, readState, request, stageFor } from "../src/play";
 import { addSetPeople, chooseSet, linkTo, parseSet } from "../src/set";
 import { newDoc } from "../src/doc";
 
@@ -154,24 +154,25 @@ test("EDGEdir reaches the player through a folder, and copies the player into th
     assert.deepEqual(lineOf({ state: "failed", text: "Bo could not be spawned" }), { text: "Not played: Bo could not be spawned", bad: true });
     assert.deepEqual(lineOf({ state: "spawning", text: "Spawning 2 people" }), { text: "Spawning 2 people", bad: false });
 
-    // The player EDGEdir ships is this repo's player folder.
-    const source = path.resolve("player");
+    // The Director EDGEdir needs is the one in this repo's director folder.
+    const source = path.resolve("director");
     const shipped = playerVersion(source)!;
+    assert.equal(shipped, DirectorVersion);
     assert.match(shipped, /^\d+\.\d+\.\d+$/);
     assert.deepEqual([older("0.1.0", "0.1.1"), older("0.2.0", "0.10.0"), older("1.0.0", "1.0.0"), older("1.1", "1.0.9")], [true, true, false, false]);
     const gamePath = path.join(root, "game");
-    assert.equal(installState(source, gamePath), "noRednode");
+    assert.equal(installState(shipped, gamePath), "noRednode");
     fs.mkdirSync(path.join(gamePath, "red4ext", "plugins", "REDnode"), { recursive: true });
-    assert.equal(installState(source, gamePath), "none");
+    assert.equal(installState(shipped, gamePath), "none");
     const to = install(source, gamePath);
-    assert.equal(to, path.join(gamePath, "red4ext", "plugins", "REDnode", "apps", "edgedir-player"));
-    assert.deepEqual(fs.readdirSync(to).sort(), fs.readdirSync(source).sort());
-    assert.equal(installState(source, gamePath), "ready");
+    assert.equal(to, path.join(gamePath, "red4ext", "plugins", "REDnode", "apps", "edge-director"));
+    assert.deepEqual(fs.readdirSync(to).sort(), fs.readdirSync(source).filter((f) => fs.statSync(path.join(source, f)).isFile()).sort());
+    assert.equal(installState(shipped, gamePath), "ready");
     // An older one in the game is offered a replacement.
     const manifest = path.join(to, "rednode-app.json");
     fs.writeFileSync(manifest, JSON.stringify({ ...JSON.parse(fs.readFileSync(manifest, "utf8")), version: "0.0.1" }));
-    assert.equal(installState(source, gamePath), "older");
-    assert.throws(() => install(path.join(root, "nothing"), gamePath), /missing from the extension/);
+    assert.equal(installState(shipped, gamePath), "older");
+    assert.throws(() => install(path.join(root, "nothing"), gamePath), /No built EDGE Director/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

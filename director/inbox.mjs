@@ -1,4 +1,4 @@
-// The folder EDGEdir reaches the player through: %LOCALAPPDATA%\EDGEdir\play. EDGEdir writes
+// The folder EDGEdir reaches the Director through: %LOCALAPPDATA%\EDGEdir\play. EDGEdir writes
 // request.json; the player writes state.json (what the play is doing) and alive.json (that it
 // runs, every two seconds). The folder is in the player's own Windows profile, so only their own
 // programs can write it, and no port is opened. No `rednode` import in here.
@@ -15,12 +15,13 @@ export function put(dir, name, value) {
     fs.writeFileSync(tmp, JSON.stringify(value));
     fs.renameSync(tmp, path.join(dir, name));
   } catch (e) {
-    console.log(`EDGEdir Player: could not write ${name}: ${e.message}`);
+    console.log(`EDGE Director: could not write ${name}: ${e.message}`);
   }
 }
 
 /**
- * Takes requests from the folder for `player` (play.mjs's Player) and says the player is alive.
+ * Takes requests from the folder for `player` (anything with `play(request)` and `stop()`: play.mjs's
+ * Player, or the Director's stage manager in front of it) and says the Director is alive.
  * A request is taken once, by its id; one left from before this started is not played.
  * Answers a function that stops watching.
  */

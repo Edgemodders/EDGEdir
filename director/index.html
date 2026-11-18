@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EDGE Director</title>
+<script src="rednode://ui/rednode-ui.js"></script>
+<script type="importmap">{ "imports": { "rednode": "rednode://sdk/index.js" } }</script>
+<style>
+  html, body { margin: 0; width: 100vw; height: 100vh; background: transparent; overflow: hidden; }
+  rn-window { position: absolute; inset: 0; }
+  #app { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--rn-fg, #eee); font: 13px var(--rn-font, system-ui, sans-serif); }
+  [hidden] { display: none !important; }
+  .mono, .dim, .time, .lane-name, .clip, #status { font-family: var(--rn-mono, monospace); font-size: 11px; }
+  .dim { color: var(--rn-dim, #999); }
+  .head { display: flex; align-items: center; gap: 8px; padding: 2px 0 8px; }
+  .head h2 { flex: 1; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .section { margin: 10px 0 4px; font: 11px var(--rn-mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--rn-dim, #999); }
+  .scroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid transparent; border-bottom-color: var(--rn-line, #333); cursor: pointer; }
+  .row:hover { border-color: var(--rn-accent, #f2e600); }
+  .row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row.on { border-color: var(--rn-accent, #f2e600); }
+  .tag { font: 10px var(--rn-mono, monospace); letter-spacing: .06em; text-transform: uppercase; color: var(--rn-ok, #5dffa1); }
+  .tag.warn { color: var(--rn-danger, #ff5e5e); }
+  #why { margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--rn-danger, #ff5e5e); color: var(--rn-danger, #ff5e5e); }
+  #transport { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .time { margin-left: auto; color: var(--rn-fg, #eee); }
+  /* The strip: a ruler to drag the playhead on, and one lane for each track. */
+  #strip { position: relative; overflow: hidden; margin-top: 8px; border: 1px solid var(--rn-line, #333); user-select: none; }
+  #ruler { position: relative; height: 16px; margin-left: 96px; border-bottom: 1px solid var(--rn-line, #333); cursor: ew-resize; }
+  .tick { position: absolute; top: 2px; font: 9px var(--rn-mono, monospace); color: var(--rn-dim, #999); transform: translateX(-50%); }
+  .lane { display: flex; height: 22px; border-bottom: 1px solid var(--rn-line, #333); }
+  .lane:last-child { border-bottom: none; }
+  .lane-name { width: 92px; padding: 4px 0 0 4px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rn-dim, #999); cursor: pointer; }
+  .lane.cast .lane-name { color: var(--rn-fg, #eee); }
+  .lane.on .lane-name { color: var(--rn-accent, #f2e600); }
+  .lane-clips { position: relative; flex: 1; }
+  .clip { position: absolute; top: 3px; height: 16px; box-sizing: border-box; padding: 2px 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 1px solid var(--rn-line, #555); background: rgba(255, 255, 255, .06); color: var(--rn-dim, #999); }
+  .clip.played { border-color: var(--rn-accent, #f2e600); color: var(--rn-fg, #eee); }
+  #head { position: absolute; top: 0; bottom: 0; width: 1px; margin-left: 96px; background: var(--rn-danger, #ff5e5e); pointer-events: none; }
+  .note { padding: 3px 0; white-space: pre-wrap; }
+  #status { padding-top: 6px; border-top: 1px solid var(--rn-line, #333); display: flex; gap: 8px; }
+  #status .text { flex: 1; }
+  #status.bad .text { color: var(--rn-danger, #ff5e5e); }
+</style>
+</head>
+<body>
+<rn-window title="EDGE Director" draggable closable>
+  <div id="app">
+    <div id="list" class="scroll">
+      <div class="head"><h2>Scenes</h2><rn-button id="again" variant="ghost">Refresh</rn-button></div>
+      <div id="scenes"></div>
+      <div id="none" class="dim" hidden>No scenes are on the Desk yet. Make one in VS Code with EDGEdir: New Scene.</div>
+    </div>
+    <div id="scene" class="scroll" hidden>
+      <div class="head"><rn-button id="back" variant="ghost">Scenes</rn-button><h2 id="name"></h2><span id="set" class="dim"></span></div>
+      <div id="why" hidden></div>
+      <div id="transport">
+        <rn-button id="play">Play</rn-button>
+        <rn-button id="stop" variant="danger">Stop</rn-button>
+        <rn-button id="restart" variant="ghost">Start Again</rn-button>
+        <rn-toggle id="loop" label="Loop"></rn-toggle>
+        <span id="time" class="time">0:00.0 / 0:00.0</span>
+      </div>
+      <div id="strip"><div id="ruler"></div><div id="lanes"></div><div id="head"></div></div>
+      <div class="section">Cast</div>
+      <div id="cast"></div>
+      <div id="nocast" class="dim">Nobody is in the game yet. Press Play.</div>
+      <div class="section" id="notesTitle">In the game</div>
+      <div id="notes" class="dim"></div>
+    </div>
+    <div id="status"><span class="text" id="statusText">Starting</span><span class="dim" id="version"></span></div>
+  </div>
+</rn-window>
+<script type="module" src="app.js"></script>
+</body>
+</html>
