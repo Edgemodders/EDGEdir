@@ -347,7 +347,7 @@ All agreed as recommended on 2026-11-17.
 
 ## Pins: named places from REDnode
 
-**Proposed on 2026-11-18, from the owner's note of the same day. N1 to N3 were agreed that day with [EDGE Director](edge-director.html)'s plan (its R5), and pins are built as its part DR3: the first part is built (the document's side and the Director's, EDGEdir 0.0.26), described under that plan's "What is built", which is the truth where it differs from this section. N4 to N6 are still open.** The owner's idea: pins are named places a scene's timeline can use, for example to spawn at, to walk to, and to trigger when V is near.
+**Proposed on 2026-11-18, from the owner's note of the same day. N1 to N3 were agreed that day with [EDGE Director](edge-director.html)'s plan (its R5), and pins are built as its part DR3: the first part is built (the document's side and the Director's, EDGEdir 0.0.26), described under that plan's "What is built", which is the truth where it differs from this section. N4 to N6 were agreed as recommended on 2026-11-18.** The owner's idea: pins are named places a scene's timeline can use, for example to spawn at, to walk to, and to trigger when V is near.
 
 ### What a pin is today
 
@@ -412,9 +412,11 @@ The owner asked on 2026-11-18 for more than this: an app of EDGEdir's own in the
 | **Pins 2** | Start when V is near | For the test only |
 | **Pins 3** | Walk to a pin | A REDnode spike first |
 
-### Questions for the owner
+### Questions and the owner's answers
 
-| # | Question | Recommended |
+All agreed as recommended on 2026-11-18 (N1 to N3 with EDGE Director's plan, N4 to N6 after).
+
+| # | Question | Agreed |
 |---|---|---|
 | N1 | Are pins REDnode's `.pins.json` files, read and never written by EDGEdir? | Yes |
 | N2 | May EDGEdir list the player's own sets from REDnode's folder (`%APPDATA%\@rednode\overlay\pins`), read only, beside pin files in the open project? | Yes: that is where **Drop a pin here** puts them. REDnode agreed on its #50 (2026-11-18): read only, and watched. Only sets the player made are there (a set opened from elsewhere stays where it was); check the format and version 1, ignore fields not known; a save is a `.tmp` file, then a rename |

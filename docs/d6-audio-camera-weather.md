@@ -4,7 +4,7 @@ title: D6 Audio, camera, weather
 
 # <span class="y">D6</span> Audio, camera, weather
 
-**Status: a plan for the owner's review, written 2026-11-17; the weather's facts brought up to REDnode's in-game test of 2026-11-18. Not agreed, nothing built.** Seven questions are at the end.
+**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. Written 2026-11-17; the weather's facts are from REDnode's in-game test of 2026-11-18. Nothing built yet. It is built after EDGE Director's pins ([EDGE Director](edge-director.html), DR3), weather first.**
 
 D6 is the sixth phase of the [design](design.html). Audio, camera and weather tracks get real clips, show in the preview, and play in the game through the player D5 built. A mod a player installs is D7.
 
@@ -114,9 +114,11 @@ Each part is a document rule, a piece of the editor, a kind of cue, and a step i
 | Lip sync for a spoken line | EDGEfab's lip sync work, later |
 | V as an actor | REDnode #47 |
 
-## Questions for the owner
+## Questions and the owner's answers
 
-| # | Question | Recommended |
+All agreed as recommended on 2026-11-18.
+
+| # | Question | Agreed |
 |---|---|---|
 | W1 | The weather is given back when its clip ends with no other after it, and at Stop. Or should it stay as the scene left it until Stop? | Given back at the clip's end: the lane then shows what the game does |
 | A1 | A sound file is copied into the scene's own folder when added, so a scene carries its sounds? | Yes |
