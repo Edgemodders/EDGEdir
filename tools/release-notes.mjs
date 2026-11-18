@@ -2,7 +2,7 @@
 // uses it for the GitHub release, and stops when the version has no section.
 //
 //   node tools/release-notes.mjs [version]            markdown for GitHub
-//   node tools/release-notes.mjs [version] --nexus    plain lines for Nexus's changelog field
+//   node tools/release-notes.mjs [version] --nexus    the version's short Nexus summary (its <!-- nexus --> block)
 //   --out <file>                                      writes the notes to a file (UTF-8)
 //
 // The version defaults to package.json's.
@@ -33,25 +33,37 @@ if (!section.some((line) => line.trim())) {
   process.exit(1);
 }
 
-if (nexus) {
-  // Nexus's changelog takes one plain line per change: no markdown, links as "text (url)".
-  const plain = (text) => text
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1");
-  const result = [];
-  let group = "";
-  for (const line of section) {
-    const groupHeading = line.match(/^\*\*(.+)\*\*$/);
-    if (groupHeading) group = groupHeading[1];
-    else if (line.startsWith("- ")) result.push((group ? `${group}: ` : "") + plain(line.slice(2)));
-    else if (line.trim()) result.push(plain(line.trim()));
-  }
-  write(result.join("\n"));
-} else {
-  write(`${section.join("\n").trim()}
+// The Nexus summary: a hand-written block under the version's heading, in an HTML comment that
+// GitHub and the docs site hide. Nexus shows each line as one entry, as plain text, and a posted
+// changelog cannot be edited, so EDGErepo's Nexus tool refuses anything else (EDGEdir #1):
+//   <!-- nexus
+//   New: EDGE Director, an app in the game that plays EDGEdir's scenes
+//   Fixed: ...
+//   -->
+const open = section.findIndex((line) => line.trim() === "<!-- nexus");
+const close = section.findIndex((line, i) => i > open && line.trim() === "-->");
+const Link = "https://github.com/Edgemodders/EDGEdir/blob/main/CHANGELOG.md";
 
-**Install:** from the VS Code Marketplace or Open VSX (search for EDGEdir), or the \`.vsix\` below with Extensions > ... > Install from VSIX... Docs: https://edgemodders.github.io/EDGEdir/ (changelog: https://github.com/Edgemodders/EDGEdir/blob/main/CHANGELOG.md)`);
+if (nexus) {
+  const stop = (why) => {
+    console.error(`CHANGELOG.md, ${version}: ${why}`);
+    process.exit(1);
+  };
+  if (open < 0 || close < 0) stop('no Nexus summary. Under the heading add "<!-- nexus", a line for each change, and "-->"');
+  const summary = section.slice(open + 1, close).map((line) => line.trim()).filter(Boolean);
+  if (!summary.length) stop("the Nexus summary is empty");
+  if (summary.length > 13) stop(`the Nexus summary has ${summary.length} lines; at most 13`);
+  for (const line of summary) {
+    if (!/^(New|Changed|Fixed|Removed|Other|Needs): \S/.test(line)) stop(`a Nexus summary line starts with New:, Changed:, Fixed:, Removed:, Other: or Needs: ("${line.slice(0, 60)}")`);
+    if (line.length > 120) stop(`a Nexus summary line is ${line.length} characters; at most 120 ("${line.slice(0, 60)}...")`);
+    if (/[`#]|\*\*|\]\(/.test(line)) stop(`a Nexus summary line is plain text, with no markdown ("${line.slice(0, 60)}")`);
+  }
+  write([...summary, `Full changelog: ${Link}`].join("\n"));
+} else {
+  const notes = open >= 0 && close >= 0 ? [...section.slice(0, open), ...section.slice(close + 1)] : section;
+  write(`${notes.join("\n").trim()}
+
+**Install:** from the VS Code Marketplace or Open VSX (search for EDGEdir), or the \`.vsix\` below with Extensions > ... > Install from VSIX... EDGE Director, the app in the game, is the EDGE-Director zip below: install it with your mod manager. Docs: https://edgemodders.github.io/EDGEdir/ (changelog: ${Link})`);
 }
 
 function write(text) {

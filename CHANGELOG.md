@@ -7,8 +7,19 @@ How to keep it (the Edgemodders convention):
 - With each change a player would notice, add a line under **Unreleased**, in its group: **New**, **Changed**, **Fixed** or **Other**. One change per line. Leave out test-only changes.
 - Before a release, rename **Unreleased** to `## <version> (<date>)` and start a new empty **Unreleased** above it.
 - Links are full URLs, since the same text goes to GitHub and Nexus.
+- Nexus gets a short summary, not these lines: under the version's heading, a block `<!-- nexus`, one line for each change, `-->`. Each line starts with `New:`, `Changed:`, `Fixed:`, `Removed:`, `Other:` or `Needs:`, is plain text of at most 120 characters, and there are at most 13. `node tools/release-notes.mjs <version> --nexus` prints it and stops a release when it is missing or breaks a rule. Keep the block under **Unreleased** current, so it is there when the section is renamed.
 
 ## Unreleased
+
+<!-- nexus
+New: The scene editor: a timeline of tracks and clips for .edgedir scenes, with a Desk for your scenes
+New: Actors from your game's characters, V among them, and a search of the game's animations
+New: A 3D preview: each actor's body plays the clip under the playhead
+New: Transitions (Blend, Inertial) and sequences, stored runs of clips you can reuse
+New: Sets: a scene can play on an EDGEbuilder scene, with its props and people
+New: Play in Game, and EDGE Director, an app in the game that opens and plays your scenes there
+Needs: REDnode 0.66.9 or later with REDbridge and Codeware, and EDGE Director's zip, for playing in the game
+-->
 
 **New**
 
