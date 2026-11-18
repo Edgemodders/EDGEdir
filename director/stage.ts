@@ -5,7 +5,9 @@
 // test and in a stand-in with no game. No `rednode` in here.
 import * as crypto from "node:crypto";
 import { markOf, setMark, setPlace, type SceneDoc } from "../src/doc";
-import { edit, isUnsaved, open, rootsOf, scenes, type Playable, type SceneView } from "./floor";
+import * as path from "node:path";
+import { forgetPin, linkPins, markAtPin, pinsOf, placeAtPin, type Pin } from "../src/pins";
+import { edit, isUnsaved, open, pinFileOf, readPinFile, rootsOf, scenes, syncPins, writePinFile, type Playable, type SceneView } from "./floor";
 import { frameOf, markAt, placeOf, turnOf, type Frame } from "./play.mjs";
 import { Active, type CastNow, type PageMessage, type PlayNow, type Snapshot } from "./protocol";
 
@@ -59,6 +61,9 @@ export class Stage {
   private chosen?: string;
   private pinId?: number;
   private distances: Record<string, number> = {};
+  private pinDistances: Record<string, number> = {};
+  /** The open scene's pins as they are drawn in the world: REDnode's pin id by the pin's title and place. */
+  private drawn = new Map<string, number>();
 
   constructor(private deps: StageDeps) {}
 
@@ -81,6 +86,7 @@ export class Stage {
       play,
       cast,
       ...(this.chosen && view?.tracks.some((t) => t.id === this.chosen && t.mark) ? { chosen: this.chosen } : {}),
+      ...(view?.pins && Object.keys(this.pinDistances).length ? { pinDistances: this.pinDistances } : {}),
       ...(this.error ? { error: this.error } : {}),
     };
   }
@@ -90,6 +96,12 @@ export class Stage {
   }
 
   private read(file: string): Playable | undefined {
+    // A pin dropped again or moved since the scene last read its pins moves what follows it.
+    try {
+      syncPins(file, this.deps.playDir);
+    } catch {
+      // The scene is read as it is.
+    }
     const { view, play } = open(file, rootsOf(this.deps.playDir));
     this.view = view;
     return play;
@@ -105,13 +117,34 @@ export class Stage {
     }
   }
 
-  /** How far each actor is from V. */
+  /** Draws the open scene's pins in the world, and takes away the ones that are gone or moved. */
+  private async showPins(): Promise<void> {
+    const want = new Map((this.view?.pins?.pins ?? []).map((p) => [`${p.title} ${p.at.join(" ")}`, p]));
+    for (const [key, id] of [...this.drawn]) {
+      if (want.has(key)) continue;
+      this.drawn.delete(key);
+      await this.deps.unpin(id).catch(() => undefined);
+    }
+    for (const [key, p] of want) {
+      if (this.drawn.has(key)) continue;
+      const id = await this.deps.pin({ x: p.at[0], y: p.at[1], z: p.at[2] }, p.title).catch(() => undefined);
+      if (id !== undefined) this.drawn.set(key, id);
+    }
+  }
+
+  /** How far each actor and each pin is from V; and the open scene's pins are drawn in the world. */
   async measure(): Promise<void> {
+    await this.showPins();
     const cast = this.deps.player.cast();
-    if (!cast.length) return void (this.distances = {});
+    const pins = this.view?.pins?.pins ?? [];
+    if (!cast.length) this.distances = {};
+    if (!pins.length) this.pinDistances = {};
+    if (!cast.length && !pins.length) return;
     const v = await this.deps.whereV().catch(() => null);
     if (!v) return;
-    this.distances = Object.fromEntries(cast.map((a) => [a.track, Math.round(Math.hypot(a.position.x - v.x, a.position.y - v.y, a.position.z - v.z) * 10) / 10]));
+    const far = (x: number, y: number, z: number) => Math.round(Math.hypot(x - v.x, y - v.y, z - v.z) * 10) / 10;
+    this.distances = Object.fromEntries(cast.map((a) => [a.track, far(a.position.x, a.position.y, a.position.z)]));
+    this.pinDistances = Object.fromEntries(pins.map((p) => [p.title, far(p.at[0], p.at[1], p.at[2])]));
   }
 
   private async unpin(): Promise<void> {
@@ -175,10 +208,11 @@ export class Stage {
     edit(file, make, playDir);
     const play = this.read(file);
     if (!was || !play) return;
-    // The scene in the game keeps its frame, unless its place was changed (`frame`).
-    const to = frame ?? player.frame();
+    // The scene in the game keeps its frame while it is in front of V; a scene at a place or on a
+    // set has the frame its file gives it now; `frame` is one worked out by the caller.
+    const to = frame ?? (play.sheet.anchor.mode === "player" ? player.frame() : frameOf(play.sheet, play.stage, null));
     if (!to) return;
-    if (frame) player.reframe(frame);
+    player.reframe(to);
     for (const a of player.cast()) {
       const lane = this.view!.tracks.find((t) => t.id === a.track);
       if (!lane?.mark || lane.placed) continue;
@@ -186,6 +220,14 @@ export class Stage {
       if (Math.hypot(next.position.x - a.position.x, next.position.y - a.position.y, next.position.z - a.position.z) > 0.0005 || Math.abs(next.yaw - a.yaw) > 0.05) await player.place(a.track, next.position, next.yaw);
     }
     await this.measure();
+  }
+
+  /** The open scene's pin file, and the path its link names it by: the scene's own, beside its file, when it has none yet. */
+  private pinFile(sceneFile: string): { file: string; link: string } {
+    // Read through `edit` with no change: it refuses a scene that VS Code has unsaved, in words.
+    const link = pinsOf(edit(sceneFile, (d) => d, this.deps.playDir));
+    const file = pinFileOf(sceneFile, link);
+    return { file, link: link?.path ?? path.basename(file) };
   }
 
   /** What the window asked. Answers when it is done; the state is published either way. */
@@ -272,6 +314,45 @@ export class Stage {
           await this.change((doc) => setPlace(doc, place), { ...frame, mode: "world" });
           break;
         }
+        case "drop": {
+          // A pin where V stands, in the scene's own pin file; one of the same name is moved there.
+          const view = needView();
+          const title = m.title.trim().slice(0, 80);
+          if (!title) throw new Error("Give the pin a name first");
+          const v = await this.v();
+          const { file, link } = this.pinFile(view.file);
+          const was = readPinFile(file) ?? { name: view.name, pins: [] as Pin[] };
+          const at: [number, number, number] = [v.x, v.y, v.z];
+          const pins = was.pins.some((p) => p.title === title) ? was.pins.map((p) => (p.title === title ? { ...p, at } : p)) : [...was.pins, { title, at }];
+          writePinFile(file, was.name || view.name, pins);
+          await this.change((doc) => linkPins(doc, link, { name: was.name || view.name, pins }));
+          break;
+        }
+        case "removePin": {
+          const view = needView();
+          const { file, link } = this.pinFile(view.file);
+          const was = readPinFile(file);
+          if (!was) throw new Error("The scene's pin file was not found");
+          const pins = was.pins.filter((p) => p.title !== m.title);
+          writePinFile(file, was.name, pins);
+          await this.change((doc) => linkPins(forgetPin(doc, m.title), link, { name: was.name, pins }));
+          break;
+        }
+        case "markAtPin":
+          needView();
+          await this.change((doc) => markAtPin(doc, m.track, m.title));
+          break;
+        case "placeAtPin":
+          needView();
+          await this.change((doc) => placeAtPin(doc, m.title));
+          break;
+        case "goToPin": {
+          const pin = needView().pins?.pins.find((p) => p.title === m.title);
+          if (!pin) throw new Error(`The scene has no pin named "${m.title}"`);
+          const v = await this.v();
+          await this.deps.teleport({ x: pin.at[0], y: pin.at[1], z: pin.at[2], yaw: turnOf(v.fx, v.fy) });
+          break;
+        }
         case "front": {
           needView();
           // In front of V again: a scene in the game goes there now.
@@ -283,6 +364,7 @@ export class Stage {
     } catch (e) {
       this.error = words(e);
     }
+    await this.measure().catch(() => undefined);
     this.publish();
   }
 }

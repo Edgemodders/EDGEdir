@@ -26,6 +26,11 @@
   #moves { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .row.plain { cursor: default; border-color: transparent; }
   .row.plain:hover { border-color: transparent; }
+  #dropRow { display: flex; gap: 6px; margin-top: 6px; }
+  #pinName { flex: 1; min-width: 0; padding: 4px 6px; background: rgba(255, 255, 255, .06); border: 1px solid var(--rn-line, #333); color: var(--rn-fg, #eee); font: 12px var(--rn-mono, monospace); }
+  #pinName:focus { outline: none; border-color: var(--rn-accent, #f2e600); }
+  .row.pinrow { cursor: default; flex-wrap: wrap; }
+  .acts { display: flex; gap: 4px; flex-wrap: wrap; }
   #why { margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--rn-danger, #ff5e5e); color: var(--rn-danger, #ff5e5e); }
   #transport { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .time { margin-left: auto; color: var(--rn-fg, #eee); }
@@ -83,6 +88,10 @@
           <rn-button class="nudge" variant="ghost" data-turn="15" title="Turn 15 degrees the other way">Turn +15</rn-button>
         </div>
       </div>
+      <div class="section">Pins</div>
+      <div id="pins"></div>
+      <div id="nopins" class="dim">No pins yet. A pin is a named place in the world: walk V there, name it and drop it.</div>
+      <div id="dropRow"><input id="pinName" type="text" maxlength="80" placeholder="A name for the place where V stands" spellcheck="false"><rn-button id="drop">Drop a Pin Here</rn-button></div>
       <div class="section">Cast</div>
       <div id="cast"></div>
       <div id="nocast" class="dim">Nobody is in the game yet. Press Play.</div>

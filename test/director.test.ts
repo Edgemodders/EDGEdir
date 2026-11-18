@@ -5,13 +5,14 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { open, rootsOf, scenes } from "../director/floor";
+import { open, rootsOf, scenes, writePinFile } from "../director/floor";
 import type { Snapshot } from "../director/protocol";
 import { Stage, type PlayerLike } from "../director/stage";
 import { entryAt, frameOf, markAt, placeOf, Player, turnOf } from "../director/play.mjs";
 import type { CueSheet } from "../src/cues";
 import { newScene, newSequence } from "../src/desk";
-import { addAnimClip, addTrack, formatDoc, markOf, newDoc, parseDoc, setActor, type SceneDoc } from "../src/doc";
+import { addAnimClip, addTrack, formatDoc, markOf, newDoc, parseDoc, setActor, setMark, type SceneDoc } from "../src/doc";
+import { forgetPin, formatPins, linkPins, markAtPin, markPin, parsePins, pinOf, pinsOf, placeAtPin, placePin, renamePin, unlinkPins, usedPins } from "../src/pins";
 import { writeRoots, writeUnsaved } from "../src/play";
 import { newSeq } from "../src/seq";
 import { addSetPeople, chooseSet, linkTo, parseSet } from "../src/set";
@@ -253,6 +254,134 @@ test("Adjust changes the scene's file with EDGEdir's own edits, and moves the pe
     // An edit EDGEdir refuses is said in its words, and nothing is written.
     await stage.handle({ type: "mark", track: id, x: 5000 });
     assert.match(last().error ?? "", /within 1000 m/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---- DR3 Pins -----------------------------------------------------------------------------------
+
+test("a pin file reads as REDnode writes it; a mark and the scene's place follow a pin", () => {
+  const text = formatPins("Alley", [{ title: "Stairs", at: [10, 20, 3], text: "the drums", style: { color: "#ffcf3f" } }, { title: "Door", at: [12, 24, 3] }]);
+  const info = parsePins(text);
+  assert.deepEqual([info.name, info.pins.map((p) => p.title), info.pins[0].text, JSON.parse(text).format, JSON.parse(text).pins[0].at], ["Alley", ["Stairs", "Door"], "the drums", "rednode-pins", { x: 10, y: 20, z: 3 }]);
+  assert.throws(() => parsePins("{}"), /Not a pin file/);
+  assert.throws(() => parsePins(JSON.stringify({ format: "rednode-pins", pins: [{ title: "", at: { x: 1, y: 2, z: 3 } }] })), /Pin 1/);
+
+  let doc: SceneDoc = addTrack(addTrack(newDoc("Talk"), "actor"), "actor");
+  const [a, b] = doc.tracks.map((t) => t.id);
+  doc = setActor(setActor(doc, a, { record: "Character.Ana", name: "Ana", rig: "w.rig" }), b, { record: "Character.Bo", name: "Bo", rig: "m.rig" });
+  doc = setMark(doc, b, { x: 1, y: 2, yaw: 90 });
+  doc = linkPins(doc, "Talk.pins.json", info);
+  // In front of V a pin is no place in the scene.
+  assert.throws(() => markAtPin(doc, a, "Stairs"), /in front of V/);
+  assert.throws(() => markAtPin(doc, a, "Roof"), /no pin named "Roof"/);
+  // The scene's place at a pin: the origin is the pin, Forward north.
+  doc = placeAtPin(doc, "Stairs");
+  assert.deepEqual(doc.anchor, { mode: "world", at: [10, 20, 3], yaw: 0, pin: "Stairs" });
+  // An actor at the other pin: 2 m east and 4 m north of the origin. The turn is kept.
+  doc = markAtPin(doc, a, "Door");
+  assert.deepEqual([markOf(doc, a), markPin(doc.tracks[0]), [...usedPins(doc)].sort()], [{ x: 2, y: 4, yaw: 0 }, "Door", ["Door", "Stairs"]]);
+  // The Door pin is dropped again 1 m further north: the mark that follows it moves, Bo's does not.
+  doc = linkPins(doc, "Talk.pins.json", { name: "Alley", pins: [info.pins[0], { title: "Door", at: [12, 25, 3] }] });
+  assert.deepEqual([markOf(doc, a), markOf(doc, b)], [{ x: 2, y: 5, yaw: 0 }, { x: 1, y: 2, yaw: 90 }]);
+  // The Stairs pin moves 1 m east: the scene's origin goes with it, and Ana stays at the Door.
+  const moved = { name: "Alley", pins: [{ title: "Stairs", at: [11, 20, 3] as [number, number, number] }, { title: "Door", at: [12, 25, 3] as [number, number, number] }] };
+  doc = linkPins(doc, "Talk.pins.json", moved);
+  assert.deepEqual([doc.anchor.at, markOf(doc, a)], [[11, 20, 3], { x: 1, y: 5, yaw: 0 }]);
+  // The same pins again change nothing.
+  assert.equal(linkPins(doc, "Talk.pins.json", moved), doc);
+  // A mark typed by hand lets go of its pin; a pin that is forgotten leaves the numbers.
+  assert.equal(markPin(setMark(doc, a, { x: 0 }).tracks[0]), undefined);
+  const forgot = forgetPin(doc, "Stairs");
+  assert.deepEqual([placePin(forgot), forgot.anchor.at, markPin(forgot.tracks[0])], [undefined, [11, 20, 3], "Door"]);
+  const renamed = renamePin(doc, "Door", "Back door");
+  assert.deepEqual([markPin(renamed.tracks[0]), pinOf(renamed, "Back door")?.at, pinOf(renamed, "Door")], ["Back door", [12, 25, 3], undefined]);
+  const bare = unlinkPins(doc);
+  assert.deepEqual([pinsOf(bare), placePin(bare), markPin(bare.tracks[0]), markOf(bare, a)], [undefined, undefined, undefined, { x: 1, y: 5, yaw: 0 }]);
+  // The document goes to text and back with its pins.
+  assert.deepEqual(parseDoc(formatDoc(doc)), doc);
+});
+
+test("the Director drops a scene's pins where V stands, into the scene's own pin file, and draws them", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "edgedir-pins-"));
+  try {
+    const desk = path.join(root, "desk");
+    const playDir = path.join(root, "play");
+    let doc: SceneDoc = addTrack(newDoc("Talk"), "actor");
+    const id = doc.tracks[0].id;
+    doc = setActor(doc, id, { record: "Character.Ana", name: "Ana", rig: "w.rig" });
+    doc = addAnimClip(doc, id, { set: "a.anims", name: "stand", rig: "w.rig", seconds: 5 }, 0).doc;
+    const talk = newScene("Talk", desk, doc);
+    fs.writeFileSync(talk.file, formatDoc(doc));
+    const onDisk = () => parseDoc(fs.readFileSync(talk.file, "utf8"));
+    const pinFile = path.join(path.dirname(talk.file), "Talk.pins.json");
+
+    const { world, calls } = fakeWorld();
+    let v = { x: 100, y: 200, z: 5, fx: 0, fy: 1 };
+    const player = new Player({ world, player: async () => v, warmMs: 2, leadMs: 2 });
+    const states: Snapshot[] = [];
+    const pinned: string[] = [];
+    let n = 0;
+    const stage = new Stage({
+      player: player as unknown as PlayerLike,
+      version: "0.0.0",
+      desk,
+      playDir,
+      publish: (s) => states.push(s),
+      whereV: async () => v,
+      teleport: async (to) => void (v = { ...v, x: to.x, y: to.y, z: to.z }),
+      pin: async (at, title) => (pinned.push(`pin ${title} ${JSON.stringify(at)}`), ++n),
+      unpin: async (pinId) => void pinned.push(`unpin ${pinId}`),
+    });
+    const last = () => states[states.length - 1];
+    await stage.handle({ type: "open", file: talk.file });
+    await stage.handle({ type: "drop", title: "  " });
+    assert.match(last().error ?? "", /Give the pin a name/);
+
+    // A first pin makes the scene's own pin file beside its file, and links it by its name there.
+    await stage.handle({ type: "drop", title: "Stairs" });
+    assert.equal(last().error, undefined);
+    assert.deepEqual(parsePins(fs.readFileSync(pinFile, "utf8")), { name: "Talk", pins: [{ title: "Stairs", at: [100, 200, 5] }] });
+    assert.deepEqual([pinsOf(onDisk())?.path, last().view!.pins, last().pinDistances], ["Talk.pins.json", { name: "Talk", pins: [{ title: "Stairs", at: [100, 200, 5], used: false }] }, { Stairs: 0 }]);
+    assert.deepEqual(pinned, ['pin Stairs {"x":100,"y":200,"z":5}']);
+    v = { ...v, x: 104, y: 203 };
+    await stage.handle({ type: "drop", title: "Door" });
+    assert.deepEqual(last().pinDistances, { Stairs: 5, Door: 0 });
+
+    // The scene's place at a pin, and the actor at the other: in the file, with the pins' names.
+    await stage.handle({ type: "markAtPin", track: id, title: "Door" });
+    assert.match(last().error ?? "", /in front of V/);
+    await stage.handle({ type: "placeAtPin", title: "Stairs" });
+    await stage.handle({ type: "markAtPin", track: id, title: "Door" });
+    assert.deepEqual([last().error, last().view!.placePin, last().view!.tracks[0].pin, markOf(onDisk(), id)], [undefined, "Stairs", "Door", { x: 4, y: 3, yaw: 0 }]);
+    assert.deepEqual(last().view!.pins!.pins.map((p) => p.used), [true, true]);
+
+    // In the game the actor stands at the Door. The Door pin dropped again somewhere else moves them there at once.
+    await stage.handle({ type: "play" });
+    assert.deepEqual(player.cast()[0].position, { x: 104, y: 203, z: 5 });
+    v = { ...v, x: 106, y: 201 };
+    calls.length = 0;
+    pinned.length = 0;
+    await stage.handle({ type: "drop", title: "Door" });
+    assert.deepEqual([markOf(onDisk(), id), calls], [{ x: 6, y: 1, yaw: 0 }, ['move {"x":106,"y":201,"z":5} 0']]);
+    // The pin drawn at the old place is taken away and one is drawn at the new.
+    assert.deepEqual(pinned.filter((p) => p.includes("Door") || p.startsWith("unpin")).length, 2);
+    await stage.handle({ type: "stop" });
+
+    // A pin moved in the file by another hand (REDnode's Pins window) is followed when the scene is read again.
+    writePinFile(pinFile, "Talk", [{ title: "Stairs", at: [100, 200, 5] }, { title: "Door", at: [100, 210, 5] }]);
+    await stage.handle({ type: "scenes" });
+    assert.deepEqual(markOf(onDisk(), id), { x: 0, y: 10, yaw: 0 });
+    // Go There on a pin, and a pin removed: the mark keeps its numbers and follows nothing.
+    await stage.handle({ type: "goToPin", title: "Door" });
+    assert.deepEqual([v.x, v.y], [100, 210]);
+    await stage.handle({ type: "removePin", title: "Door" });
+    assert.deepEqual([last().view!.pins!.pins.map((p) => p.title), last().view!.tracks[0].pin, markOf(onDisk(), id)], [["Stairs"], undefined, { x: 0, y: 10, yaw: 0 }]);
+    // The scene closed: its pins are no longer drawn.
+    pinned.length = 0;
+    await stage.handle({ type: "close" });
+    assert.equal(pinned.filter((p) => p.startsWith("unpin")).length, 1);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

@@ -15,3 +15,5 @@ Kept as EDGEdir's own changelog is: a line under **Unreleased** with each change
 - Adjust: click an actor's name on the strip, then **Move to V** puts their mark where V stands, facing as V faces; Left, Right, Forward and Back move it 10 cm, and Turn turns it 15 degrees. An actor in the game moves at once. Each change is saved to the scene's file, and the scene open in VS Code follows.
 - **The Scene Is Here** keeps the scene at the spot it plays at, instead of in front of V wherever V is; **In Front of V** undoes it.
 - A scene with unsaved changes in VS Code plays in the game and cannot be changed there, so neither tool overwrites the other.
+- Pins: name a place and **Drop a Pin Here** puts a pin where V stands, in the scene's own pin file (REDnode's pin format, beside the scene). The scene's pins are drawn in the world while the scene is open. For each pin: **Go There**, the chosen actor **Here**, **Scene Here**, **Drop Again** and **Remove**.
+- An actor's mark and the scene's place can follow a pin: drop the pin again somewhere else and they move with it, in the game at once and in the scene's file.

@@ -8,6 +8,7 @@ import { libraryRoot } from "../src/core/made";
 import { cuesOf, type CueSheet } from "../src/cues";
 import { deskDir, Kind, listDesk } from "../src/desk";
 import { clipEnd, markOf, sceneLength, type Clip, type Mark, type SceneDoc } from "../src/doc";
+import { follow, formatPins, linkPins, markPin, parsePins, PinsEnding, pinsOf, placePin, usedPins, type Pin, type PinsLink } from "../src/pins";
 import { stageFor, type PlayStage } from "../src/play";
 import { readScene, writeScene } from "../src/seq";
 import { fromOf, setOf } from "../src/set";
@@ -43,6 +44,8 @@ export interface StripTrack {
   mark?: Mark;
   /** The set places this actor: the mark is not the Director's to change. */
   placed?: boolean;
+  /** The pin the mark follows. */
+  pin?: string;
   clips: StripClip[];
 }
 
@@ -59,6 +62,10 @@ export interface SceneView {
   set?: { name: string; found: boolean };
   /** The scene's own place in the world, when it has one: neither on a set nor in front of V. */
   place?: { at: [number, number, number]; yaw: number };
+  /** The pin the scene's place follows. */
+  placePin?: string;
+  /** The scene's pins, as it last read them, and which of them something follows. */
+  pins?: { name: string; pins: { title: string; at: [number, number, number]; used: boolean }[] };
   /** VS Code has changes to this scene that are not saved: the Director plays it and does not change it. */
   unsaved?: boolean;
   /** Why the scene cannot be played, in words; absent when it can. */
@@ -109,12 +116,18 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     kind: t.kind,
     ...(t.actor?.name ? { who: t.actor.name } : {}),
     cast: cast.has(t.id),
-    ...(t.kind === "actor" && t.actor ? { mark: markOf(doc, t.id), ...(doc.set && fromOf(t) ? { placed: true } : {}) } : {}),
+    ...(t.kind === "actor" && t.actor ? { mark: markOf(doc, t.id), ...(doc.set && fromOf(t) ? { placed: true } : {}), ...(markPin(t) ? { pin: markPin(t) } : {}) } : {}),
     clips: t.clips.map((c) => ({ id: c.id, start: c.start, end: clipEnd(c), label: String(label(c)), played: jumps.has(`${t.id} ${c.start}`) || c.kind === "sequence" })),
   }));
   const view: SceneView = { file, name: doc.name, length: Math.max(sheet.length, sceneLength(doc)), tracks, notes: notes.map((n) => n.text) };
   const anchor = doc.anchor as { mode: string; at?: [number, number, number]; yaw?: number };
   if (anchor.mode === "world" && Array.isArray(anchor.at)) view.place = { at: anchor.at, yaw: Number(anchor.yaw ?? 0) };
+  const pinned = pinsOf(doc);
+  if (pinned) {
+    const used = usedPins(doc);
+    view.pins = { name: pinned.name, pins: pinned.pins.map((p) => ({ title: p.title, at: p.at, used: used.has(p.title) })) };
+  }
+  if (placePin(doc)) view.placePin = placePin(doc);
   const link = setOf(doc);
   let stage: PlayStage | undefined;
   if (link) {
@@ -172,7 +185,8 @@ export function edit(file: string, change: (doc: SceneDoc) => SceneDoc, playDir:
   } catch {
     throw new Error(`${path.basename(file)} is not on the Desk any more`);
   }
-  const doc = change(readScene(file, was));
+  // What follows a pin follows it after every change: a moved origin moves the marks that do not.
+  const doc = follow(change(readScene(file, was)));
   const text = writeScene(file, doc, was);
   if (text !== was) {
     const tmp = `${file}.${process.pid}.tmp`;
@@ -180,4 +194,59 @@ export function edit(file: string, change: (doc: SceneDoc) => SceneDoc, playDir:
     fs.renameSync(tmp, file);
   }
   return doc;
+}
+
+// ---- pins (DR3) -------------------------------------------------------------------------------
+
+/** A scene's pin file: the one its link names (a name beside the scene's file, or a full path), or for a scene with none, `<scene>.pins.json` beside it. */
+export function pinFileOf(sceneFile: string, link: PinsLink | undefined): string {
+  const dir = path.dirname(sceneFile);
+  if (link) return path.isAbsolute(link.path) ? link.path : path.join(dir, link.path);
+  return path.join(dir, path.basename(sceneFile, path.extname(sceneFile)) + PinsEnding);
+}
+
+/** A pin file's pins, or undefined when there is no such file. A file that is not a pin file throws, in words. */
+export function readPinFile(file: string): { name: string; pins: Pin[] } | undefined {
+  let text: string;
+  try {
+    text = fs.readFileSync(file, "utf8");
+  } catch {
+    return undefined;
+  }
+  return parsePins(text);
+}
+
+/** Writes a pin file whole, as REDnode writes one: through a temp file, then a rename. */
+export function writePinFile(file: string, name: string, pins: Pin[]): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, formatPins(name, pins));
+  fs.renameSync(tmp, file);
+}
+
+/**
+ * Brings a scene up to its pin file when the file's pins are not the ones the scene last read:
+ * one change to the scene's file. False when nothing changed, the scene has no pins, the file is
+ * gone, or VS Code has the scene unsaved (it is then read again later).
+ */
+export function syncPins(sceneFile: string, playDir: string): boolean {
+  let doc: SceneDoc;
+  try {
+    doc = readScene(sceneFile, fs.readFileSync(sceneFile, "utf8"));
+  } catch {
+    return false;
+  }
+  const link = pinsOf(doc);
+  if (!link) return false;
+  let info: { name: string; pins: Pin[] } | undefined;
+  try {
+    info = readPinFile(pinFileOf(sceneFile, link));
+  } catch {
+    return false;
+  }
+  if (!info) return false;
+  const next = linkPins(doc, link.path, { name: info.name || link.name, pins: info.pins });
+  if (next === doc || isUnsaved(sceneFile, playDir)) return false;
+  edit(sceneFile, (d) => linkPins(d, link.path, { name: info!.name || link.name, pins: info!.pins }), playDir);
+  return true;
 }

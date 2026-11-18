@@ -38,6 +38,8 @@ export interface Snapshot {
   cast: CastNow[];
   /** The actor that is chosen: the one Adjust works on, marked in the world with a pin while in the game. */
   chosen?: string;
+  /** Metres from V to each of the open scene's pins, by title, when V was found. */
+  pinDistances?: Record<string, number>;
   /** The last thing that went wrong, in words. Gone with the next thing that goes right. */
   error?: string;
 }
@@ -58,7 +60,13 @@ export type PageMessage =
   | { type: "nudge"; track: string; right?: number; forward?: number; turn?: number }
   | { type: "mark"; track: string; x?: number; y?: number; yaw?: number }
   | { type: "here" }
-  | { type: "front" };
+  | { type: "front" }
+  // DR3 Pins. A drop writes the scene's own pin file; the others change the scene's file.
+  | { type: "drop"; title: string }
+  | { type: "removePin"; title: string }
+  | { type: "markAtPin"; track: string; title: string }
+  | { type: "placeAtPin"; title: string }
+  | { type: "goToPin"; title: string };
 
 export type ModMessage = { type: "state"; state: Snapshot };
 

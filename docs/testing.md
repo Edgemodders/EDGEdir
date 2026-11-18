@@ -12,8 +12,9 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 80 tests |
-| [The owner's tests, A to F](#the-owners-tests) | By hand, the owner: A to D in VS Code, E and F in the game | D1 to D5, DR1, DR2 | | None run yet |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 82 tests |
+| [The owner's tests, A to G](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to G in the game | D1 to D5, DR1 to DR3 | | None run yet |
+| [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | | Not run yet (0.0.26, EDGE Director 0.4.0) |
 | [DR2 Adjust](#dr2-adjust) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR2 | | Not run yet (0.0.25, EDGE Director 0.3.0) |
 | [DR1 The Director's window](#dr1-the-directors-window) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
 | [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes. Step 3 changed in 0.0.24 (no copy into the game's folder): not run |
@@ -46,8 +47,9 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
-- **The owner's Tests E and F**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust): not run yet. Nothing of EDGEdir has run in the game at all.
+- **The owner's Tests E, F and G**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins): not run yet. Nothing of EDGEdir has run in the game at all.
 - **DR2 Adjust**, 12 steps with a stand-in for the game: not run yet.
+- **DR3 Pins**, 10 steps with a stand-in for the game: not run yet. The owner's is Test G.
 - **DR1 The Director's window**, 13 steps with a stand-in for the game: not run yet. With it, D5d's changed step 3 (EDGEdir 0.0.24 asks for EDGE Director's download and copies nothing).
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
@@ -64,6 +66,7 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 | [D](#test-d-sets-and-what-the-game-will-not-match) | Sets, and what the game will not match | As B, and an EDGEbuilder scene in the Library | 5 minutes | Not run yet |
 | [E](#test-e-edge-director-in-the-game-play) | EDGE Director in the game: open and play a scene | The game running, REDnode, EDGE Director | 30 minutes | Not run yet |
 | [F](#test-f-edge-director-in-the-game-adjust) | EDGE Director in the game: adjust a scene | As E | 15 minutes | Not run yet |
+| [G](#test-g-edge-director-in-the-game-pins) | EDGE Director in the game: pins | As E | 10 minutes | Not run yet |
 
 Tests A to D are the spot tests S1 to S12, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
 
@@ -119,13 +122,13 @@ Tests A to D are the spot tests S1 to S12, one short test for each major feature
 
 ### Test E: EDGE Director in the game: play
 
-EDGEdir 0.0.25 with EDGE Director 0.3.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
+EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
 
-**Before Tests E and F:** REDnode 0.66.9 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.3.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
+**Before Tests E, F and G:** REDnode 0.66.9 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.4.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
 
 | Step | Do | Expect, and say |
 |---|---|---|
-| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.3.0 |
+| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.4.0 |
 | E2 | Click the scene of Test C | Its name, "in front of V", a strip with a lane for each track and the clips' names, and under **In the game** what the game will not match. Say how the window sits over the game, and whether its size suits watching a scene |
 | E3 | Press **Play** | The line reads Writing 2 workspots (the first time about half a minute), Spawning, Starting the cast, Playing. Two people stand about 3 m in front of V and play. **G1:** are they at their marks, and in time with each other and with the playhead on the strip? **G7:** how long from the click to the first movement? |
 | E4 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
@@ -146,7 +149,7 @@ EDGEdir 0.0.25 with EDGE Director 0.3.0. The in-game test of D5c, D5d and DR1, r
 
 ### Test F: EDGE Director in the game: adjust
 
-EDGEdir 0.0.25 with EDGE Director 0.3.0. The in-game test of DR2. Go on from Test E, with its scene open in EDGE Director's window, and the same scene open and saved in VS Code beside the game.
+EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of DR2. Go on from Test E, with its scene open in EDGE Director's window, and the same scene open and saved in VS Code beside the game.
 
 | Step | Do | Expect, and say |
 |---|---|---|
@@ -166,6 +169,25 @@ EDGEdir 0.0.25 with EDGE Director 0.3.0. The in-game test of DR2. Go on from Tes
 |---|---|---|
 | 1 | | Not run yet |
 
+### Test G: EDGE Director in the game: pins
+
+EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of DR3's first part. Go on from Test F, with the scene open in EDGE Director's window and nothing playing.
+
+| Step | Do | Expect, and say |
+|---|---|---|
+| G1 | Walk V to a spot. Under **Pins** type a name and press **Drop a Pin Here** (or Enter) | The pin is listed with 0 m, and stands in the world with its name over it, as REDnode's pins do. Say whether typing in the box also moves V or opens anything in the game |
+| G2 | Walk away and drop a second pin under another name | Two pins, each with its distance from V, which follows V as V walks |
+| G3 | Press **Scene Here** on the first pin | The header reads "at the pin" and its name; the pin's row names "the scene" |
+| G4 | Click an actor's name on the strip, then press that actor's **Here** on the second pin | Adjust shows the mark with "at the pin" and its name; the pin's row names the actor |
+| G5 | Press **Play** | The scene plays at the first pin, with that actor standing on the second pin |
+| G6 | While it plays, walk V somewhere else and press **Drop Again** on the second pin | The pin in the world moves to V, and the actor moves there at once and plays on |
+| G7 | Press **Go There** on the first pin | V stands at that pin |
+| G8 | Open REDnode's own **Pins** window. Then press **Stop**, go back to **Scenes** in EDGE Director | Say whether the scene's pins are listed in REDnode's Pins window, and under what name. Back at Scenes, the scene's pins are gone from the world |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
 ## Type check, build and unit tests
 
 ```powershell
@@ -178,7 +200,7 @@ The **Check** workflow runs the same on every push to `main`. The tests are pure
 
 D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with a developer's copy of the Director into a made-up game folder.
 
-DR1's and DR2's 5 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, a mark and a place in the world turned into each other in each kind of frame, Adjust (a change to the file made with EDGEdir's own edits and the person moved in the game, the scene's place, what VS Code has unsaved played and not changed, an edit refused in EDGEdir's words), and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
+DR1's, DR2's and DR3's 7 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, a mark and a place in the world turned into each other in each kind of frame, Adjust (a change to the file made with EDGEdir's own edits and the person moved in the game, the scene's place, what VS Code has unsaved played and not changed, an edit refused in EDGEdir's words), pins (a pin file read and written as REDnode's, a mark and the scene's place that follow a pin when it moves, a pin dropped where V stands into the scene's own file, drawn, dropped again with the actor in the game moved, moved by another hand, removed), and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
 
 ## D1 Timeline
 
@@ -625,3 +647,26 @@ EDGEdir 0.0.25 with EDGE Director 0.3.0 (2026-11-18). Adjust with no game, as [D
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1, 2 (the page's side), 4 to 9 once by script in a browser, and they showed what is written here; that was not a round. Nothing of it has run with VS Code |
+
+## DR3 Pins
+
+EDGEdir 0.0.26 with EDGE Director 0.4.0 (2026-11-18). The Director's pins with no game, as [DR1's test](#dr1-the-directors-window) is run: the stand-in and its page in a browser. V stands at 0, 0 until **Go There** moves V. The stand-in prints a `pin` for each pin it would draw and an `unpin` for each it takes away.
+
+**Before you start:** DR1's Desk, with Talk saved, in front of V, with no pins. Nothing playing.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | Open Talk. Under **Pins** click **Drop a Pin Here** with the box empty; then type `Stairs` and press Enter | Empty: nothing happens, and the box takes the cursor. With the name: a row Stairs, 0 m, with Go There, Actor Here (off), Scene Here, Drop Again, Remove. The stand-in prints a `pin` Stairs. Beside the scene's file on the Desk there is `Talk.pins.json` with `"format": "rednode-pins"` and the pin; the scene's file has `"pins"` with the path `Talk.pins.json` |
+| 2 | Click the second actor's name on the strip, then that actor's **Here** on Stairs | The line turns red: the scene plays in front of V, so a pin is no place in it. Nothing changes |
+| 3 | Click **Scene Here** on Stairs | The header reads "at the pin Stairs". The row has a tag "the scene". The scene's file has `"anchor"` with `"mode": "world"`, the pin's place and `"pin": "Stairs"` |
+| 4 | Click **Play**, then **Go There** on the first actor in Cast, then type `Door` and drop it | A second row Door. Its distance is 0 m and Stairs's is more |
+| 5 | Click the second actor's **Here** on Door | Adjust reads the mark with "at the pin Door"; Door's row has the actor's name as a tag. The stand-in prints one `move` of that actor to the pin's place |
+| 6 | Click **Go There** on Stairs, then **Drop Again** on Door | V goes to Stairs (a `teleport`). Door is at V's place now: an `unpin` and a `pin` Door, and one `move` of the actor there. The mark in the file changed |
+| 7 | Click **Stop**. In a text editor change Door's `x` in `Talk.pins.json` by 2 and save | Within about 3 s the actor's mark in Adjust is 2 m different, with no click, and the scene's file has it |
+| 8 | Click **Left** in Adjust | The mark moves 10 cm and no longer says "at the pin"; Door's row loses the actor's tag |
+| 9 | Click **Remove** on Stairs | The row goes and an `unpin` is printed. The header reads "at" with the three numbers the pin had: the scene stays there and follows nothing |
+| 10 | Click **Scenes** | An `unpin` for each pin still drawn |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1 to 3, 5 (with nothing playing) and 9 once by script in a browser, and they showed what is written here; that was not a round |

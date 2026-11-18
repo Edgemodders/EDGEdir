@@ -76,7 +76,7 @@ stage = new Stage({
     const r = (to.yaw * Math.PI) / 180;
     v = { x: to.x, y: to.y, z: to.z, fx: -Math.sin(r), fy: Math.cos(r) };
   },
-  pin: (at, title) => call("pin", [at, title], ++n, 5),
+  pin: (at, title) => call("pin", [title, at], ++n, 5),
   unpin: (id) => call("unpin", [id], true, 5),
 });
 const floor = stage;

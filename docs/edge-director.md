@@ -4,7 +4,7 @@ title: EDGE Director
 
 # <span class="y">EDGE</span> Director
 
-**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window and DR2 Adjust are built (EDGEdir 0.0.25, EDGE Director 0.3.0): not run in the game, and their hand tests with a stand-in have not run. See [What is built](#what-is-built).**
+**Status: agreed by the owner on 2026-11-18, all twelve questions as recommended. DR1 The window, DR2 Adjust and the first part of DR3 Pins are built (EDGEdir 0.0.26, EDGE Director 0.4.0): not run in the game, and their hand tests with a stand-in have not run. See [What is built](#what-is-built).**
 
 The owner's words: an "EDGE Director" REDnode app that is part of the EDGEdir tool set. It can place and manage pins if it needs to, but its main purpose is to carry the workflow of directing, playing and adjusting a scene over to inside the game.
 
@@ -144,6 +144,27 @@ How DR2 differs from the plan:
 | "Unsaved in VS Code", with the adjust buttons off | As planned, as a yellow box. The list is EDGEdir's, in the play folder |
 | The numbers, typed | Shown, not typed: the window has no number boxes yet. The stage manager takes typed numbers (`mark`); VS Code's inspector is where they are typed |
 | A change to clips takes effect at Start Again | Not in DR2: the Director changes no clips yet (DR4) |
+
+**DR3 Pins, part 1: the document and the Director. EDGEdir 0.0.26 with EDGE Director 0.4.0 (2026-11-18). Not run in the game. Its hand test with a stand-in ([Tests](testing.html), "DR3 Pins") has not run; the owner's is Test G.**
+
+| Part | Where | What it does |
+|---|---|---|
+| A pin file | `parsePins`, `formatPins` in `src/pins.ts` | REDnode's `rednode-pins` version 1, read and written as REDnode does; fields not known are left out on reading, and a pin's text and look are kept |
+| The link | `linkPins`, `unlinkPins`, `pinsOf` | `"pins": { "path", "name", "pins": [{ "title", "at": [x, y, z] }] }`: the file (a name beside the scene's file, or a full path) and the pins as last read, so the scene opens without the file |
+| Following a pin | `markAtPin`, `placeAtPin`, `follow`, `forgetPin`, `renamePin`, `usedPins` | A mark or the scene's place keeps its numbers and the pin's title beside them (`at.pin`, `anchor.pin`). `follow` brings the numbers up to the pins: first the place, then each mark. So everything that reads a mark (the preview, the cue sheet, the player) is unchanged. A mark typed or nudged by hand lets go of its pin |
+| A scene needs a place | `markAtPin` | A scene in front of V has no places in the world, so a mark there cannot follow a pin: the scene is first given a place (The Scene Is Here, or Scene Here on a pin) or is on a set |
+| The scene's own pin file | `pinFileOf`, `readPinFile`, `writePinFile`, `syncPins` in `director/floor.ts` | `<scene>.pins.json` beside the scene's file on the Desk, written by the Director. Read again whenever the scene is: a pin moved there by any hand moves what follows it, as one change to the scene's file |
+| In the window | `director/stage.ts` (`drop`, `removePin`, `markAtPin`, `placeAtPin`, `goToPin`), the **Pins** section | Drop a Pin Here with a typed name; for each pin its distance, what follows it, Go There, the chosen actor Here, Scene Here, Drop Again, Remove. The open scene's pins are drawn in the world with `world.pin` and taken away when it is closed |
+
+How it differs from the design's pins section, and what is left for part 2:
+
+| Point | Built, or left |
+|---|---|
+| N1: pin files are read and never written by EDGEdir | The Director writes one kind: the scene's own pin file, which it made (R5). It never writes a set in REDnode's folder or any other file |
+| The Director draws and drops through REDnode's calls | It draws with `world.pin`. It writes the scene's file itself, in REDnode's format, rather than through `world.pinSet.save`: the stage manager then runs with no game, and the file is the same. **Unverified:** whether REDnode's Pins window lists these pins (Test G8) |
+| Rename a pin | `renamePin` is in the document's code; the window has no button yet. Drop Again and Remove cover moving and deleting |
+| In VS Code: the scene's pins in the inspector, a pin picked for a mark there, pins as posts in the preview, Choose Pins from REDnode's folder or the project, the file watched while the scene is open | Part 2. Until then VS Code keeps a scene's pins and what follows them untouched, and a mark typed there lets go of its pin |
+| A pin's id and facing | Waits for REDnode #50, part 3. Pins are named by title |
 
 Unverified until the game, beside the list below: that a page and its mod of one package hear each other over `channel` as EDGEbuilder's do (read from EDGEbuilder's source, not run here); `world.pin` on a spawned person and `game.player.teleport` from this mod; a jump to a clip the actor already plays (Start Again with one clip).
 

@@ -58,7 +58,7 @@ function drawScene(s: Snapshot) {
   const v = s.view!;
   $("name").textContent = v.name;
   const n = (x: number) => String(Math.round(x * 100) / 100);
-  $("set").textContent = v.set ? `on ${v.set.name}${v.set.found ? "" : " (not found)"}` : v.place ? `at ${v.place.at.map(n).join(", ")}` : "in front of V";
+  $("set").textContent = v.set ? `on ${v.set.name}${v.set.found ? "" : " (not found)"}` : v.placePin ? `at the pin ${v.placePin}` : v.place ? `at ${v.place.at.map(n).join(", ")}` : "in front of V";
   // The scene's place: a scene on a set plays where the set is.
   $("here").hidden = !!v.set;
   $("front").hidden = !!v.set || !v.place;
@@ -71,7 +71,7 @@ function drawScene(s: Snapshot) {
   $("adjust").hidden = !who;
   if (who?.mark) {
     $("whoName").textContent = who.who ?? who.name;
-    $("whoMark").textContent = `Right ${n(who.mark.x)} m, Forward ${n(who.mark.y)} m, Turn ${n(who.mark.yaw)}`;
+    $("whoMark").textContent = `Right ${n(who.mark.x)} m, Forward ${n(who.mark.y)} m, Turn ${n(who.mark.yaw)}${who.pin ? `, at the pin ${who.pin}` : ""}`;
     $("placed").hidden = !who.placed;
     $("moves").hidden = !!who.placed;
     for (const b of document.querySelectorAll<HTMLElement>("#moves rn-button")) setOff(b, !!v.unsaved);
@@ -140,6 +140,50 @@ function drawCast(s: Snapshot) {
   );
 }
 
+/** The scene's pins: each with what follows it, its distance, and what can be done with it. */
+let pinsWas = "";
+function drawPins(s: Snapshot) {
+  const v = s.view!;
+  const pins = v.pins?.pins ?? [];
+  const who = v.tracks.find((t) => t.id === s.chosen && t.mark && !t.placed);
+  const key = JSON.stringify([pins, s.pinDistances, v.placePin, who?.id, who?.pin, v.unsaved, !!v.set]);
+  if (key === pinsWas) return;
+  pinsWas = key;
+  $("nopins").hidden = pins.length > 0;
+  setOff($("drop"), !!v.unsaved);
+  const button = (text: string, title: string, on: () => void, dead = false) => {
+    const b = el("rn-button", "", text);
+    b.setAttribute("variant", "ghost");
+    b.title = title;
+    setOff(b, dead);
+    b.addEventListener("click", () => {
+      if (!off(b)) on();
+    });
+    return b;
+  };
+  $("pins").replaceChildren(
+    ...pins.map((p) => {
+      const row = el("div", "row pinrow");
+      row.dataset.pin = p.title;
+      const follows = [v.placePin === p.title ? "the scene" : "", ...v.tracks.filter((t) => t.pin === p.title).map((t) => t.who ?? t.name)].filter(Boolean);
+      row.append(el("span", "name", p.title));
+      if (follows.length) row.append(el("span", "tag", follows.join(", ")));
+      const far = s.pinDistances?.[p.title];
+      row.append(el("span", "dim", far === undefined ? "" : `${far} m`));
+      const acts = el("div", "acts");
+      acts.append(
+        button("Go There", "Puts V at this pin", () => post({ type: "goToPin", title: p.title })),
+        button(who ? `${who.who ?? who.name} Here` : "Actor Here", who ? "The chosen actor stands at this pin, and follows it when it is dropped again" : "Choose an actor first: click their name on the strip", () => who && post({ type: "markAtPin", track: who.id, title: p.title }), !who || !!v.unsaved),
+        button("Scene Here", "The scene's place is this pin, and follows it when it is dropped again", () => post({ type: "placeAtPin", title: p.title }), !!v.set || !!v.unsaved),
+        button("Drop Again", "Moves this pin to where V stands now; what follows it moves with it", () => post({ type: "drop", title: p.title }), !!v.unsaved),
+        button("Remove", "Takes the pin away; what followed it stays where it is", () => post({ type: "removePin", title: p.title }), !!v.unsaved),
+      );
+      row.append(acts);
+      return row;
+    }),
+  );
+}
+
 function drawTransport(s: Snapshot) {
   const here = mine();
   const busy = here && !["playing", "ended"].includes(s.play.state);
@@ -187,6 +231,7 @@ function render(s: Snapshot) {
   drawScenes(s);
   if (s.view) {
     drawScene(s);
+    drawPins(s);
     drawCast(s);
   }
   drawTransport(s);
@@ -209,6 +254,19 @@ $("restart").addEventListener("click", () => {
   if (off($("restart"))) return;
   from = 0;
   post(mine() ? { type: "seek", t: 0 } : { type: "play", from: 0, loop: looping() });
+});
+// Pins: a pin is dropped where V stands, under the name typed.
+const dropPin = () => {
+  const box = $<HTMLInputElement>("pinName");
+  if (off($("drop")) || !box.value.trim()) return box.focus();
+  post({ type: "drop", title: box.value });
+  box.value = "";
+};
+$("drop").addEventListener("click", dropPin);
+$("pinName").addEventListener("keydown", (e) => {
+  // The game's own keys must not get what is typed here.
+  e.stopPropagation();
+  if (e.key === "Enter") dropPin();
 });
 // Adjust: each one changes the scene's file through the mod, which answers with the new state.
 $("here").addEventListener("click", () => {
