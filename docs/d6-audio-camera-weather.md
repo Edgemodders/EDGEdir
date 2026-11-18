@@ -4,7 +4,7 @@ title: D6 Audio, camera, weather
 
 # <span class="y">D6</span> Audio, camera, weather
 
-**Status: a plan for the owner's review, written 2026-11-17. Not agreed, nothing built.** Seven questions are at the end.
+**Status: a plan for the owner's review, written 2026-11-17; the weather's facts brought up to REDnode's in-game test of 2026-11-18. Not agreed, nothing built.** Seven questions are at the end.
 
 D6 is the sixth phase of the [design](design.html). Audio, camera and weather tracks get real clips, show in the preview, and play in the game through the player D5 built. A mod a player installs is D7.
 
@@ -17,7 +17,9 @@ A scene with two actors, a line of sound, three shots and a change to rain plays
 | Fact | From | Consequence |
 |---|---|---|
 | The player package plays a cue sheet on timers, and EDGEdir sends it one with **Play in Game** | [D5](d5-play-in-game.html), built; not run in the game yet | D6 adds kinds of cue to the same sheet and the same player |
-| `world.setWeather(state, { blend, priority })` holds a weather state; `world.resetWeather()` gives it back to the game's cycle. A state is a name from the world's own list or a `WeatherPresets` record. A package's weather is given back when the package stops | REDnode 0.66.10, built; **its in-game test is not run yet** | The weather clip is one cue to set and one to give back |
+| `world.setWeather(state, { blend, priority })` holds a weather state until it is given back; the game's own cycle leaves it alone meanwhile. A state is a name from the world's own list (19 in the tested world) or a `WeatherPresets` record | REDnode, **passed in the game on 2026-11-18** (0.67.0) | The weather clip is one cue to set and one to give back |
+| The change came over a couple of seconds, though a blend of 10 s was asked for | The same test | The clip's blend may not be the time the game takes. A note says so, and the in-game test looks at it |
+| `world.resetWeather()` blends back over 10 s to the weather from before REDnode's first hold, then lets the game's cycle go on. A package that stops, or is ended, has its weather given back the same way by REDnode itself | REDnode 0.67.2, passed in the game on 2026-11-18 | "The weather comes back after" is REDnode's own doing, also when the player is ended with no notice. The weather part needs REDnode 0.67.2 or later |
 | `audio.play(file, { delay, start, end, volume, fadeIn, category })` plays a WAV, OGG, MP3 or FLAC from the package's folder or its data folder. `stop({ fadeOut })` stops it | REDnode | A sound file plays flat: not placed in the world |
 | `audio.event(name, { on })` posts one of the game's sound events, on V or on nothing. A name the game does not know plays nothing, and nothing says so. Marked experimental | REDnode | A game sound is a name. It cannot be checked by the game |
 | EDGEwave's API finds the game's sound events (`soundEvents`) and plays one recording of an event in VS Code (`playEvent`) | EDGEwave's docs/api.md | The picker for game sounds is EDGEwave's list, when EDGEwave is installed |
@@ -43,7 +45,7 @@ Each part is a document rule, a piece of the editor, a kind of cue, and a step i
 | One track | A scene has at most one weather track (the design). A second is refused |
 | The picker | The game's weather states, read from the game's files through REDbridge (the `WeatherPresets` records), with their plain names. No list is kept in the repo |
 | In the preview | The clip's name on the lane; while the playhead is in it, the viewport's line names the weather and the background takes a tint (grey for rain and fog, warm for sun). No rain or fog is drawn |
-| In the game | A cue at the clip's start: `world.setWeather(state, { blend })`. Where a weather clip ends with no other after it, and at Stop: `world.resetWeather()` |
+| In the game | A cue at the clip's start: `world.setWeather(state, { blend })`. Where a weather clip ends with no other after it, and at Stop: `world.resetWeather()`, which blends back over 10 s to the weather from before the scene |
 | Notes | "The blend is the game's: it starts at the clip's start", and a note when two weather clips touch with a blend longer than the first clip |
 
 ## Audio (D6b)
@@ -96,7 +98,7 @@ Each part is a document rule, a piece of the editor, a kind of cue, and a step i
 
 | To | Need | State |
 |---|---|---|
-| REDnode #46 | The weather's in-game test | Built in 0.66.10, test not run |
+| REDnode #46 | The weather's calls | Done: passed in the game on 2026-11-18, with giving back in 0.67.2. Nothing more is needed for D6a |
 | REDnode | The camera given back by the host when a package is ended, if the spike shows V is left without a view | To file after the spike, if needed |
 | EDGEwave | A mix rendered to a file through its API, and a sound's length | To file if question A3 is yes |
 | REDnode | Sound on an entity or at a place | Already in the design's list, after D6 |
