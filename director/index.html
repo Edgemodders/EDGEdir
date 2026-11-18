@@ -12,8 +12,8 @@
   [hidden] { display: none !important; }
   .mono, .dim, .time, .lane-name, .clip, #status { font-family: var(--rn-mono, monospace); font-size: 11px; }
   .dim { color: var(--rn-dim, #999); }
-  .head { display: flex; align-items: center; gap: 8px; padding: 2px 0 8px; }
-  .head h2 { flex: 1; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 2px 0 8px; }
+  .head h2 { flex: 1; min-width: 45%; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .section { margin: 10px 0 4px; font: 11px var(--rn-mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--rn-dim, #999); }
   .scroll { flex: 1; min-height: 0; overflow-y: auto; }
   .row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid transparent; border-bottom-color: var(--rn-line, #333); cursor: pointer; }
@@ -45,6 +45,7 @@
   .lane.on .lane-name { color: var(--rn-accent, #f2e600); }
   .lane-clips { position: relative; flex: 1; }
   .clip { position: absolute; top: 3px; height: 16px; box-sizing: border-box; padding: 2px 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 1px solid var(--rn-line, #555); background: rgba(255, 255, 255, .06); color: var(--rn-dim, #999); }
+  .clip.tr { top: 0; height: 3px; padding: 0; border: none; background: var(--rn-ok, #5dffa1); opacity: .8; }
   .clip.played { border-color: var(--rn-accent, #f2e600); color: var(--rn-fg, #eee); }
   #head { position: absolute; top: 0; bottom: 0; width: 1px; margin-left: 96px; background: var(--rn-danger, #ff5e5e); pointer-events: none; }
   .note { padding: 3px 0; white-space: pre-wrap; }

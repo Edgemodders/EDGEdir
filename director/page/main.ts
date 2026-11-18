@@ -96,10 +96,11 @@ function drawScene(s: Snapshot) {
       if (t.mark) name.addEventListener("click", () => post({ type: "choose", track: s.chosen === t.id ? undefined : t.id }));
       const clips = el("div", "lane-clips");
       for (const c of t.clips) {
-        const clip = el("div", `clip${c.played && t.cast ? " played" : ""}`, c.label);
+        // A transition is a thin bar over the join: the preview's, not a clip the game plays.
+        const clip = c.kind === "transition" ? el("div", "clip tr") : el("div", `clip${c.played && t.cast ? " played" : ""}`, c.label);
         clip.style.left = `${(c.start / (v.length || 1)) * 100}%`;
         clip.style.width = `${((c.end - c.start) / (v.length || 1)) * 100}%`;
-        clip.title = `${c.label}, ${clock(c.start)} to ${clock(c.end)}`;
+        clip.title = c.kind === "transition" ? `A transition, ${clock(c.start)} to ${clock(c.end)}: in the preview only` : `${c.label}, ${clock(c.start)} to ${clock(c.end)}`;
         clips.append(clip);
       }
       lane.append(name, clips);

@@ -840,7 +840,7 @@ function drawInspector() {
     if (!seqMode) {
       const ask = (what: "choose" | "remove" | "add") => () => vscode.postMessage({ type: "set", do: what });
       box.append(heading("Set"));
-      if (!stage) box.append(note("No set: the scene plays in front of V. A set is an EDGEbuilder scene, the stage with its props and people."), action("Choose Set...", "Pick an EDGEbuilder scene from the Library or the open project for this scene to play on", ask("choose")));
+      if (!stage) box.append(note(`No set: the scene plays ${(d.anchor as { mode: string }).mode === "world" ? "at its own place in the world" : "in front of V"}. A set is an EDGEbuilder scene, the stage with its props and people.`), action("Choose Set...", "Pick an EDGEbuilder scene from the Library or the open project for this scene to play on", ask("choose")));
       else {
         const p = fact("Set", stage.name || "No name");
         p.id = "f-set";

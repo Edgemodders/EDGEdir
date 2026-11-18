@@ -29,7 +29,9 @@ export interface StripClip {
   start: number;
   end: number;
   label: string;
-  /** In the cue sheet: the game plays it. */
+  /** What the clip is: an animation (`anim`), a `transition`, a `sequence` block, or the track's own kind. */
+  kind: string;
+  /** In the cue sheet: the game plays it. A transition is the preview's, never the game's. */
   played: boolean;
 }
 
@@ -118,7 +120,7 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     ...(t.actor?.name ? { who: t.actor.name } : {}),
     cast: cast.has(t.id) || (t.kind === "weather" && !t.mute && t.clips.some((c) => weatherOf(c))),
     ...(t.kind === "actor" && t.actor ? { mark: markOf(doc, t.id), ...(doc.set && fromOf(t) ? { placed: true } : {}), ...(markPin(t) ? { pin: markPin(t) } : {}) } : {}),
-    clips: t.clips.map((c) => ({ id: c.id, start: c.start, end: clipEnd(c), label: String(weatherOf(c) ? (c.name ?? weatherLabel(weatherOf(c)!.state)) : label(c)), played: jumps.has(`${t.id} ${c.start}`) || c.kind === "sequence" || (!!weatherOf(c) && !t.mute) })),
+    clips: t.clips.map((c) => ({ id: c.id, kind: c.kind, start: c.start, end: clipEnd(c), label: String(weatherOf(c) ? (c.name ?? weatherLabel(weatherOf(c)!.state)) : label(c)), played: (c.kind !== "transition" && jumps.has(`${t.id} ${c.start}`)) || c.kind === "sequence" || (!!weatherOf(c) && !t.mute) })),
   }));
   const view: SceneView = { file, name: doc.name, length: Math.max(sheet.length, sceneLength(doc)), tracks, notes: notes.map((n) => n.text) };
   const anchor = doc.anchor as { mode: string; at?: [number, number, number]; yaw?: number };

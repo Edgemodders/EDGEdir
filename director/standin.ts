@@ -6,6 +6,7 @@
 //   node dist/director-standin.mjs --fail spawn    the named call fails (write, spawn, use, jump, load)
 //   node dist/director-standin.mjs --write-ms 3000 the first workspot takes that long to write
 //   node dist/director-standin.mjs --port 4173     the page's port (0 for no page)
+//   node dist/director-standin.mjs --kit <file>    REDnode's UI kit (its packages/ui/src/rednode-ui.js), so the page looks as in the game
 // It uses %LOCALAPPDATA%\EDGEdir\play and the Desk, as the real one does: set LOCALAPPDATA to try it apart.
 import * as fs from "node:fs";
 import * as http from "node:http";
@@ -26,6 +27,7 @@ const arg = (name: string) => {
 const fail = arg("--fail");
 const writeMs = Number(arg("--write-ms") ?? 300);
 const port = Number(arg("--port") ?? 4173);
+const kit = arg("--kit");
 
 let n = 0;
 const said = (name: string, ...args: unknown[]) => console.log(`${new Date().toISOString().slice(11, 23)}  ${name} ${args.map((a) => JSON.stringify(a)).join(" ")}`);
@@ -134,13 +136,14 @@ if (port) {
         req.on("close", () => listeners.delete(res));
         return;
       }
+      if (kit && url === "/rednode-ui.js") return void res.writeHead(200, { "Content-Type": types[".js"] }).end(fs.readFileSync(kit));
       if (url === "/rednode-stub.js") return void res.writeHead(200, { "Content-Type": types[".js"] }).end(Stub);
       const name = url === "/" ? "index.html" : path.basename(url);
       const file = path.join(pageDir, name);
       if (!types[path.extname(name)] || !fs.existsSync(file)) return void res.writeHead(404).end();
       let text = fs.readFileSync(file, "utf8");
       // The browser has no rednode:// addresses: the kit is left out, and `rednode` is the stub.
-      if (name === "index.html") text = text.replace('<script src="rednode://ui/rednode-ui.js"></script>', "").replace("rednode://sdk/index.js", "/rednode-stub.js").replace("background: transparent;", "background: #08090d;");
+      if (name === "index.html") text = text.replace('<script src="rednode://ui/rednode-ui.js"></script>', kit ? '<script src="/rednode-ui.js"></script>' : "").replace("rednode://sdk/index.js", "/rednode-stub.js").replace("background: transparent;", "background: #08090d;");
       res.writeHead(200, { "Content-Type": types[path.extname(name)], "Cache-Control": "no-store" }).end(text);
     })
     .listen(port, "127.0.0.1", () => console.log(`The window's page: http://127.0.0.1:${port}/ (this PC only)`));

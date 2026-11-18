@@ -55,11 +55,13 @@ ${body}
     getState: () => state, setState: (s) => { state = s; },
     postMessage: (m) => {
       window.harness.messages.push(m.type);
-      if (m.type === "ready") toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage });
+      if (m.type === "ready") toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage, weathers: window.harness.weathers });
       // A set (D5a): window.harness.stage = {...}, then window.harness.resend().
-      window.harness.resend = () => toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage });
+      // The game's weathers (D6a): window.harness.weathers = ["WeatherPresets.Rain", ...], then resend(). Any message: window.harness.toPage({...}).
+      window.harness.resend = () => toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage, weathers: window.harness.weathers });
+      window.harness.toPage = toPage;
       if (m.type === "want") toPage({ type: "got", key: m.key, ...(files[m.key] ?? { error: "the harness has no file for it (run tools/preview-sample.ts)" }) });
-      if (m.type === "edit") { window.harness.doc = m.doc; window.harness.edits++; toPage({ type: "doc", doc: m.doc, dirty: true, stage: window.harness.stage }); }
+      if (m.type === "edit") { window.harness.doc = m.doc; window.harness.edits++; toPage({ type: "doc", doc: m.doc, dirty: true, stage: window.harness.stage, weathers: window.harness.weathers }); }
     },
   });
   window.harness.invalid = (text) => toPage({ type: "invalid", text });
