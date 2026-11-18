@@ -394,7 +394,7 @@ The owner wants to adjust a scene while standing in it. Pins give a first way wi
 | The mark moves in the open scene | EDGEdir, by itself, when the file changes |
 | Play again | **Play in Game** |
 
-A window of EDGEdir's own in the game (play, stop, start again, move the chosen actor to V) is a further step, planned after "D5 in the game" has run.
+The owner asked on 2026-11-18 for more than this: an app of EDGEdir's own in the game, **EDGE Director**, that opens, plays and adjusts a scene there. Its plan is [EDGE Director](edge-director.html); pins are one part of it (DR3).
 
 ### In the preview and in the game
 

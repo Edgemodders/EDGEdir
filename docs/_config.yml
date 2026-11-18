@@ -36,6 +36,8 @@ nav:
     url: /d5-play-in-game.html
   - title: D6 Audio, camera, weather
     url: /d6-audio-camera-weather.html
+  - title: EDGE Director
+    url: /edge-director.html
   - title: Extension API
     url: /api.html
   - title: Tests
