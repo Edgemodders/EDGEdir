@@ -417,7 +417,7 @@ A window of EDGEdir's own in the game (play, stop, start again, move the chosen 
 | # | Question | Recommended |
 |---|---|---|
 | N1 | Are pins REDnode's `.pins.json` files, read and never written by EDGEdir? | Yes |
-| N2 | May EDGEdir list the player's own sets from REDnode's folder (`%APPDATA%\@rednode\overlay\pins`), read only, beside pin files in the open project? | Yes: that is where **Drop a pin here** puts them. REDnode is asked to agree, since it is its folder |
+| N2 | May EDGEdir list the player's own sets from REDnode's folder (`%APPDATA%\@rednode\overlay\pins`), read only, beside pin files in the open project? | Yes: that is where **Drop a pin here** puts them. REDnode agreed on its #50 (2026-11-18): read only, and watched. Only sets the player made are there (a set opened from elsewhere stays where it was); check the format and version 1, ignore fields not known; a save is a `.tmp` file, then a rename |
 | N3 | One pin file for a scene? | Yes, at first |
 | N4 | "Trigger when near" is first the scene's start, with waits in the middle later? | Yes |
 | N5 | Pins 1 before D6, since it gives a scene its place on the map and the adjust loop? | Yes: it is small and needs no new call |
