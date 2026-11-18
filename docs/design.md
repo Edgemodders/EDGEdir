@@ -345,6 +345,84 @@ All agreed as recommended on 2026-11-17.
 | S5 | Is it built as the first part of D5? | Yes |
 | S6 | The vehicle track: its own phase after D6, after the EDGEbuilder kind and a REDnode spike? | Yes |
 
+## Pins: named places from REDnode
+
+**Proposed on 2026-11-18, from the owner's note of the same day. Not agreed, nothing built.** The owner's idea: pins are named places a scene's timeline can use, for example to spawn at, to walk to, and to trigger when V is near.
+
+### What a pin is today
+
+REDnode's world pins (its #43, passed in the game on 2026-11-14, closed):
+
+| Fact | From |
+|---|---|
+| A pin is a title, an optional line of text, a place in the world (`x`, `y`, `z`) and a look. It has no id and no facing | REDnode's `packages/overlay/pinsets.js` |
+| The **Pins** window in the game lists every pin with its distance and **Go there**, and has **Drop a pin here**: a pin at V's place with a typed name | REDnode's docs/world.md, "WP3: build" |
+| A set of pins is one file, `<name>.pins.json` (`"format": "rednode-pins"`, version 1, up to 200 pins). The player's own sets are in `%APPDATA%\@rednode\overlay\pins`; a file opened from elsewhere, such as a mod project, stays where it is | The same |
+| A package draws pins with `world.pin`, and loads a file with `world.pinSet.load`. Pins only draw: they need no permission | The same |
+
+So a modder can already walk the location in the game, drop a pin at each spot, and have a file of named places. EDGEdir reads that file.
+
+### What a scene does with pins
+
+| Use | In the document | Needs |
+|---|---|---|
+| **The scene's place** | `"anchor": { "mode": "pin", "pin": "<title>" }`: the scene plays at that place on the map, with no set. Marks are metres from it, as today | A small change to the player. This is the way a scene with no set gets a fixed place |
+| **A mark at a pin** | An actor's mark names a pin: `"at": { "pin": "<title>", "yaw": 90 }`, with an optional offset in metres. On a set too | Nothing in the game: the cue sheet carries the numbers |
+| **A shot at a pin, or aimed at one** | With D6c's camera: `"at": { "pin": ... }`, `"aim": { "pin": ... }` | D6c |
+| **Start when V is near** | `"start": { "near": { "pin": "<title>", "radius": 8 } }`: the player spawns the cast out of view, waits, and starts the clock when V comes within the radius | The player watches V's place itself (a few times a second). In a mod a player installs (D7), the game's own trigger areas are the better way: EDGEquest's and EDGEbuilder's ground (EDGEbuilder #3) |
+| **Walk to a pin** | A `move` clip on an actor's track: `"move": { "to": "<title>", "gait": "walk" }`. The person leaves their workspot, walks, and takes it up again at the next clip | A REDnode call that sends a spawned person walking (**unverified**: REDnode gives a hold command through the game's AI commands today; a move command on our spawned people has not been tried). The clip's length is a guess from the distance; the game decides when the person arrives |
+| **Wait in the middle** | A hold on the timeline: the clock stops until V is near a pin, or the walk has arrived | A change to the timeline's model: part of it waits for an event. Later, after the first three |
+
+### The link
+
+| Point | Rule |
+|---|---|
+| The file stays REDnode's and the player's | EDGEdir reads it and never writes it. Pins are dropped, named and removed in the game's Pins window |
+| A link, as a set's is | `"pins": { "path": "...", "name": "...", "hash": "sha256:..." }`, one file for a scene. The scene keeps the places it last read, so it still opens when the file is gone |
+| A pin is named by its title | Pins have no id. Two pins with one title in a file: EDGEdir takes the first and says so. A pin renamed in the game is lost to the scene, which says so and keeps the place (an id is asked of REDnode, below) |
+| When the file changes | EDGEdir watches it. A moved pin moves every mark, shot and the origin that name it, as one edit that can be undone |
+| With a set | A scene may have both. The set gives props and people; pins give places nobody stands on yet |
+
+### Adjusting in the game
+
+The owner wants to adjust a scene while standing in it. Pins give a first way with nothing new in the game:
+
+| Step | Where |
+|---|---|
+| Play the scene | **Play in Game**, in VS Code |
+| Walk to where an actor should stand, and drop a pin, or drop one again under the same name | The Pins window, in the game |
+| The mark moves in the open scene | EDGEdir, by itself, when the file changes |
+| Play again | **Play in Game** |
+
+A window of EDGEdir's own in the game (play, stop, start again, move the chosen actor to V) is a further step, planned after "D5 in the game" has run.
+
+### In the preview and in the game
+
+| Where | Shows |
+|---|---|
+| The preview | Each pin as a small post with its title, at its place from the scene's origin. Pins far from the origin are listed, not drawn |
+| The editor | A **Pins** section in the scene's inspector: the file, its pins, which are used. A pin picker where a mark is typed |
+| The game, at Play in Game | The player draws the scene's pins with `world.pin` while it runs, so the modder sees the names in the world. They go when the player stops |
+
+### Parts
+
+| Part | Builds | Needs the game |
+|---|---|---|
+| **Pins 1** | The link, Choose Pins, marks and the scene's place at a pin, the preview, the watch | For the test only |
+| **Pins 2** | Start when V is near | For the test only |
+| **Pins 3** | Walk to a pin | A REDnode spike first |
+
+### Questions for the owner
+
+| # | Question | Recommended |
+|---|---|---|
+| N1 | Are pins REDnode's `.pins.json` files, read and never written by EDGEdir? | Yes |
+| N2 | May EDGEdir list the player's own sets from REDnode's folder (`%APPDATA%\@rednode\overlay\pins`), read only, beside pin files in the open project? | Yes: that is where **Drop a pin here** puts them. REDnode is asked to agree, since it is its folder |
+| N3 | One pin file for a scene? | Yes, at first |
+| N4 | "Trigger when near" is first the scene's start, with waits in the middle later? | Yes |
+| N5 | Pins 1 before D6, since it gives a scene its place on the map and the adjust loop? | Yes: it is small and needs no new call |
+| N6 | Walk to a pin waits for a REDnode spike, and is planned after it? | Yes |
+
 ## The editor
 
 One custom text editor for `*.edgedir`, built the EDGEwave way: plain TypeScript, canvas, the whole document posted back on each change so undo, redo, save and the dirty mark are VS Code's own.
@@ -453,6 +531,7 @@ So the first route, cues from a package, holds. A clip that moves its actor need
 | EDGEbuilder | A `vehicle` kind in its scenes, from `Vehicle.*` records; an id in a scene file; where its scenes are found (EDGEbuilder #6, filed 2026-11-17) | The vehicle track; the set's link |
 | REDnode | A call on the editor channel that reaches a package's service; directing a person not spawned with the workspot, or `world.load` leaving such people out (REDnode #48, filed 2026-11-17) | D5 |
 | REDnode | A spike on what a spawned vehicle can be told to do (not filed yet) | The vehicle track |
+| REDnode | For pins: a call that sends a spawned person walking to a place, out of and back into their workspot; an id and a facing on a pin; reading the player's pin sets from its folder (REDnode #50, filed 2026-11-18, see "Pins") | Pins 1 and 3 |
 | EDGEkit | Include EDGEdir, once it is published | After the first release |
 
 ## Phases
