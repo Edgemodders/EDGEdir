@@ -5,7 +5,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { libraryRoot } from "../src/core/made";
-import { cuesOf, type CueSheet } from "../src/cues";
+import { cuesOf, playable, type CueSheet } from "../src/cues";
+import { weatherLabel, weatherOf } from "../src/weather";
 import { deskDir, Kind, listDesk } from "../src/desk";
 import { clipEnd, markOf, sceneLength, type Clip, type Mark, type SceneDoc } from "../src/doc";
 import { follow, formatPins, linkPins, markPin, parsePins, PinsEnding, pinsOf, placePin, usedPins, type Pin, type PinsLink } from "../src/pins";
@@ -115,9 +116,9 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     name: t.name,
     kind: t.kind,
     ...(t.actor?.name ? { who: t.actor.name } : {}),
-    cast: cast.has(t.id),
+    cast: cast.has(t.id) || (t.kind === "weather" && !t.mute && t.clips.some((c) => weatherOf(c))),
     ...(t.kind === "actor" && t.actor ? { mark: markOf(doc, t.id), ...(doc.set && fromOf(t) ? { placed: true } : {}), ...(markPin(t) ? { pin: markPin(t) } : {}) } : {}),
-    clips: t.clips.map((c) => ({ id: c.id, start: c.start, end: clipEnd(c), label: String(label(c)), played: jumps.has(`${t.id} ${c.start}`) || c.kind === "sequence" })),
+    clips: t.clips.map((c) => ({ id: c.id, start: c.start, end: clipEnd(c), label: String(weatherOf(c) ? (c.name ?? weatherLabel(weatherOf(c)!.state)) : label(c)), played: jumps.has(`${t.id} ${c.start}`) || c.kind === "sequence" || (!!weatherOf(c) && !t.mute) })),
   }));
   const view: SceneView = { file, name: doc.name, length: Math.max(sheet.length, sceneLength(doc)), tracks, notes: notes.map((n) => n.text) };
   const anchor = doc.anchor as { mode: string; at?: [number, number, number]; yaw?: number };
@@ -137,7 +138,7 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     if (found) stage = stageFor(doc, fs.readFileSync(setFile!, "utf8"));
     else view.why = `The scene's set "${link.name}" was not found, so the scene cannot play on it. Open the scene in VS Code and choose the set again, or remove it.`;
   }
-  if (!sheet.cast.length) view.why = notes.find((n) => !n.clip)?.text ?? "Nothing to play in the game: no actor track has a clip the game can play.";
+  if (!playable(sheet)) view.why = notes.find((n) => !n.clip)?.text ?? "Nothing to play in the game: no actor track has a clip the game can play.";
   return view.why ? { view } : { view, play: { file, sheet, ...(stage ? { stage } : {}) } };
 }
 

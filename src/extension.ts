@@ -14,10 +14,10 @@ import { addAnimClip, addSeqClip, EditError, findTrack, newDoc, refreshSeqs, lin
 import { rigName } from "./core/entity";
 import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
-import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PinsHost, type PlayHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
+import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PinsHost, type PlayHost, type WeatherHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
 import { findPinFiles, pinFileOf, pinPathFor, readPinFile } from "../director/floor";
 import { linkPins, PinsEnding, pinsOf } from "./pins";
-import { cuesOf } from "./cues";
+import { cuesOf, playable } from "./cues";
 import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor, writeRoots, writeUnsaved } from "./play";
 import { Game } from "./game";
 import { castLabel } from "./core/cast";
@@ -330,7 +330,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     const gamePath = await game.gameFolder();
     if (!gamePath) return warn("no Cyberpunk 2077 folder is set (the setting edgedir.gamePath, or REDcode's)."), false;
     const state = installState(DirectorVersion, gamePath);
-    if (state === "noRednode") return warn("REDnode is not in the game's folder (red4ext\\plugins\\REDnode). Play in game needs REDnode 0.66.9 or later, with REDbridge beside it."), false;
+    if (state === "noRednode") return warn("REDnode is not in the game's folder (red4ext\\plugins\\REDnode). Play in game needs REDnode 0.67.2 or later, with REDbridge beside it."), false;
     if (state === "none") return get("Play in game needs EDGE Director, EDGEdir's app in the game.", How);
     if (state === "older") return get(`The EDGE Director in the game's folder is older than this EDGEdir needs (${DirectorVersion}).`, How);
     return warn(`EDGE Director is in the game's folder and is not running. ${SwitchOn}`), false;
@@ -389,7 +389,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         if (isSeqFile(document.uri.path)) return warn("a sequence plays in the game on an actor, in a scene.");
         const doc = sceneIn(document);
         const { sheet, notes } = cuesOf(doc);
-        if (!sheet.cast.length) return warn(`nothing to play in the game. ${notes.find((n) => !n.clip)?.text ?? "No actor track has a clip the game can play."}`);
+        if (!playable(sheet)) return warn(`nothing to play in the game. ${notes.find((n) => !n.clip)?.text ?? "No actor track has a clip the game can play."}`);
         const list = notes.map((n) => n.text).join("\n");
         if (notes.length && agreed.get(document.uri.toString()) !== list) {
           const go = await vscode.window.showWarningMessage(
@@ -434,6 +434,30 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         tell?.({ text: "The player is not running: nothing is left to stop", bad: false, active: false });
       } catch (e) {
         fail("Stop in Game", e);
+      }
+    },
+  };
+
+  // ---- Weather (D6a): the game's weather presets, for a weather clip's list ----
+  let weatherList: string[] = [];
+  let weatherAsked = false;
+  const weathers: WeatherHost = {
+    list: () => weatherList,
+    async load() {
+      if (weatherAsked) return false;
+      weatherAsked = true;
+      try {
+        const bridge = await game.bridge();
+        const page = await bridge.tweakRecords({ type: "WeatherPreset", flats: ["name"], offset: 0, limit: 500 });
+        weatherList = page.items
+          .map((item) => item.path)
+          .filter((p): p is string => typeof p === "string" && p.startsWith("WeatherPresets."))
+          .sort((a, b) => a.localeCompare(b));
+        return weatherList.length > 0;
+      } catch {
+        // Asked again with the next scene: the bridge may be there then.
+        weatherAsked = false;
+        return false;
       }
     },
   };
@@ -505,6 +529,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     sets,
     plays,
     pins,
+    weathers,
   );
   /** The scene in front as a document, or undefined when its text is not a scene just now. */
   const frontDoc = (): SceneDoc | undefined => {

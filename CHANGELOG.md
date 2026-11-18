@@ -17,13 +17,15 @@ New: Actors from your game's characters, V among them, and a search of the game'
 New: A 3D preview: each actor's body plays the clip under the playhead
 New: Transitions (Blend, Inertial) and sequences, stored runs of clips you can reuse
 New: Sets: a scene can play on an EDGEbuilder scene, with its props and people
-New: Play in Game, and EDGE Director, an app in the game that opens and plays your scenes there
-Needs: REDnode 0.66.9 or later with REDbridge and Codeware, and EDGE Director's zip, for playing in the game
+New: Play in Game, and EDGE Director, an app in the game that opens, plays and adjusts your scenes there
+New: Pins name places in the world for a scene and its actors; a weather track changes the weather
+Needs: REDnode 0.67.2 or later with REDbridge and Codeware, and EDGE Director's zip, for playing in the game
 -->
 
 **New**
 
 - EDGE Director, EDGEdir's app in the game: a window that lists the Desk's scenes and plays one in the game, with Play, Stop, Start Again, a playhead to drag, Loop, and each actor with Go There. It also adjusts a scene where it stands: move an actor's mark to V or by small steps, and keep the scene at a spot in the world; the scene open in VS Code follows. Pins name places in the world: drop one where V stands, and an actor's mark or the scene's place follows it. It works with VS Code open or closed. Its own changelog: https://github.com/Edgemodders/EDGEdir/blob/main/director/changelog.md. Not yet tested in the game.
+- Weather: a clip on the weather track holds one of the game's weathers for as long as it lasts. Pick it in the clip's inspector (the list is read from your game), with the seconds the change should take. The 3D preview names the weather under the playhead and tints the view. In the game the weather changes at the clip's start and goes back after. A scene has one weather track. Needs REDnode 0.67.2 or later in the game. Not yet tested in the game.
 - Pins in the editor: a scene's inspector has a **Pins** section. **Choose Pins...** takes a pin file: the scene's own, one of your pin sets from the game (REDnode's Pins window), or one in the open project. The scene's place and an actor's mark can be set to a pin there (**The scene's place**, **At pin**), and the pins stand in the 3D preview as posts with their names. An open scene follows its pin file as it changes.
 - Play in Game: a button beside the transport plays the scene in the running game, on people spawned in front of V or on the scene's set. It needs REDnode 0.66.9 or newer with REDbridge. It plays through EDGE Director, EDGEdir's app in the game: its own download beside EDGEdir's on each release (EDGE-Director-<version>.zip), installed with your mod manager; switch it on and allow its two permissions in REDnode's Mod Manager. EDGEdir says when it is missing or too old. Before a play EDGEdir lists what the game will not match. **Stop in Game** removes the people again. Not yet tested in the game.
 - Sets: a scene can play on a set, an EDGEbuilder scene with its props and people. The new **Sets** view lists the EDGEbuilder scenes in your EDGE Library and in the open REDcode project. **New Scene on This Set** makes a scene with a track for each of the set's people, standing where the set has them; its props show as plain boxes in the 3D preview. When a person of the set is moved in EDGEbuilder, the scene follows the next time it is opened. EDGEdir never changes a set.

@@ -4,7 +4,7 @@ title: D6 Audio, camera, weather
 
 # <span class="y">D6</span> Audio, camera, weather
 
-**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. Written 2026-11-17; the weather's facts are from REDnode's in-game test of 2026-11-18. Nothing built yet. It is built after EDGE Director's pins ([EDGE Director](edge-director.html), DR3), weather first.**
+**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. D6a Weather is built (EDGEdir 0.0.28, EDGE Director 0.5.0): not run in VS Code or in the game. D6b Audio and D6c Camera are not built. See [What is built](#what-is-built).**
 
 D6 is the sixth phase of the [design](design.html). Audio, camera and weather tracks get real clips, show in the preview, and play in the game through the player D5 built. A mod a player installs is D7.
 
@@ -84,6 +84,31 @@ Each part is a document rule, a piece of the editor, a kind of cue, and a step i
 | A scene with no actors | Plays in the game when it has any weather, sound or shot. D5 refused it |
 | The stand-in | `tools/player-standin.mjs` prints the new calls, so each part's hand test in VS Code needs no game |
 | In the game inspector | The **In the game** section says the notes above for a selected weather, audio or camera clip |
+
+## What is built
+
+**D6a Weather, EDGEdir 0.0.28 with EDGE Director 0.5.0 (2026-11-18). Not run in VS Code or in the game; its hand test ([Tests](testing.html), "D6a Weather") has not run, and the owner's is Test H.**
+
+| Part | Where | What it does |
+|---|---|---|
+| The clip | `src/weather.ts` (`weatherOf`, `setWeather`, `MaxBlend`) | `"weather": { "state", "blend" }` on a clip of the weather track. The state is a `WeatherPresets` record's path (the list offers these) or a state's own name; the blend is 0 to 60 s, 5 when not said |
+| One track | `addTrack` in `src/doc.ts` | A second weather track is refused |
+| The cues | `weatherCues` in `src/weather.ts`; `sheet.weather` and `playable` in `src/cues.ts` | A state at each clip's start, and the weather given back where a clip ends with no other starting there (W1). Notes of kind `weather` on each clip: the blend is the game's, the weather goes back at the end, a blend longer than its clip, a clip with no weather. A scene with weather and no actors has something to play |
+| The list | The `WeatherHost` in `src/editor.ts`, built in `src/extension.ts` | The game's presets, read once through REDbridge (`tweakdb.records`, type `WeatherPreset`: 15 in game 2.5) when a scene with a weather track opens. Nothing is kept in the repo. Without the game's files the inspector takes a typed name |
+| The inspector and the lane | `webview/editor.ts` | Weather (a list, plain names such as Heavy clouds) and Blend (s) for a weather clip; the lane shows the weather's name on the clip |
+| The preview | `webview/preview.ts`, `media/editor.css` | The viewport's line starts with "Weather:" and the name while the playhead is in a weather clip, and the view is tinted: grey for rain, fog and cloud, warm for sun, sand for dust and toxic rain. `edgedirPreview.state().weather` has the name |
+| The player | `director/play.mjs` (`weatherAt`, in `begin` and `clear`) | The state of the starting moment is set at once, the later cues on timers with the actors' cues; Stop, a failure and a new play give a held weather back. A weather the game refuses is said in the play's notes and the play goes on. A scene with nobody needs no V |
+| In the Director | `director/floor.ts` | The strip shows the weather's name on its clips, lit as played |
+
+How it differs from the plan:
+
+| Plan | Built |
+|---|---|
+| "Stays `cues: 1`, with new lists; a player that does not know a list leaves it out" | As planned for `weather`. A player before 0.5.0 refuses a scene with weather and no actors as having nobody to play |
+| EDGE Director 0.2.0 with the weather | The Director's numbers moved on with DR1 to DR3: the weather is in 0.5.0, which also asks for REDnode 0.67.2 |
+| A note when two weather clips touch with a blend longer than the first clip | The note is on any clip whose blend is longer than the clip itself |
+
+Unverified until the game: everything in the game, as for all of the Director. That a `WeatherPresets` record's path is taken as REDnode's docs say; what the game does when a second state is set while the first is still blending.
 
 ## Tests
 

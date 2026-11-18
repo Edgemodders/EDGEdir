@@ -12,8 +12,9 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 83 tests |
-| [The owner's tests, A to G](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to G in the game | D1 to D5, DR1 to DR3 | | None run yet |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 86 tests |
+| [The owner's tests, A to H](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to H in the game | D1 to D5, DR1 to DR3, D6a | | None run yet |
+| [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | | Not run yet (0.0.28, EDGE Director 0.5.0) |
 | [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | | Not run yet (0.0.26, EDGE Director 0.4.0) |
 | [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | | Not run yet (0.0.27) |
 | [DR2 Adjust](#dr2-adjust) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR2 | | Not run yet (0.0.25, EDGE Director 0.3.0) |
@@ -48,9 +49,10 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
-- **The owner's Tests E, F and G**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins): not run yet. Nothing of EDGEdir has run in the game at all.
+- **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): not run yet. Nothing of EDGEdir has run in the game at all.
 - **DR2 Adjust**, 12 steps with a stand-in for the game: not run yet.
 - **DR3 Pins**, 10 steps with a stand-in for the game: not run yet. The owner's is Test G.
+- **D6a Weather**, 11 steps in VS Code and with the stand-in: not run yet.
 - **DR3 Pins in the editor**, 10 steps in VS Code: not run yet. The owner's is step D3 of Test D.
 - **DR1 The Director's window**, 13 steps with a stand-in for the game: not run yet. With it, D5d's changed step 3 (EDGEdir 0.0.24 asks for EDGE Director's download and copies nothing).
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
@@ -69,6 +71,7 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 | [E](#test-e-edge-director-in-the-game-play) | EDGE Director in the game: open and play a scene | The game running, REDnode, EDGE Director | 30 minutes | Not run yet |
 | [F](#test-f-edge-director-in-the-game-adjust) | EDGE Director in the game: adjust a scene | As E | 15 minutes | Not run yet |
 | [G](#test-g-edge-director-in-the-game-pins) | EDGE Director in the game: pins | As E | 10 minutes | Not run yet |
+| [H](#test-h-weather) | Weather: in the editor, then in the game | As E, with REDnode 0.67.2 or later | 10 minutes | Not run yet |
 
 Tests A to D are the spot tests S1 to S12 and S15, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
 
@@ -127,11 +130,11 @@ Tests A to D are the spot tests S1 to S12 and S15, one short test for each major
 
 EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
 
-**Before Tests E, F and G:** REDnode 0.66.9 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.4.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
+**Before Tests E to H:** REDnode 0.67.2 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.5.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
 
 | Step | Do | Expect, and say |
 |---|---|---|
-| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.4.0 |
+| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.5.0 |
 | E2 | Click the scene of Test C | Its name, "in front of V", a strip with a lane for each track and the clips' names, and under **In the game** what the game will not match. Say how the window sits over the game, and whether its size suits watching a scene |
 | E3 | Press **Play** | The line reads Writing 2 workspots (the first time about half a minute), Spawning, Starting the cast, Playing. Two people stand about 3 m in front of V and play. **G1:** are they at their marks, and in time with each other and with the playhead on the strip? **G7:** how long from the click to the first movement? |
 | E4 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
@@ -191,6 +194,25 @@ EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of DR3's first part. G
 |---|---|---|
 | 1 | | Not run yet |
 
+### Test H: Weather
+
+EDGEdir 0.0.28 with EDGE Director 0.5.0. D6a, in the editor and then in the game. The game needs REDnode 0.67.2 or later. Use the scene of Test C.
+
+| Step | Do | Expect, and say |
+|---|---|---|
+| H1 | In VS Code open the scene, **Add Track**, Weather. Try to add a second Weather track | One Weather lane. The second is refused with a message |
+| H2 | Add a clip to the Weather lane from 2 s, about 6 s long. Select it and choose **Rain** under **Weather**; set **Blend (s)** to 3 | The list has the game's weathers by plain name. The clip reads Rain on the lane. Under **In the game** it says the change starts at the clip's start and that the weather goes back at its end |
+| H3 | Drag the playhead through the clip | Inside the clip the view is tinted grey and the line over it starts with "Weather: Rain"; outside, neither |
+| H4 | Save. In the game, in EDGE Director, open the scene | The strip has the Weather lane with the Rain clip, lit |
+| H5 | Press **Play** and watch the sky | At 2 s the weather starts to change to rain. Say how long the change takes, and whether it looks like the game's own rain |
+| H6 | Let it play past the clip's end | At 8 s the weather starts back to what it was before the scene, over about 10 s |
+| H7 | Press **Start Again**; when it rains press **Stop** | The weather goes back after Stop too |
+| H8 | In VS Code add a second weather clip right after the first, with **Sunny**; save; play in the game | Rain turns to sun at the join, with no going back between them, and the weather goes back after the second clip |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
 ## Type check, build and unit tests
 
 ```powershell
@@ -202,6 +224,8 @@ npm test
 The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D4b's 6 tests (`test/seq.test.ts`) check a sequence's file, the block on a lane (as long as its clips, not trimmed or split, unpacked), the pose through a block, a linked block taking the sequence as it is now, what Save as Sequence takes, and the Desk's sequence items. D4a's 6 tests (`test/transition.test.ts`) check a transition's method and ease, where Add Transition puts one, which clips it joins, the pose under a Blend and an Inertial one, and what it says about the game. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
 
 D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with a developer's copy of the Director into a made-up game folder.
+
+D6a's 3 tests (`test/weather.test.ts`) check a weather clip's state and blend and the one weather track, the cues (a state at each clip's start, the weather given back where no clip follows, the notes, a scene with weather alone), and the player (states set on time, given back at a clip's end and at Stop, the state of the moment a play starts from, a weather the game refuses).
 
 DR1's, DR2's and DR3's 8 tests (`test/director.test.ts`) check a play that starts from a moment (each actor in that moment's clip, the time counted from the scene's start), going to a moment and Start Again with the cast kept, the loop, a mark and a place in the world turned into each other in each kind of frame, Adjust (a change to the file made with EDGEdir's own edits and the person moved in the game, the scene's place, what VS Code has unsaved played and not changed, an edit refused in EDGEdir's words), pins (a pin file read and written as REDnode's, a mark and the scene's place that follow a pin when it moves, a pin dropped where V stands into the scene's own file, drawn, dropped again with the actor in the game moved, moved by another hand, removed; the pin files a scene can choose), and the Desk as the Director reads it: the scenes listed without sequences, a scene as a strip with its notes and its cue sheet, a scene with nobody, and a scene whose set is gone and found again.
 
@@ -696,3 +720,27 @@ EDGEdir 0.0.27 (2026-11-18). Pins in VS Code: the inspector's Pins section, a pi
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | | | Not run yet. While building (2026-11-18) Claude ran the page's side of steps 1 and 3 to 6 once by script in a plain browser (`tools/page-harness.mjs`), judged by the page's state; that was not a round. Choose Pins, the watch and Undo have not run |
+
+## D6a Weather
+
+EDGEdir 0.0.28 with EDGE Director 0.5.0 (2026-11-18). The weather track in VS Code, and the calls the Director would make, with the stand-in (`node dist/director-standin.mjs`). The stand-in prints `weather` with the state and the blend for a weather set, and `weather-back` when it is given back.
+
+**Before you start:** F5 (**Run EDGEdir**) with the game's files and REDbridge 0.14.0, as for D5b. A saved scene with one actor of the game with a clip 10 s long. The stand-in running on the same `LOCALAPPDATA`.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | **Add Track**, Weather; then again | A Weather lane. The second time: a message that a scene has one weather track, and no new lane |
+| 2 | Add a clip on the Weather lane at 2 s, 4 s long, and select it | The inspector has **Weather** and **Blend (s)** (5). Within about 15 s the first time, Weather is a list of the game's weathers by plain name (Cloudy, Fog, Heavy clouds, Rain, Sunny, and more); before that, or without the game's files, a text box with a note. A note says the clip has no weather yet |
+| 3 | Choose Rain | The clip reads Rain on the lane. **In the game** says the change starts at the clip's start and is asked to take 5 s, and that the weather goes back at the clip's end |
+| 4 | Set Blend (s) to 6, then to 61 | 6: a note that the blend is longer than the clip. 61: refused with a message, and the box goes back to 6 |
+| 5 | Drag the playhead to 3 s, then to 7 s | At 3 s the viewport's line starts with "Weather: Rain" and the view has a grey tint (`edgedirPreview.state().weather` is "Rain"); at 7 s neither |
+| 6 | Add a second weather clip from 6 s to 8 s (touching the first) and choose Sunny | The first clip's note about going back at its end is gone; the second has it |
+| 7 | Click **Play in Game**, **Play Anyway** | The stand-in prints, with the actor's calls: `weather` "WeatherPresets.Rain" with blend 6 about 2 s after the start, `weather` "WeatherPresets.Sunny" at 6 s, and `weather-back` at 8 s |
+| 8 | Play again and click **Stop in Game** at about 4 s | A `weather-back` with the `remove` |
+| 9 | Mute the Weather track and play | No `weather` is printed |
+| 10 | Unmute it. Make a new scene with only a Weather track and one Rain clip, and click **Play in Game** | It plays: no `write` and no `spawn`, a `weather`, and at the clip's end `weather-back` and "The scene has ended" |
+| 11 | In the stand-in's page (http://127.0.0.1:4173/) open the first scene | The strip has the Weather lane with Rain and Sunny on its clips, lit |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | | Not run yet. While building (2026-11-18) Claude saw step 5's line, tint and state once by script in a plain browser (`tools/page-harness.mjs`); that was not a round |

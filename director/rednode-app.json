@@ -1,7 +1,7 @@
 {
   "id": "edge-director",
   "name": "EDGE Director",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "Edgemodders",
   "description": "EDGEdir's app in the game: open a scene from EDGEdir's Desk, play it on real people where it belongs, start it again or from any moment, go to its actors, and put them and the scene where they should be: each change is saved to the scene's file, and EDGEdir in VS Code follows. It writes a workspot for each actor from the game's own animations, spawns the cast, and jumps each actor from clip to clip on time. EDGEdir's Play in Game in VS Code sends it scenes too. Asks for the bridge and archives permissions.",
   "entry": "index.html",
@@ -20,7 +20,7 @@
   "open": false,
   "permissions": ["bridge", "archives"],
   "requires": {
-    "rednode": ">=0.66.9",
+    "rednode": ">=0.67.2",
     "codeware": ">=1.14",
     "redbridge": ">=0.12.0"
   }

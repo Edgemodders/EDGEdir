@@ -3,6 +3,7 @@
 // not match. No VS Code, no page, no files, nothing read from the game. docs/d5-play-in-game.md.
 import { markOf, playOf, sceneLength, transitionOf, unfit, type Clip, type Mark, type SceneDoc, type Track } from "./doc";
 import { flat, joinOf } from "./pose";
+import { weatherCues, weatherTrack } from "./weather";
 
 /** One entry of an actor's workspot: a game animation, looping, named for its clip. */
 export interface CueClip {
@@ -41,9 +42,14 @@ export interface CueSheet {
   anchor: SceneDoc["anchor"];
   cast: CastMember[];
   timeline: Cue[];
+  /** D6a: the weather to hold from a moment, or to give back (`reset`). Absent when the scene has none. */
+  weather?: { t: number; state?: string; blend?: number; reset?: true }[];
 }
 
-export type GameNoteKind = "in" | "speed" | "made" | "transition" | "cut" | "player" | "noActor" | "noRig" | "standIn";
+/** Whether a cue sheet has anything for the game: somebody to play, or a weather to hold. */
+export const playable = (sheet: CueSheet): boolean => sheet.cast.length > 0 || (sheet.weather?.length ?? 0) > 0;
+
+export type GameNoteKind = "in" | "speed" | "made" | "transition" | "cut" | "player" | "noActor" | "noRig" | "standIn" | "weather";
 
 /** One thing the game will not play as the preview shows it. */
 export interface GameNote {
@@ -120,7 +126,13 @@ export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
     if (member.clips.length) cast.push(member);
   }
   timeline.sort((x, y) => x.t - y.t);
-  return { sheet: { cues: 1, scene: doc.name, length: sceneLength(doc), anchor: doc.anchor, cast, timeline }, notes };
+  // D6a: the weather track.
+  const weather = weatherCues(doc);
+  const lane = weatherTrack(doc);
+  if (lane) for (const n of weather.notes) notes.push({ kind: "weather", track: lane.id, clip: n.clip, text: n.text });
+  const sheet: CueSheet = { cues: 1, scene: doc.name, length: sceneLength(doc), anchor: doc.anchor, cast, timeline };
+  if (weather.cues.length) sheet.weather = weather.cues.map(({ clip: _clip, ...cue }) => cue);
+  return { sheet, notes };
 }
 
 /** Whether a transition leads into a clip. */

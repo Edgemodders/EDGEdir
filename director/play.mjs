@@ -73,7 +73,7 @@ export function sceneFor(stage, sheet) {
 /** What is wrong with a request, in words; undefined when it can be played. */
 export function refusal(sheet) {
   if (!sheet || sheet.cues !== 1) return "This is not a cue sheet this player knows (cues: 1). Update EDGEdir or its player.";
-  if (!Array.isArray(sheet.cast) || !sheet.cast.length) return "The scene has nobody to play: no actor track has a clip the game can play.";
+  if (!Array.isArray(sheet.cast) || (!sheet.cast.length && !sheet.weather?.length)) return "The scene has nobody to play: no actor track has a clip the game can play.";
   for (const m of sheet.cast) {
     if (!m.record || !m.rig || !m.clips?.length) return `"${m.name ?? m.track}" has no character, rig or clips.`;
   }
@@ -119,6 +119,11 @@ export class Player {
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
     const { world } = this.deps;
     for (const a of ctx.cast.splice(0)) await world.remove(a.id).catch(() => false);
+    // D6a: a weather the scene holds is given back. REDnode does the same when the package is ended.
+    if (ctx.held) {
+      ctx.held = false;
+      await world.resetWeather().catch(() => undefined);
+    }
     if (ctx.loaded) {
       ctx.loaded = false;
       await world.unload(SET).catch(() => 0);
@@ -167,12 +172,36 @@ export class Player {
         }, Math.max(0, due - now())),
       );
     }
+    // D6a: the weather. The state the scene holds at this moment is set now; the later cues run on timers.
+    const weather = sheet.weather ?? [];
+    const hold = async (cue) => {
+      try {
+        if (cue.reset) {
+          if (ctx.held) await world.resetWeather();
+          ctx.held = false;
+        } else {
+          ctx.held = true;
+          const r = await world.setWeather(cue.state, { blend: cue.blend });
+          if (r && r.applied === false) throw new Error("the game did not take it");
+        }
+      } catch (e) {
+        if (run === this.run) this.set({ notes: [...(this.st.notes ?? []), `The weather ${cue.reset ? "was not given back" : `"${cue.state}" was not set`}: ${e.message}`] });
+      }
+    };
+    const inForce = weatherAt(weather, from);
+    if (inForce) void hold(inForce);
+    else if (ctx.held) void hold({ reset: true });
+    for (const cue of weather) {
+      if (cue.t <= from) continue;
+      ctx.timers.push(setTimeout(() => void hold(cue), Math.max(0, t0 + (cue.t - from) * 1000 - now())));
+    }
     // The end: the cast holds its last clips, looping, until Stop. A looping play starts again.
+    const nobody = !sheet.cast.length;
     ctx.timers.push(
       setTimeout(() => {
         if (run !== this.run) return;
         if (ctx.loop) void this.seek(0);
-        else this.set({ state: "ended", text: "The scene has ended: the cast holds its last clips until Stop" });
+        else this.set({ state: "ended", text: nobody ? "The scene has ended" : "The scene has ended: the cast holds its last clips until Stop" });
       }, Math.max(0, t0 + (sheet.length - from) * 1000 - now())),
     );
     // startedAt is when the scene's time 0 was, or would have been: the time now is always now - startedAt.
@@ -252,7 +281,7 @@ export class Player {
 
       // 1. Write: one workspot for each actor. One whose clips have not changed is not written again.
       const todo = sheet.cast.filter((m) => this.written.get(nameOf(sheet, m))?.from !== fromOf(m));
-      this.set({ text: todo.length ? `Writing ${todo.length} workspot${todo.length === 1 ? "" : "s"}` : "The workspots are as they were" });
+      if (sheet.cast.length) this.set({ text: todo.length ? `Writing ${todo.length} workspot${todo.length === 1 ? "" : "s"}` : "The workspots are as they were" });
       for (const m of todo) {
         const name = nameOf(sheet, m);
         // The game takes the new files in one swap, with the last one written.
@@ -263,10 +292,11 @@ export class Player {
       // 2. Place.
       const onSet = sheet.anchor?.mode === "set";
       if (onSet && !Array.isArray(stage?.origin)) throw new Error("The scene plays on a set, and the set did not come with it.");
-      const v = onSet || sheet.anchor?.mode === "world" ? null : await step(this.deps.player());
-      ctx.frame = frameOf(sheet, stage, v);
+      // A scene with nobody in it (weather alone) needs no place.
+      const v = onSet || sheet.anchor?.mode === "world" || !sheet.cast.length ? null : await step(this.deps.player());
+      ctx.frame = sheet.cast.length ? frameOf(sheet, stage, v) : undefined;
       ctx.v = v;
-      const places = placements(sheet, stage, v);
+      const places = sheet.cast.length ? placements(sheet, stage, v) : {};
       if (onSet && stage.scene) {
         this.set({ state: "loading", text: `Loading the set "${stage.scene.name ?? "set"}"` });
         ctx.loaded = true;
@@ -275,7 +305,7 @@ export class Player {
       }
 
       // 3. Spawn, and start everyone once so the first play's T pose is over before the scene starts.
-      this.set({ state: "spawning", text: `Spawning ${sheet.cast.length} ${sheet.cast.length === 1 ? "person" : "people"}` });
+      if (sheet.cast.length) this.set({ state: "spawning", text: `Spawning ${sheet.cast.length} ${sheet.cast.length === 1 ? "person" : "people"}` });
       for (const m of sheet.cast) {
         const { id } = await world.spawn({ record: m.record, ...(m.appearance ? { appearance: m.appearance } : {}), ...places[m.track], workspot: this.written.get(nameOf(sheet, m)).path }).catch((e) => {
           throw new Error(`${m.name} could not be spawned: ${e.message}`);
@@ -290,8 +320,10 @@ export class Player {
         if (r?.id) a.id = r.id;
         if (!r?.started) throw new Error(`${m.name} did not start playing: ${r?.why ?? "no reason given"}`);
       }
-      this.set({ state: "warming", text: "Starting the cast" });
-      await step(new Promise((done) => setTimeout(done, this.deps.warmMs)));
+      if (sheet.cast.length) {
+        this.set({ state: "warming", text: "Starting the cast" });
+        await step(new Promise((done) => setTimeout(done, this.deps.warmMs)));
+      }
 
       // 4. Play: one timer for each cue, all from one start time.
       ctx.sheet = sheet;
@@ -307,6 +339,13 @@ export class Player {
     }
     return this.st;
   }
+}
+
+/** The weather a scene holds at a moment: the last cue at or before it, when that one sets a state. */
+export function weatherAt(cues, from) {
+  let now;
+  for (const cue of cues ?? []) if (cue.t <= from) now = cue;
+  return now && !now.reset ? now : undefined;
 }
 
 /** The clip an actor plays at a moment: the last jump at or before it, or their first clip. */

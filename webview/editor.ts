@@ -47,6 +47,7 @@ import { cuesOf, notesFor } from "../src/cues";
 import { fromOf, type Stage } from "../src/set";
 import { frameOf as placeFrame, markAtPin, markFrom, markPin, pinsOf, placeAtPin, placePin, unlinkPins } from "../src/pins";
 import { joinOf, transitionNote } from "../src/pose";
+import { DefaultBlend, setWeather, weatherLabel, weatherOf } from "../src/weather";
 import { mountPreview } from "./preview";
 
 interface ViewState {
@@ -73,6 +74,8 @@ let seqMode = false;
 let links: Record<string, string> = {};
 /** How the scene stands to its set (D5a); undefined when it has none. */
 let stage: Stage | undefined;
+/** D6a: the game's weather presets, when the host has read them. */
+let weathers: string[] = [];
 let playing = false;
 let playFrom = 0;
 let lastTick = 0;
@@ -172,6 +175,7 @@ window.addEventListener("message", (e) => {
   seqMode = !!m.sequence;
   links = (m.links as Record<string, string> | undefined) ?? {};
   stage = m.stage as Stage | undefined;
+  weathers = (m.weathers as string[] | undefined) ?? weathers;
   document.body.classList.toggle("sequence", seqMode);
   doc = m.doc as SceneDoc;
   // What undo or a text edit took away is no longer selected; a clip that is new (redo, paste in the text) is not either.
@@ -287,7 +291,7 @@ const laneTop = (i: number) => Ruler + i * Lane;
 /** The colour of a clip that does not fit its actor's rig. */
 const Unfit = "#ff5a5a";
 
-const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (c.kind === "sequence" ? `▸ ${seqOf(c)?.name || "sequence"}` : c.kind === "transition" ? "transition" : c.kind);
+const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (weatherOf(c) ? weatherLabel(weatherOf(c)!.state) : undefined) ?? (c.kind === "sequence" ? `▸ ${seqOf(c)?.name || "sequence"}` : c.kind === "transition" ? "transition" : c.kind);
 
 /** A clip's box in the lane: a transition is a thin band along the top, over the join, clear of the clips' names. */
 function box(c: Clip, lane: number) {
@@ -663,6 +667,24 @@ function drawInspector() {
       const why = unfit(track, clip);
       if (why) box.append(note(`Unfit: ${why}. It stays on the track, and will not play on this actor.`));
     } else if (clip.kind === "anim") box.append(note("A named block with no animation yet. Add one from the Animations view with Add to Track."));
+    // D6a: a weather clip holds a weather in the game for as long as it lasts.
+    if (clip.kind === "weather") {
+      const w = weatherOf(clip);
+      const state = w?.state ?? "";
+      const known = weathers.includes(state);
+      box.append(
+        field(
+          "Weather",
+          weathers.length
+            ? choice("f-weather", state, [...(state ? [] : [["", "Choose a weather", true] as [string, string, boolean]]), ...(state && !known ? [[state, weatherLabel(state)] as [string, string]] : []), ...weathers.map((s): [string, string] => [s, weatherLabel(s)])], (v) => change((x) => setWeather(x, clip.id, { state: v })))
+            : textInput("f-weather", state, (v) => change((x) => setWeather(x, clip.id, { state: v }))),
+        ),
+        field("Blend (s)", numberInput("f-blend", w?.blend ?? DefaultBlend, 0.5, (v) => change((x) => setWeather(x, clip.id, { blend: v })))),
+      );
+      if (!weathers.length) box.append(note("The game's weathers are not read yet (it needs the game's files): type a preset such as WeatherPresets.Rain, or a weather state's own name."));
+      if (!w) box.append(note("No weather yet: the clip does nothing in the game until it has one."));
+      else box.append(note("The clip's length is how long the weather is held. The preview names it and tints the view; it draws no rain or fog."));
+    }
     const seq = seqOf(clip);
     if (clip.kind === "sequence" && seq) {
       const state = links[clip.id] ?? "linked";

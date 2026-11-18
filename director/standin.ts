@@ -43,6 +43,8 @@ const world = {
   jumpWorkspot: (id: Id, to: string) => call("jump", [id.hash, to], true, 5),
   remove: (id: Id) => call("remove", [id.hash], true, 5),
   move: (id: Id, position: unknown, _orientation: unknown, yaw: number) => call("move", [id.hash, position, yaw], true, 5),
+  setWeather: (state: string, o: unknown) => call("weather", [state, o], { applied: true, changed: true, state }, 5),
+  resetWeather: () => call("weather-back", [], { held: false }, 5),
   load: (scene: { objects: { id: string }[] }, o: unknown) => call("load", [scene.objects.map((x) => x.id), o], { skipped: [], notes: [] }),
   unload: (name: string) => call("unload", [name], 1, 5),
 };

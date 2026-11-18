@@ -638,6 +638,8 @@ export function setPlace(doc: SceneDoc, place: { at: [number, number, number]; y
 
 /** A new track at the end, named after its kind and numbered when the name is taken. */
 export function addTrack(doc: SceneDoc, kind: TrackKind, name?: string): SceneDoc {
+  // D6a: the game has one weather at a time.
+  if (kind === "weather" && doc.tracks.some((t) => t.kind === "weather")) throw new EditError("A scene has one weather track: the game has one weather at a time");
   let label = name?.trim() || TrackKindNames[kind];
   if (!name) for (let n = 2; doc.tracks.some((t) => t.name === label); n++) label = `${TrackKindNames[kind]} ${n}`;
   return withTracks(doc, [...doc.tracks, { id: nextTrackId(doc), kind, name: label, clips: [] }]);

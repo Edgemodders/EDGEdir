@@ -9,6 +9,7 @@ export function turnOf(fx: number, fy: number): number;
 export function frameOf(sheet: unknown, stage: unknown, v: { x: number; y: number; z: number; fx: number; fy: number } | null): Frame;
 export function placeOf(frame: Frame, at: { x?: number; y?: number; yaw?: number } | undefined, z?: number): { position: { x: number; y: number; z: number }; yaw: number };
 export function markAt(frame: Frame, position: { x: number; y: number }, yaw: number): { x: number; y: number; yaw: number };
+export function weatherAt(cues: { t: number; state?: string; reset?: true }[] | undefined, from: number): { t: number; state?: string; blend?: number } | undefined;
 export function entryAt(sheet: unknown, member: unknown, from: number): string;
 export interface PlayerState {
   id?: string;

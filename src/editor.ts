@@ -67,6 +67,14 @@ export interface SetHost {
   addPeople(document: vscode.TextDocument): Promise<void>;
 }
 
+/** The game's weathers, for a weather clip's list (D6a). */
+export interface WeatherHost {
+  /** The presets read so far: empty until `load` has answered. */
+  list(): string[];
+  /** Reads them from the game's files, once. True when the list changed. */
+  load(): Promise<boolean>;
+}
+
 /** What the editor asks about a scene's pins, named places from a pin file (DR3). */
 export interface PinsHost {
   /** Brings a scene up to its pin file, when the file's pins are not the ones it last read. */
@@ -139,6 +147,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly sets: SetHost,
     private readonly plays: PlayHost,
     private readonly pins: PinsHost,
+    private readonly weathers: WeatherHost,
   ) {}
 
   /** Every scene and sequence open in an editor. */
@@ -184,7 +193,9 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
           // Not on disk (yet): unsaved.
         }
         const doc = readScene(document.uri.path, text);
-        post({ type: "doc", doc, dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc), stage: isSeqFile(document.uri.path) ? undefined : this.sets.stage(doc) });
+        // D6a: a scene with a weather track gets the game's weathers for its list, read once.
+        if (doc.tracks.some((t) => t.kind === "weather") && !this.weathers.list().length) void this.weathers.load().then((got) => got && sendDoc());
+        post({ type: "doc", doc, weathers: this.weathers.list(), dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc), stage: isSeqFile(document.uri.path) ? undefined : this.sets.stage(doc) });
       } catch (e) {
         post({ type: "invalid", text: (e as Error).message });
       }

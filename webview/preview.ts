@@ -10,6 +10,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { markOf, type SceneDoc, type Track } from "../src/doc";
 import { bodies, bodyKey, bodyWant, clipKey, clipWant, clipsNear, poseAt, type BodyWant, type ClipWant } from "../src/pose";
+import { weatherAt, weatherLabel, weatherTint } from "../src/weather";
 
 /** The host's answer to a `want`. */
 export interface Got {
@@ -35,7 +36,7 @@ export interface Preview {
   got(m: Got): void;
   frame(): void;
   /** What the preview has, for tests of the page: bodies standing, files waited for, and the note. */
-  state(): { bodies: number; props: number; pins?: number; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
+  state(): { bodies: number; props: number; pins?: number; weather?: string; waiting: number; failed: number; note: string; poses: Record<string, Shown> };
 }
 
 interface Loaded {
@@ -169,6 +170,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       boxes.add(holder);
     }
   };
+  let shownWeather = "";
   // DR3: the scene's pins, as thin posts with their titles.
   const posts = new THREE.Group();
   scene.add(posts);
@@ -449,6 +451,11 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
     for (const [reason, what] of failed) lines.unshift(`Not loaded: ${what.length > 3 ? `${what.slice(0, 3).join(", ")} and ${what.length - 3} more` : what.join(", ")}. ${reason.replace(/[.\s]+$/, "")}. Frame tries again`);
     if (loading) lines.unshift(`Loading ${loading} file${loading === 1 ? "" : "s"} from the game…`);
     if (doc && !tracks.length) lines.push(doc.tracks.some((t) => t.kind === "actor") ? "Choose an actor on an actor track, and its body stands here." : "Add an actor track and choose an actor, and its body stands here.");
+    // D6a: the weather the lane holds at this moment. No rain or fog is drawn: a name and a tint.
+    const sky = doc ? weatherAt(doc, time) : undefined;
+    stage.dataset.weather = sky ? (weatherTint(sky.state) ?? "plain") : "";
+    shownWeather = sky ? weatherLabel(sky.state) : "";
+    if (sky) lines.unshift(`Weather: ${shownWeather}`);
     noteEl.textContent = lines.join("  ·  ");
     noteEl.title = [...lines, ...new Set(tracks.flatMap((t) => { const w = bodyWant(t.actor); return w ? (files.get(bodyKey(w))?.notes ?? []).map((n) => `${t.actor?.name ?? t.name}: ${n}`) : []; }))].join("\n");
     draw();
@@ -493,6 +500,7 @@ export function mountPreview(stage: HTMLElement, noteEl: HTMLElement, send: (m: 
       bodies: [...standing.values()].filter((s) => s.root).length,
       props: boxes.children.length,
       pins: posts.children.length,
+      weather: shownWeather,
       waiting: [...files.values()].filter((f) => f.state === "asked").length,
       failed: [...files.values()].filter((f) => f.state === "failed").length,
       note: noteEl.textContent ?? "",
