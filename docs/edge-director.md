@@ -4,7 +4,7 @@ title: EDGE Director
 
 # <span class="y">EDGE</span> Director
 
-**Status: a plan for the owner's review, written 2026-11-18 from the owner's note of the same day. Not agreed, nothing built.** Nine questions are at the end.
+**Status: a plan for the owner's review, written 2026-11-18 from the owner's note of the same day. Not agreed, nothing built.** Twelve questions are at the end.
 
 The owner's words: an "EDGE Director" REDnode app that is part of the EDGEdir tool set. It can place and manage pins if it needs to, but its main purpose is to carry the workflow of directing, playing and adjusting a scene over to inside the game.
 
@@ -66,12 +66,35 @@ It ends the split of today, where the scene can be played in the game only by a 
 | **With D6** | **Shot from V's View** (a camera shot taken from where V looks), the weather picked from the game's own list, heard sound | [D6](d6-audio-camera-weather.html) |
 | **Later** | Walk to a pin; start when V is near; a gizmo to drag an actor, as EDGEbuilder has for props | REDnode #50's spike; its own plans |
 
+## How it is released
+
+The owner's rule (2026-11-18): the Director is a REDnode app that is built and given as its own release file for EDGEdir, as REDnode gives its Admin Tools, UI Tools and Sound Tools from its repo.
+
+How REDnode does it (its `packs/`, `tools/release/pack-zip.mjs` and Release workflow), and the same for EDGEdir:
+
+| Thing | REDnode's packs | EDGE Director |
+|---|---|---|
+| Source | `packs/<pack>/` in REDnode's repo | `director/` in this repo (today's `player/`, renamed) |
+| Version | The pack's own, in `pack.json` | Its own, in `director/rednode-app.json`. Not EDGEdir's |
+| Changelog | The pack's own `changelog.md`; a release stops when something is left under Unreleased | `director/changelog.md`, with the same check |
+| The file | `<Pack-Name>-<version>.zip`, laid out like the game folder | `EDGE-Director-<version>.zip`: `red4ext/plugins/REDnode/apps/edge-director/`, with the licence. Installed with Vortex or EDGEdeck, or extracted into the game folder |
+| Where | Attached to each REDnode release on GitHub, and its own Nexus page | Attached to each EDGEdir release on GitHub beside the `.vsix`. On Nexus: question R11 |
+| Needs | The REDnode named in `pack.json` and in the app's `requires` | The same: the app's `requires` names REDnode, Codeware and REDbridge, so the Mod Manager says when one is too old |
+
+| Point | Plan |
+|---|---|
+| The extension and the Director | The extension knows which Director version it needs. When the one in the game is missing or older, EDGEdir says so and opens the release's page. It no longer copies anything into the game folder by itself (question R10) |
+| Why not copy | A file EDGEdir copies into the game folder is not known to the player's mod manager: EDGEdeck and Vortex would not list it, update it or remove it. The copy has also never run |
+| For development | A command **Copy the Development Director into the Game** stays for F5 runs, off the release path |
+| The release gate | The Director's in-game tests and spot tests gate its zip, as the hand tests gate the `.vsix`. One release run makes both |
+| The build | `npm run build` makes the Director's bundle; `tools/release/director-zip.mjs` makes the zip; the Check workflow builds it on every push |
+
 ## What changes in what is built
 
 | Thing | Change |
 |---|---|
-| The package | `player/` becomes the Director: id `edge-director`, name **EDGE Director**, with `entry`, `main` and `service`. EDGEdir Player 0.1.0 was never released or run in the game, so nothing is left behind (question R2) |
-| The build | A second bundle: the page and the mod, with EDGEdir's pure code in them. The extension still ships the package and offers to copy it into the game |
+| The package | `player/` becomes `director/`: id `edge-director`, name **EDGE Director**, with `entry`, `main` and `service`, its own version and changelog. EDGEdir Player 0.1.0 was never released or run in the game, so nothing is left behind (question R2) |
+| The build | A second bundle: the page and the mod, with EDGEdir's pure code in them, zipped as its own release file. The `.vsix` no longer carries the package, and the question that offers to copy it goes (D5d's steps 3 and 4 change) |
 | `player/play.mjs` | Stays the steps of a play. New: start from a moment, loop, move a person while playing |
 | A mod a player installs (D7) | Needs a player with no window. D7's plan decides whether that is the Director's own mod part or a small package of its own, built from the same `play.mjs` |
 | "D5 in the game" | Its 10 steps are run with the Director's window once DR1 is built: its buttons are in the game, so the test needs fewer trips to VS Code (question R6) |
@@ -108,3 +131,6 @@ It ends the split of today, where the scene can be played in the game only by a 
 | R7 | The order: DR1, DR2, DR3, then D6, with DR4 planned after the first three are used? | Yes |
 | R8 | Clip editing in the game (DR4) is wanted, though later? Or is the game side for playing and placing only, with clips always edited in VS Code? | Wanted, later, and small: move, trim, swap an animation |
 | R9 | The name in the game's Mod Manager and launcher is **EDGE Director**, and the docs call the whole tool EDGEdir? | Yes |
+| R10 | The zip is the only way a player installs the Director: the extension says when it is missing or too old and opens the download, and copies nothing into the game folder (a developer command aside)? | Yes: the mod manager then knows the files |
+| R11 | On Nexus, is the Director a second file on EDGEdir's page, or a page of its own as REDnode's packs have? | A second file on EDGEdir's page: it is no use without EDGEdir's scenes. EDGEdir has no Nexus page yet |
+| R12 | The Director has its own version and changelog, released in the same run as the extension? | Yes |
