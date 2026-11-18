@@ -2,6 +2,8 @@
 
 EDGEdir is a VS Code extension for directing Cyberpunk 2077's characters: design and stitch animations and acting sequences for NPCs, and play them on characters in the running game. It is at its start: the design is agreed, and the first phase, the timeline editor and the Desk, is built, and so is the second, the cast and real animations on the lanes. Both passed their hand tests by script and wait for the owner's spot tests.
 
+**New to EDGEdir, or here to try it?** Start with the user manual on the EDGEmodders wiki: [EDGEdir](https://edgemodders.ai/wiki/edgedir/), with [Install and set up](https://edgemodders.ai/wiki/edgedir/install.html) and [Your first scene](https://edgemodders.ai/wiki/edgedir/first-scene.html). These pages are the design record and the developer reference: the plans, what is built of each, and every test.
+
 | Document | What it covers |
 |---|---|
 | [Design](design.html) | Draft 1, agreed 2026-11-16: the scene document, the timeline editor, the preview, how a scene reaches the game, and the phases |

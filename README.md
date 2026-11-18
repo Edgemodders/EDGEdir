@@ -12,7 +12,7 @@
 
 A director's tool for Cyberpunk 2077, as a VS Code extension in the EDGE family: design and stitch animations and acting sequences for the game's characters (NPCs), and play them on characters in the running game.
 
-**[Docs](https://edgemodders.github.io/EDGEdir/)** &middot; [Changelog](CHANGELOG.md) &middot; [Tests](docs/testing.md)
+**[User manual (wiki)](https://edgemodders.ai/wiki/edgedir/)** &middot; **[Docs](https://edgemodders.github.io/EDGEdir/)** &middot; [Changelog](CHANGELOG.md) &middot; [Tests](docs/testing.md)
 
 > [!NOTE]
 > **Status: EDGE Director DR1, 2026-11-18.** EDGEdir now has an app in the game, EDGE Director (its own download on each release): a window that lists the scenes on the Desk and plays one on real people, built and not yet run in the game. The design is agreed ([docs/design.md](docs/design.md)). Built and waiting for hand tests: the scene editor (a timeline of tracks and clips for `.edgedir` files), the Desk, the actor picker (the game's characters, and V), the Animations view (the game's animations, with search), real animations as clips on the lanes, the 3D preview (each actor's body playing the clip under the playhead), transitions that blend two clips in it, and sequences (a run of clips stored by itself and used on any actor with the same rig). Play in the game is built and has not run in the game yet: the editor says what the game will not play as the preview shows it, a scene can be made on a set (an EDGEbuilder scene) with a track for each of its people, and **Play in Game** sends the scene to EDGEdir's player, a REDnode package that plays it on people spawned in front of V. Nothing is released yet.
