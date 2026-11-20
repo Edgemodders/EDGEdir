@@ -410,3 +410,37 @@ test("the pin files a scene can choose: its own, the player's in the game, the p
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("Pause holds everybody still and Resume goes on from there; an actor holds their last pose after their last clip", async () => {
+  const { world, calls } = fakeWorld();
+  const held: string[] = [];
+  const player = new Player({ world, player: async () => V, warmMs: 2, leadMs: 2, freeze: async (id: { hash: string }, on: boolean) => void held.push(`${on ? "hold" : "release"} ${id.hash}`) });
+  // Ana's last clip ends at 0.15 s of a scene 0.3 s long.
+  const withEnd = { ...sheet, length: 0.3, ends: [{ t: 0.15, track: "t1" }] };
+  assert.equal(await player.pause(), false);
+  await player.play({ id: "a", sheet: withEnd });
+  assert.equal(player.resume(), false);
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(await player.pause(), true);
+  const paused = player.state();
+  assert.equal(paused.state, "paused");
+  assert.ok(paused.pausedAt! > 0.01 && paused.pausedAt! < 0.1, String(paused.pausedAt));
+  assert.deepEqual(held, ["hold e1"]);
+  // While paused no cue runs.
+  const before = calls.length;
+  await new Promise((r) => setTimeout(r, 120));
+  assert.equal(calls.length, before);
+  assert.equal(player.resume(), true);
+  assert.deepEqual(held, ["hold e1", "release e1"]);
+  assert.equal(player.state().state, "playing");
+  // The time goes on from where it stood, and Ana is held a moment before her last clip's end.
+  await until(() => held.length === 3);
+  assert.equal(held[2], "hold e1");
+  await until(() => player.state().state === "ended");
+  assert.match(player.state().text, /holds its last pose/);
+  assert.deepEqual(calls.filter((c) => c.startsWith("jump")), ["jump c1", "jump c2", "jump c3"]);
+  // Start Again lets time run for her again before she jumps.
+  await player.seek(0);
+  assert.equal(held[3], "release e1");
+  await player.stop();
+});

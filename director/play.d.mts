@@ -16,6 +16,7 @@ export interface PlayerState {
   state: string;
   text: string;
   startedAt?: number;
+  pausedAt?: number;
   loop?: boolean;
   length?: number;
   late?: { t: number; track: string; jump: string; ms: number; ok: boolean }[];
@@ -28,6 +29,8 @@ export class Player {
   play(request: unknown): Promise<PlayerState>;
   stop(quiet?: boolean): Promise<PlayerState>;
   seek(from: number, loop?: boolean): Promise<boolean>;
+  pause(): Promise<boolean>;
+  resume(): boolean;
   setLoop(on: boolean): void;
   cast(): { track: string; name: string; id?: unknown; position: { x: number; y: number; z: number }; yaw: number }[];
   frame(): Frame | undefined;

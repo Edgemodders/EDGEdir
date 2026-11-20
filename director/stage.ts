@@ -21,6 +21,8 @@ export interface PlayerLike {
   play(request: unknown): Promise<PlayNow>;
   stop(quiet?: boolean): Promise<PlayNow>;
   seek(from: number, loop?: boolean): Promise<boolean>;
+  pause(): Promise<boolean>;
+  resume(): boolean;
   setLoop(on: boolean): void;
   cast(): { track: string; name: string; id?: unknown; position: Place; yaw: number }[];
   frame(): Frame | undefined;
@@ -271,6 +273,12 @@ export class Stage {
           break;
         case "loop":
           player.setLoop(m.on);
+          break;
+        case "pause":
+          if (!(await player.pause())) throw new Error("Nothing is playing to pause");
+          break;
+        case "resume":
+          if (!player.resume()) throw new Error("The scene is not paused");
           break;
         case "stop":
           await this.unpin();

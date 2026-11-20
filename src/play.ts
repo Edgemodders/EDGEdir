@@ -31,7 +31,7 @@ export function playDir(): string {
 /** What the player says of a play (player/play.mjs). */
 export interface PlayState {
   id?: string;
-  state: "idle" | "writing" | "loading" | "spawning" | "warming" | "playing" | "ended" | "stopped" | "failed";
+  state: "idle" | "writing" | "loading" | "spawning" | "warming" | "playing" | "paused" | "ended" | "stopped" | "failed";
   text: string;
   scene?: string;
   length?: number;

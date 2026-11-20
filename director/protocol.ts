@@ -6,10 +6,12 @@ import type { SceneRow, SceneView } from "./floor";
 /** The player's word on the play (director/play.mjs). */
 export interface PlayNow {
   id?: string;
-  state: "idle" | "writing" | "loading" | "spawning" | "warming" | "playing" | "ended" | "stopped" | "failed";
+  state: "idle" | "writing" | "loading" | "spawning" | "warming" | "playing" | "paused" | "ended" | "stopped" | "failed";
   text: string;
   /** When the scene's time 0 was, on this PC's clock, in milliseconds. */
   startedAt?: number;
+  /** Where a paused scene stands, in seconds. */
+  pausedAt?: number;
   length?: number;
   loop?: boolean;
   late?: { t: number; track: string; jump: string; ms: number; ok: boolean; error?: string }[];
@@ -52,6 +54,8 @@ export type PageMessage =
   | { type: "play"; from?: number; loop?: boolean }
   | { type: "seek"; t: number }
   | { type: "loop"; on: boolean }
+  | { type: "pause" }
+  | { type: "resume" }
   | { type: "stop" }
   | { type: "choose"; track?: string }
   | { type: "goTo"; track: string }
@@ -71,4 +75,4 @@ export type PageMessage =
 export type ModMessage = { type: "state"; state: Snapshot };
 
 /** The states in which a scene is in the game: its cast is there, or is on its way. */
-export const Active = ["writing", "loading", "spawning", "warming", "playing", "ended"];
+export const Active = ["writing", "loading", "spawning", "warming", "playing", "paused", "ended"];

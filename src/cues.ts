@@ -1,7 +1,7 @@
 // The cue sheet (D5b): what the game is told for a scene, as a pure function of the document. The
 // cast, each actor's workspot clips, the jumps in time order, and the notes on what the game will
 // not match. No VS Code, no page, no files, nothing read from the game. docs/d5-play-in-game.md.
-import { markOf, playOf, sceneLength, transitionOf, unfit, type Clip, type Mark, type SceneDoc, type Track } from "./doc";
+import { clipEnd, markOf, playOf, sceneLength, transitionOf, unfit, type Clip, type Mark, type SceneDoc, type Track } from "./doc";
 import { flat, joinOf } from "./pose";
 import { weatherCues, weatherTrack } from "./weather";
 
@@ -42,6 +42,8 @@ export interface CueSheet {
   anchor: SceneDoc["anchor"];
   cast: CastMember[];
   timeline: Cue[];
+  /** Where each actor's last clip ends: from there the actor holds that clip's last pose. Absent in sheets from before EDGE Director 0.6.0. */
+  ends?: { t: number; track: string }[];
   /** D6a: the weather to hold from a moment, or to give back (`reset`). Absent when the scene has none. */
   weather?: { t: number; state?: string; blend?: number; reset?: true }[];
 }
@@ -72,6 +74,7 @@ const num = (n: number) => String(Number(n.toFixed(3)));
 export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
   const cast: CastMember[] = [];
   const timeline: Cue[] = [];
+  const ends: { t: number; track: string }[] = [];
   const notes: GameNote[] = [];
   for (const lane of doc.tracks) {
     if (lane.kind !== "actor" || lane.mute) continue;
@@ -123,7 +126,11 @@ export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
             : `The game joins "${label(a)}" to "${label(b)}" with its own blend, about half a second from where "${label(b)}" starts (not measured). This transition's method, length and ease are the preview's.`,
       });
     }
-    if (member.clips.length) cast.push(member);
+    if (member.clips.length) {
+      cast.push(member);
+      const last = [...anims].reverse().find((c) => playOf(c)?.anim.set);
+      if (last) ends.push({ t: clipEnd(last), track: lane.id });
+    }
   }
   timeline.sort((x, y) => x.t - y.t);
   // D6a: the weather track.
@@ -131,6 +138,7 @@ export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
   const lane = weatherTrack(doc);
   if (lane) for (const n of weather.notes) notes.push({ kind: "weather", track: lane.id, clip: n.clip, text: n.text });
   const sheet: CueSheet = { cues: 1, scene: doc.name, length: sceneLength(doc), anchor: doc.anchor, cast, timeline };
+  if (ends.length) sheet.ends = ends;
   if (weather.cues.length) sheet.weather = weather.cues.map(({ clip: _clip, ...cue }) => cue);
   return { sheet, notes };
 }

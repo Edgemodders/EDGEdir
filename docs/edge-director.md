@@ -178,6 +178,8 @@ How it differs from the design's pins section, and what is left for part 2:
 
 Left out: a rename button for a pin, in either tool; a pin's own second line of text shown anywhere; pins further than 150 m from the origin in the preview (they are listed in the inspector).
 
+**First run in the game, 2026-11-20 (the owner's Test E, round 1, on 0.5.0; [Tests](testing.html)):** EDGE Director started, its window listed the Desk, and a scene of two people played through: workspots written in 2 s, people spawned in 2 s, every jump on time (3 to 9 ms late), the actors on the sides their marks give. So these are no longer unverified: that the window and its mod hear each other over `channel`, the play's steps, and left and right of the marks. From that round, **EDGE Director 0.6.0** (EDGEdir 0.0.29): **Pause** and **Resume** (`pause`, `resume` in `director/play.mjs`; state `paused`, `pausedAt`); an actor holds the last pose of their last clip (`sheet.ends` from `src/cues.ts`; `still` in the player; `deps.freeze`, which in `director/mod.ts` is the game's `SetIndividualTimeDilation` on that one person, **unverified in the game**); the strip's taller lanes, the bar that sizes it, and the playhead kept in sight at the end.
+
 Unverified until the game, beside the list below: that a page and its mod of one package hear each other over `channel` as EDGEbuilder's do (read from EDGEbuilder's source, not run here); `world.pin` on a spawned person and `game.player.teleport` from this mod; a jump to a clip the actor already plays (Start Again with one clip).
 
 ## Tests

@@ -12,8 +12,8 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-18 | Pass, 86 tests |
-| [The owner's tests, A to H](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to H in the game | D1 to D5, DR1 to DR3, D6a | | None run yet |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-20 | Pass, 87 tests |
+| [The owner's tests, A to H](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to H in the game | D1 to D5, DR1 to DR3, D6a | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
 | [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | | Not run yet (0.0.28, EDGE Director 0.5.0) |
 | [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | | Not run yet (0.0.26, EDGE Director 0.4.0) |
 | [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | | Not run yet (0.0.27) |
@@ -68,7 +68,7 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 | [B](#test-b-cast-and-animations) | Actors and animations | VS Code, the game's files | 15 minutes, after the first read of the game | Not run yet |
 | [C](#test-c-preview-transitions-and-sequences) | The 3D preview, transitions, sequences | As B | 10 minutes | Not run yet |
 | [D](#test-d-sets-and-what-the-game-will-not-match) | Sets, what the game will not match, and pins in the editor (its last spot, S15, is best done after Test G) | As B, and an EDGEbuilder scene in the Library | 10 minutes | Not run yet |
-| [E](#test-e-edge-director-in-the-game-play) | EDGE Director in the game: open and play a scene | The game running, REDnode, EDGE Director | 30 minutes | Not run yet |
+| [E](#test-e-edge-director-in-the-game-play) | EDGE Director in the game: open and play a scene | The game running, REDnode, EDGE Director | 30 minutes | Partly run 2026-11-20: E1, E2, E3, E5 pass |
 | [F](#test-f-edge-director-in-the-game-adjust) | EDGE Director in the game: adjust a scene | As E | 15 minutes | Not run yet |
 | [G](#test-g-edge-director-in-the-game-pins) | EDGE Director in the game: pins | As E | 10 minutes | Not run yet |
 | [H](#test-h-weather) | Weather: in the editor, then in the game | As E, with REDnode 0.67.2 or later | 10 minutes | Not run yet |
@@ -128,20 +128,22 @@ Tests A to D are the spot tests S1 to S12 and S15, one short test for each major
 
 ### Test E: EDGE Director in the game: play
 
-EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
+EDGEdir 0.0.29 with EDGE Director 0.6.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
 
-**Before Tests E to H:** REDnode 0.67.2 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.5.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
+**Before Tests E to H:** REDnode 0.67.2 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.6.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
 
 | Step | Do | Expect, and say |
 |---|---|---|
-| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.5.0 |
+| E1 | In the game press F10, open the Mod Manager, switch **EDGE Director** on, allow **bridge** and **archives**, and pin it to the launcher | Its window opens at the right. **Scenes** lists the Desk's scenes, the last changed first. The line at the bottom reads Ready and EDGE Director 0.6.0 |
 | E2 | Click the scene of Test C | Its name, "in front of V", a strip with a lane for each track and the clips' names, and under **In the game** what the game will not match. Say how the window sits over the game, and whether its size suits watching a scene |
 | E3 | Press **Play** | The line reads Writing 2 workspots (the first time about half a minute), Spawning, Starting the cast, Playing. Two people stand about 3 m in front of V and play. **G1:** are they at their marks, and in time with each other and with the playhead on the strip? **G7:** how long from the click to the first movement? |
 | E4 | The same play, at its start | **G2:** does either person show a T pose before the scene starts? |
 | E5 | Look at where they stand and face | **G3:** is the first actor on V's left and the second on V's right, and do both face V? If not, say how they stand |
 | E6 | Watch each join, and the same join in VS Code's preview | **G4:** how does the game's blend look against the preview's Blend and Inertial? |
 | E7 | While it plays, drag the playhead on the strip's ruler to the middle. Then press **Start Again** | Both people go to the clips of that moment at once and play on from there; the time follows. Start Again: they go to their first clips; nobody is removed or spawned |
-| E8 | Switch **Loop** on and let the scene end | The scene starts again by itself, with the same people. Switch Loop off: at the next end the line says the scene has ended and the people go on with their last clips |
+| E8 | Switch **Loop** on and let the scene end | The scene starts again by itself, with the same people. Switch Loop off: at the next end the line says the scene has ended and the cast holds its last pose; each person stands still in the last pose of their last clip, and the playhead stays at the strip's right edge |
+| E8b | (0.6.0) While it plays press **Pause**; then **Resume** | Pause: everybody holds still mid-movement, the playhead stops, the button reads Resume and the line reads Paused. Resume: they move on from where they were, in time with the playhead. Say whether anyone jumps or starts their clip again |
+| E8c | (0.6.0) Drag the bar under the strip down and up; with more lanes than fit, scroll the lanes | The strip gets taller and shorter, and the lanes scroll inside it. The size is kept when the window is opened again |
 | E9 | Under **Cast**, look at the rows; click one; press **Go There** on the other | Each actor with the clip they play now and their distance from V. The clicked actor has a pin with their name over them in the world, and their lane's name is lit. Go There puts V in front of that actor, facing them (say where V lands) |
 | E10 | In VS Code, trim one clip short and give another Loops 2; save. In the game press **Stop**, look at the strip, press **Play** | After Stop the strip shows the changed clips within a few seconds. **G5:** does the short clip end where the next begins, and does the repeated one repeat, as in the preview? **G7:** how long is the wait this time? |
 | E11 | Press **Stop**, then **Play** | **G6:** is everybody gone after Stop, and does the second play start clean, with two people only? |
@@ -151,7 +153,17 @@ EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of D5c, D5d and DR1, r
 
 | Round | Date | Result |
 |---|---|---|
-| 1 | | Not run yet |
+| 1 | 2026-11-20 | **Partly run, by the owner, on EDGE Director 0.5.0 with REDnode 0.68.1** (the first time anything of EDGEdir ran in the game; Claude read the Director's log, its window's text and `state.json` through REDnode's tools beside it). The scene was "Test E", made by Claude on the Desk: Judy and Panam, each with two clips and a transition, at Right -1 and Right 1, Turn 180. **E1 pass:** the Director started cleanly and its window listed the Desk's two scenes. **E2 pass** by the window's text (the strip, "in front of V", two notes). **E3 pass:** the first Play failed at once with "Allow EDGE Director to use REDbridge in the Mod Manager first" (the permission was not allowed yet); the second wrote 2 workspots in 2 s, spawned 2 people in 2 s, and played; from click to playing 5 s (**G7**), not the half minute expected. All four jumps landed, 3 to 9 ms late. The playhead moved through the scene (**G1**, in part: timing against the playhead was not judged closely). **E5 pass (G3):** Judy stood on V's left and Panam on V's right. Facing was not judged: Panam's clip gets up off the ground, so she did not look at V. **Not answered yet:** E4 (a T pose at the start, G2), E6 (the blend at the joins, G4). E7 to E14 not run. REDnode refreshed what V wears when the workspots were swapped in (its log says so): to be asked whether it was seen |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| The strip is squashed: the lanes are too low, and the strip should be resizable with the lanes scrolling inside it | 0.6.0: lanes 30 px high; a bar under the strip changes its height (kept between visits), and the lanes scroll inside. Step E8c. Seen only in a plain browser |
+| The playhead disappeared at the scene's end | 0.6.0: it stays one pixel inside the strip's right edge. It was drawn just outside the strip, which cuts off what is outside |
+| At the end the people went into a loop: they did not stop | As built until then: each clip in the game loops, and the last one looped until Stop. 0.6.0: an actor is held still a moment (0.05 s) before their last clip's end, by the game's own time dilation on that one person (`SetIndividualTimeDilation`), so they keep that pose. **Unverified in the game**: step E8 |
+| A Pause button that reads Resume when pressed would be useful | 0.6.0: **Pause** holds everybody still the same way and stops the cues; **Resume** goes on from there. Step E8b. Unverified in the game |
+| The first Play fails when the bridge permission is not allowed | As meant, and the line says what to do. The wiki's install page says to allow both permissions first |
 
 ### Test F: EDGE Director in the game: adjust
 

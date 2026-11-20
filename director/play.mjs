@@ -87,6 +87,7 @@ const Abandoned = Symbol("abandoned");
  *   deps.world    REDnode's `world` (writeWorkspot, spawn, useWorkspot, jumpWorkspot, remove, load, unload)
  *   deps.player   async () => ({ x, y, z, fx, fy }): V's place and the way V faces, or null
  *   deps.report   (state) => void, called with every change
+ *   deps.freeze   optional: async (id, on) stops time for one person, or lets it run again
  *   deps.warmMs   how long the cast is given after its first play, for the T pose to pass (1500)
  *   deps.leadMs   from the last step to the scene's start (300)
  */
@@ -152,6 +153,16 @@ export class Player {
     const sheet = ctx.sheet;
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
     const t0 = now() + this.deps.leadMs;
+    // An actor whose last clip is over holds its last pose: time stops for them alone, a moment
+    // before the clip's end, so the clip does not start again. Everybody else moves.
+    const Before = 0.05;
+    for (const a of ctx.cast) {
+      const end = (sheet.ends ?? []).find((e) => e.track === a.track)?.t;
+      const over = end !== undefined && end - Before <= from;
+      void this.still(ctx, a, over);
+      if (end === undefined || over) continue;
+      ctx.timers.push(setTimeout(() => run === this.run && void this.still(ctx, a, true), Math.max(0, t0 + (end - Before - from) * 1000 - now())));
+    }
     for (const cue of sheet.timeline) {
       // A cue at the moment itself restarts its clip after the warm-up; after a seek the actor has just jumped to it.
       if (cue.t < from || (jumped && cue.t === from)) continue;
@@ -201,11 +212,43 @@ export class Player {
       setTimeout(() => {
         if (run !== this.run) return;
         if (ctx.loop) void this.seek(0);
-        else this.set({ state: "ended", text: nobody ? "The scene has ended" : "The scene has ended: the cast holds its last clips until Stop" });
+        else this.set({ state: "ended", text: nobody ? "The scene has ended" : this.deps.freeze ? "The scene has ended: the cast holds its last pose until Stop" : "The scene has ended: the cast holds its last clips until Stop" });
       }, Math.max(0, t0 + (sheet.length - from) * 1000 - now())),
     );
     // startedAt is when the scene's time 0 was, or would have been: the time now is always now - startedAt.
-    this.set({ state: "playing", text: "Playing", startedAt: t0 - from * 1000, loop: ctx.loop, late: [] });
+    this.set({ state: "playing", text: "Playing", startedAt: t0 - from * 1000, pausedAt: undefined, loop: ctx.loop, late: [] });
+  }
+
+  /** Stops time for one actor, or lets it run again: they hold the pose they are in. Nothing happens without `deps.freeze`. */
+  async still(ctx, a, on) {
+    if (!this.deps.freeze || !!a.still === !!on) return;
+    a.still = !!on;
+    await this.deps.freeze(a.id, !!on).catch((e) => {
+      if (ctx === this.ctx && !ctx.saidFreeze) {
+        ctx.saidFreeze = true;
+        this.set({ notes: [...(this.st.notes ?? []), `An actor could not be held still: ${e.message}`] });
+      }
+    });
+  }
+
+  /** Pauses the scene that plays: the cues wait and everybody holds their pose. False when nothing plays. */
+  async pause() {
+    const ctx = this.ctx;
+    if (!ctx?.sheet || this.st.state !== "playing") return false;
+    const at = Math.min(Math.max(0, (this.deps.now() - this.st.startedAt) / 1000), ctx.sheet.length);
+    for (const t of ctx.timers.splice(0)) clearTimeout(t);
+    for (const a of ctx.cast) await this.still(ctx, a, true);
+    if (ctx !== this.ctx) return false;
+    this.set({ state: "paused", text: "Paused", pausedAt: at });
+    return true;
+  }
+
+  /** Goes on from where the scene was paused. False when it is not paused. */
+  resume() {
+    const ctx = this.ctx;
+    if (!ctx?.sheet || this.st.state !== "paused") return false;
+    this.begin(ctx, this.run, this.st.pausedAt ?? 0, true);
+    return true;
   }
 
   /**
@@ -215,11 +258,13 @@ export class Player {
   async seek(from, loop) {
     const ctx = this.ctx;
     const run = this.run;
-    if (!ctx?.sheet || !["playing", "ended"].includes(this.st.state)) return false;
+    if (!ctx?.sheet || !["playing", "ended", "paused"].includes(this.st.state)) return false;
     const { world } = this.deps;
     const t = Math.min(Math.max(0, Number(from) || 0), ctx.sheet.length);
     if (loop !== undefined) ctx.loop = !!loop;
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
+    // Time runs again for everybody first: a person held still may not take a jump.
+    for (const a of ctx.cast) await this.still(ctx, a, false);
     for (const m of ctx.sheet.cast) {
       const a = ctx.cast.find((x) => x.track === m.track);
       if (a) await world.jumpWorkspot(a.id, entryAt(ctx.sheet, m, t)).catch(() => false);

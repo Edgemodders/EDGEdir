@@ -16,5 +16,8 @@ Kept as EDGEdir's own changelog is: a line under **Unreleased** with each change
 - **The Scene Is Here** keeps the scene at the spot it plays at, instead of in front of V wherever V is; **In Front of V** undoes it.
 - A scene with unsaved changes in VS Code plays in the game and cannot be changed there, so neither tool overwrites the other.
 - Pins: name a place and **Drop a Pin Here** puts a pin where V stands, in the scene's own pin file (REDnode's pin format, beside the scene). The scene's pins are drawn in the world while the scene is open. For each pin: **Go There**, the chosen actor **Here**, **Scene Here**, **Drop Again** and **Remove**.
+- **Pause** holds the scene and everybody in it still; it reads **Resume** while paused.
+- An actor holds the last pose of their last clip, instead of playing it again and again until Stop.
+- The strip's lanes are taller, and a bar under the strip makes it taller or shorter; the lanes scroll inside it. The playhead stays in sight at the scene's end.
 - Weather: a scene's weather clips change the weather in the game at their starts, and the weather goes back to what it was where a clip ends with no other after it, and at Stop. A scene with weather and nobody in it plays too. Needs REDnode 0.67.2 or later.
 - An actor's mark and the scene's place can follow a pin: drop the pin again somewhere else and they move with it, in the game at once and in the scene's file.

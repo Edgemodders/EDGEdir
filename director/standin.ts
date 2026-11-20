@@ -59,6 +59,7 @@ let stage: Stage | undefined;
 const player = new Player({
   world,
   player: async () => v,
+  freeze: (id: Id, on: boolean) => call(on ? "hold" : "release", [id.hash], undefined, 5),
   report: (state: PlayNow) => {
     put(playDir(), "state.json", { ...state, version });
     said("state", state.state, state.text);

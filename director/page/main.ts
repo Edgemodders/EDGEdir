@@ -34,6 +34,7 @@ function now(): number {
   if (!s?.view) return 0;
   if (!mine() || s.play.startedAt === undefined) return from;
   if (s.play.state === "ended") return s.view.length;
+  if (s.play.state === "paused") return s.play.pausedAt ?? from;
   if (s.play.state !== "playing") return from;
   return Math.min(Math.max(0, (Date.now() - s.play.startedAt) / 1000), s.view.length);
 }
@@ -187,7 +188,10 @@ function drawPins(s: Snapshot) {
 
 function drawTransport(s: Snapshot) {
   const here = mine();
-  const busy = here && !["playing", "ended"].includes(s.play.state);
+  const busy = here && !["playing", "ended", "paused"].includes(s.play.state);
+  const paused = here && s.play.state === "paused";
+  $("pause").textContent = paused ? "Resume" : "Pause";
+  setOff($("pause"), !here || !["playing", "paused"].includes(s.play.state));
   setOff($("play"), !s.view || !!s.view.why || here);
   setOff($("stop"), !Active.includes(s.play.state));
   setOff($("restart"), !s.view || !!s.view.why || busy);
@@ -219,7 +223,8 @@ function tick() {
     const t = now();
     $("time").textContent = `${clock(t)} / ${clock(s.view.length)}`;
     const wide = $("ruler").clientWidth;
-    $("head").style.left = `${(t / (s.view.length || 1)) * wide}px`;
+    // One pixel inside the strip at the scene's end, so the playhead stays in sight there.
+    $("head").style.left = `${Math.min((t / (s.view.length || 1)) * wide, wide - 2)}px`;
   }
 }
 
@@ -250,6 +255,37 @@ $("play").addEventListener("click", () => {
 });
 $("stop").addEventListener("click", () => {
   if (!off($("stop"))) post({ type: "stop" });
+});
+$("pause").addEventListener("click", () => {
+  if (off($("pause")) || !state) return;
+  post({ type: state.play.state === "paused" ? "resume" : "pause" });
+});
+// The bar under the strip makes the lanes' box taller or shorter; the lanes scroll inside it.
+const laneBox = $("lanes");
+const sized = (px: number) => {
+  laneBox.style.maxHeight = `${Math.max(62, Math.min(600, Math.round(px)))}px`;
+};
+try {
+  sized(Number(localStorage.getItem("edgeDirector.lanes")) || 186);
+} catch {
+  sized(186);
+}
+let sizing: { y: number; h: number } | undefined;
+$("stripSize").addEventListener("pointerdown", (e) => {
+  sizing = { y: e.clientY, h: laneBox.getBoundingClientRect().height };
+  $("stripSize").setPointerCapture(e.pointerId);
+});
+$("stripSize").addEventListener("pointermove", (e) => {
+  if (sizing) sized(sizing.h + e.clientY - sizing.y);
+});
+$("stripSize").addEventListener("pointerup", () => {
+  if (!sizing) return;
+  sizing = undefined;
+  try {
+    localStorage.setItem("edgeDirector.lanes", String(parseInt(laneBox.style.maxHeight, 10)));
+  } catch {
+    // Kept for this visit only.
+  }
 });
 $("restart").addEventListener("click", () => {
   if (off($("restart"))) return;
@@ -316,7 +352,7 @@ $("ruler").addEventListener("pointerup", (e) => {
   dragging = false;
   from = momentAt(e);
   // With the scene in the game, the cast goes to that moment; with none, the next Play starts there.
-  if (mine() && ["playing", "ended"].includes(state!.play.state)) post({ type: "seek", t: from });
+  if (mine() && ["playing", "ended", "paused"].includes(state!.play.state)) post({ type: "seek", t: from });
   tick();
 });
 

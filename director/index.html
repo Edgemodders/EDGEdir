@@ -38,13 +38,18 @@
   #strip { position: relative; overflow: hidden; margin-top: 8px; border: 1px solid var(--rn-line, #333); user-select: none; }
   #ruler { position: relative; height: 16px; margin-left: 96px; border-bottom: 1px solid var(--rn-line, #333); cursor: ew-resize; }
   .tick { position: absolute; top: 2px; font: 9px var(--rn-mono, monospace); color: var(--rn-dim, #999); transform: translateX(-50%); }
-  .lane { display: flex; height: 22px; border-bottom: 1px solid var(--rn-line, #333); }
+  /* The lanes scroll inside their box, whose height the bar under the strip changes. */
+  #lanes { overflow-y: auto; scrollbar-width: none; }
+  #stripSize { height: 7px; margin: 0 0 2px; cursor: ns-resize; border-bottom: 1px solid var(--rn-line, #333); position: relative; }
+  #stripSize::after { content: ""; position: absolute; left: 50%; top: 2px; width: 36px; height: 2px; margin-left: -18px; background: var(--rn-dim, #999); }
+  #stripSize:hover::after { background: var(--rn-accent, #f2e600); }
+  .lane { display: flex; height: 30px; border-bottom: 1px solid var(--rn-line, #333); }
   .lane:last-child { border-bottom: none; }
-  .lane-name { width: 92px; padding: 4px 0 0 4px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rn-dim, #999); cursor: pointer; }
+  .lane-name { width: 92px; padding: 8px 0 0 4px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rn-dim, #999); cursor: pointer; }
   .lane.cast .lane-name { color: var(--rn-fg, #eee); }
   .lane.on .lane-name { color: var(--rn-accent, #f2e600); }
   .lane-clips { position: relative; flex: 1; }
-  .clip { position: absolute; top: 3px; height: 16px; box-sizing: border-box; padding: 2px 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 1px solid var(--rn-line, #555); background: rgba(255, 255, 255, .06); color: var(--rn-dim, #999); }
+  .clip { position: absolute; top: 4px; height: 22px; box-sizing: border-box; padding: 4px 5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 1px solid var(--rn-line, #555); background: rgba(255, 255, 255, .06); color: var(--rn-dim, #999); }
   .clip.tr { top: 0; height: 3px; padding: 0; border: none; background: var(--rn-ok, #5dffa1); opacity: .8; }
   .clip.played { border-color: var(--rn-accent, #f2e600); color: var(--rn-fg, #eee); }
   #head { position: absolute; top: 0; bottom: 0; width: 1px; margin-left: 96px; background: var(--rn-danger, #ff5e5e); pointer-events: none; }
@@ -68,12 +73,14 @@
       <div id="why" hidden></div>
       <div id="transport">
         <rn-button id="play">Play</rn-button>
+        <rn-button id="pause" variant="ghost">Pause</rn-button>
         <rn-button id="stop" variant="danger">Stop</rn-button>
         <rn-button id="restart" variant="ghost">Start Again</rn-button>
         <rn-toggle id="loop" label="Loop"></rn-toggle>
         <span id="time" class="time">0:00.0 / 0:00.0</span>
       </div>
       <div id="strip"><div id="ruler"></div><div id="lanes"></div><div id="head"></div></div>
+      <div id="stripSize" title="Drag to make the timeline taller or shorter"></div>
       <div class="section">Adjust</div>
       <div id="noone" class="dim">Click an actor's name on the strip to adjust where they stand.</div>
       <div id="adjust" hidden>

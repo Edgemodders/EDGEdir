@@ -27,6 +27,14 @@ let stage: Stage | undefined;
 const player = new Player({
   world,
   player: whereV,
+  // Time stops for one person, or runs again: the game's own slow motion for a single character.
+  // (Unverified in the game on a person in a workspot.)
+  freeze: async (id: unknown, on: boolean) => {
+    const person = await world.entity(id);
+    if (!person) throw new Error("the person is not in the world");
+    if (on) await person.SetIndividualTimeDilation("EDGEDirector", 0.0001, 86400);
+    else await person.UnsetIndividualTimeDilation();
+  },
   report: (state: PlayNow) => {
     put(playDir(), "state.json", { ...state, version });
     console.log(`EDGE Director: ${state.state}${state.text ? `, ${state.text}` : ""}`);
