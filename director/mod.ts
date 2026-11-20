@@ -38,14 +38,16 @@ const player = new Player({
     // person froze and one did not, and the frozen one's hair stretched.
     const key = JSON.stringify(id);
     if (on) {
-      if (!trial.has(key)) trial.set(key, trial.size % 2 === 0 ? 0 : 0.0001);
+      if (!trial.has(key)) trial.set(key, trial.size % 2 === 0 ? 0 : 0.01);
       const value = trial.get(key)!;
-      await person.SetIndividualTimeDilation("EDGEDirector", value, 86400);
+      // As the game's own scripts call it: no ease in or out ("None"), and no end (-1). Without the
+      // curve names the hold came on slowly: a short hold was never seen, and Pause lagged.
+      await person.SetIndividualTimeDilation("EDGEDirector", value, -1, "None", "None");
       const reads = await person.GetTimeDilationValue().catch(() => "?");
       const has = await person.HasIndividualTimeDilation("EDGEDirector").catch(() => "?");
       console.log(`EDGE Director: held ${key} at ${value}; the game reads ${reads}, has its own dilation: ${has}`);
     } else {
-      await person.UnsetIndividualTimeDilation();
+      await person.UnsetIndividualTimeDilation("None");
       const reads = await person.GetTimeDilationValue().catch(() => "?");
       console.log(`EDGE Director: released ${key}; the game reads ${reads}`);
     }

@@ -19,7 +19,7 @@ declare module "rednode" {
     resetWeather(): Promise<unknown>;
     load(scene: unknown, options: unknown): Promise<{ skipped?: { object: string; why: string }[]; notes?: string[] }>;
     unload(name: string): Promise<number>;
-    entity(id: unknown): Promise<{ SetIndividualTimeDilation(reason: string, dilation: number, duration?: number): Promise<void>; UnsetIndividualTimeDilation(): Promise<void>; GetTimeDilationValue(): Promise<number>; HasIndividualTimeDilation(reason?: string): Promise<boolean> } | null>;
+    entity(id: unknown): Promise<{ SetIndividualTimeDilation(reason: string, dilation: number, duration?: number, easeInCurve?: string, easeOutCurve?: string): Promise<void>; UnsetIndividualTimeDilation(easeOutCurve?: string): Promise<void>; GetTimeDilationValue(): Promise<number>; HasIndividualTimeDilation(reason?: string): Promise<boolean> } | null>;
     onRespawn(handler: (before: { hash: string }, after: { hash: string }) => void): void;
     pin(options: { at: unknown; title: string; text?: string }): Promise<number>;
     unpin(id: number): Promise<unknown>;
