@@ -148,20 +148,36 @@ export class Player {
   }
 
   /** Sets the timers for the cues after `from` (seconds into the scene), all from one start time, and says Playing. */
-  begin(ctx, run, from, jumped = false) {
+  begin(ctx, run, from, jumped = false, lead = this.deps.leadMs) {
     const { world, now } = this.deps;
     const sheet = ctx.sheet;
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
-    const t0 = now() + this.deps.leadMs;
-    // An actor whose last clip is over holds its last pose: time stops for them alone, a moment
-    // before the clip's end, so the clip does not start again. Everybody else moves.
+    const t0 = now() + lead;
+    // Each actor's lane, in time: a clip starts (a jump), or a clip ends with none after it (a hold).
+    // Held, time stops for that person alone, a moment before the clip's end, so the clip does not
+    // start again: they keep its last pose through a gap and after their last clip. Before their
+    // first clip they wait in its first pose.
     const Before = 0.05;
     for (const a of ctx.cast) {
-      const end = (sheet.ends ?? []).find((e) => e.track === a.track)?.t;
-      const over = end !== undefined && end - Before <= from;
-      void this.still(ctx, a, over);
-      if (end === undefined || over) continue;
-      ctx.timers.push(setTimeout(() => run === this.run && void this.still(ctx, a, true), Math.max(0, t0 + (end - Before - from) * 1000 - now())));
+      const jumps = sheet.timeline.filter((c) => c.track === a.track);
+      const holds = (sheet.ends ?? []).filter((e) => e.track === a.track).map((e) => ({ t: Math.max(0, e.t - Before), hold: true }));
+      const events = [...jumps, ...holds].sort((x, y) => x.t - y.t || (x.hold ? 1 : -1));
+      // Where the actor stands at this moment: in a clip, held after one, or waiting for their first.
+      const before = events.filter((e) => (e.hold ? e.t <= from : e.t < from || (jumped && e.t === from)));
+      const now0 = before[before.length - 1];
+      const waiting = !now0 && jumps.length > 0 && jumps[0].t > from;
+      if (waiting) {
+        // From the warm-up they are somewhere inside the first clip: back to its start, and held there.
+        void (async () => {
+          await this.still(ctx, a, false);
+          await world.jumpWorkspot(a.id, jumps[0].jump).catch(() => false);
+          if (run === this.run) await this.still(ctx, a, true);
+        })();
+      } else void this.still(ctx, a, !!now0?.hold);
+      for (const e of holds) {
+        if (e.t <= from) continue;
+        ctx.timers.push(setTimeout(() => run === this.run && void this.still(ctx, a, true), Math.max(0, t0 + (e.t - from) * 1000 - now())));
+      }
     }
     for (const cue of sheet.timeline) {
       // A cue at the moment itself restarts its clip after the warm-up; after a seek the actor has just jumped to it.
@@ -174,6 +190,8 @@ export class Player {
           let ok = false;
           let error;
           try {
+            // Time runs again for an actor who was held, then they take the jump.
+            if (a) await this.still(ctx, a, false);
             ok = !!a && (await world.jumpWorkspot(a.id, cue.jump));
           } catch (e) {
             error = e.message;
@@ -237,7 +255,8 @@ export class Player {
     if (!ctx?.sheet || this.st.state !== "playing") return false;
     const at = Math.min(Math.max(0, (this.deps.now() - this.st.startedAt) / 1000), ctx.sheet.length);
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
-    for (const a of ctx.cast) await this.still(ctx, a, true);
+    // Everybody at the same moment, not one after another.
+    await Promise.all(ctx.cast.map((a) => this.still(ctx, a, true)));
     if (ctx !== this.ctx) return false;
     this.set({ state: "paused", text: "Paused", pausedAt: at });
     return true;
@@ -247,7 +266,8 @@ export class Player {
   resume() {
     const ctx = this.ctx;
     if (!ctx?.sheet || this.st.state !== "paused") return false;
-    this.begin(ctx, this.run, this.st.pausedAt ?? 0, true);
+    // No lead: the scene's time goes on from exactly where it stood, so the playhead does not step back.
+    this.begin(ctx, this.run, this.st.pausedAt ?? 0, true, 0);
     return true;
   }
 

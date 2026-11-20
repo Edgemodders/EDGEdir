@@ -415,8 +415,8 @@ test("Pause holds everybody still and Resume goes on from there; an actor holds 
   const { world, calls } = fakeWorld();
   const held: string[] = [];
   const player = new Player({ world, player: async () => V, warmMs: 2, leadMs: 2, freeze: async (id: { hash: string }, on: boolean) => void held.push(`${on ? "hold" : "release"} ${id.hash}`) });
-  // Ana's last clip ends at 0.15 s of a scene 0.3 s long.
-  const withEnd = { ...sheet, length: 0.3, ends: [{ t: 0.15, track: "t1" }] };
+  // Her last clip starts at 0.1 s and ends at 0.2 s of a scene 0.3 s long.
+  const withEnd = { ...sheet, length: 0.3, ends: [{ t: 0.2, track: "t1" }] };
   assert.equal(await player.pause(), false);
   await player.play({ id: "a", sheet: withEnd });
   assert.equal(player.resume(), false);
@@ -442,5 +442,31 @@ test("Pause holds everybody still and Resume goes on from there; an actor holds 
   // Start Again lets time run for her again before she jumps.
   await player.seek(0);
   assert.equal(held[3], "release e1");
+  await player.stop();
+});
+
+test("an actor waits in their first pose before their first clip, and holds a clip's last pose through a gap", async () => {
+  const { world, calls } = fakeWorld();
+  const log: string[] = [];
+  const both = { ...world, jumpWorkspot: (id: unknown, to: string) => (log.push(`jump ${to}`), world.jumpWorkspot(id, to)) };
+  const player = new Player({ world: both, player: async () => V, warmMs: 2, leadMs: 2, freeze: async (_id: unknown, on: boolean) => void log.push(on ? "hold" : "release") });
+  // One actor: a clip from 0.1 to 0.2 s, a gap, a clip from 0.3 to 0.4 s, in a scene of 0.5 s.
+  const gappy: CueSheet = {
+    ...sheet,
+    length: 0.5,
+    timeline: [
+      { t: 0.1, track: "t1", jump: "c1" },
+      { t: 0.3, track: "t1", jump: "c2" },
+    ],
+    ends: [
+      { t: 0.2, track: "t1" },
+      { t: 0.4, track: "t1" },
+    ],
+  };
+  await player.play({ id: "a", sheet: gappy });
+  await until(() => player.state().state === "ended");
+  // Waiting: back to the first clip's start and held. Then each clip: released, jumped, and held a moment before its end.
+  assert.deepEqual(log, ["jump c1", "hold", "release", "jump c1", "hold", "release", "jump c2", "hold"]);
+  assert.ok(calls.length > 0);
   await player.stop();
 });

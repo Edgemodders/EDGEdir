@@ -24,6 +24,7 @@ async function whereV() {
 }
 
 let stage: Stage | undefined;
+const trial = new Map<string, number>();
 const player = new Player({
   world,
   player: whereV,
@@ -32,8 +33,22 @@ const player = new Player({
   freeze: async (id: unknown, on: boolean) => {
     const person = await world.entity(id);
     if (!person) throw new Error("the person is not in the world");
-    if (on) await person.SetIndividualTimeDilation("EDGEDirector", 0.0001, 86400);
-    else await person.UnsetIndividualTimeDilation();
+    // A trial (2026-11-20): the first person held in a play gets a dilation of exactly 0 and the next
+    // 0.0001, turn about, and what the game then reads back is logged. In the owner's first try one
+    // person froze and one did not, and the frozen one's hair stretched.
+    const key = JSON.stringify(id);
+    if (on) {
+      if (!trial.has(key)) trial.set(key, trial.size % 2 === 0 ? 0 : 0.0001);
+      const value = trial.get(key)!;
+      await person.SetIndividualTimeDilation("EDGEDirector", value, 86400);
+      const reads = await person.GetTimeDilationValue().catch(() => "?");
+      const has = await person.HasIndividualTimeDilation("EDGEDirector").catch(() => "?");
+      console.log(`EDGE Director: held ${key} at ${value}; the game reads ${reads}, has its own dilation: ${has}`);
+    } else {
+      await person.UnsetIndividualTimeDilation();
+      const reads = await person.GetTimeDilationValue().catch(() => "?");
+      console.log(`EDGE Director: released ${key}; the game reads ${reads}`);
+    }
   },
   report: (state: PlayNow) => {
     put(playDir(), "state.json", { ...state, version });

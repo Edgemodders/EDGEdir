@@ -42,7 +42,11 @@ export interface CueSheet {
   anchor: SceneDoc["anchor"];
   cast: CastMember[];
   timeline: Cue[];
-  /** Where each actor's last clip ends: from there the actor holds that clip's last pose. Absent in sheets from before EDGE Director 0.6.0. */
+  /**
+   * Where an actor's clip ends with no clip starting there: a gap on the lane, or the end of the last
+   * clip. From there the actor holds that clip's last pose until their next clip. Absent in sheets
+   * from before EDGE Director 0.6.0, which played a clip again and again through a gap.
+   */
   ends?: { t: number; track: string }[];
   /** D6a: the weather to hold from a moment, or to give back (`reset`). Absent when the scene has none. */
   weather?: { t: number; state?: string; blend?: number; reset?: true }[];
@@ -128,8 +132,12 @@ export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
     }
     if (member.clips.length) {
       cast.push(member);
-      const last = [...anims].reverse().find((c) => playOf(c)?.anim.set);
-      if (last) ends.push({ t: clipEnd(last), track: lane.id });
+      // A clip's end holds when no played clip starts there: before a gap, and at the last clip.
+      const played = anims.filter((c) => playOf(c)?.anim.set);
+      played.forEach((c, i) => {
+        const next = played[i + 1];
+        if (!next || next.start - clipEnd(c) > 0.001) ends.push({ t: clipEnd(c), track: lane.id });
+      });
     }
   }
   timeline.sort((x, y) => x.t - y.t);
