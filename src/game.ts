@@ -8,6 +8,7 @@ import { AnimSets, gameKey } from "./core/animSets";
 import { BridgeClient } from "./core/bridgeClient";
 import { Cast } from "./core/cast";
 import { defaultCacheDir, resolveBridge, resolveGame, type GameChoice } from "./core/config";
+import { isGameFolder } from "./core/gameFinder";
 import { readEntity, type EntityFacts } from "./core/entity";
 import { findMade, libraryAnims, libraryRoot, projectAnims, type MadeAnim } from "./core/made";
 import { PreviewStore, type PreviewFile } from "./core/preview";
@@ -83,7 +84,16 @@ export class Game {
     this.changed.fire();
   }
 
+  private saidBadPath = "";
+
   private findGame(search: boolean): Promise<GameChoice | undefined> {
+    // A game folder set for EDGEdir that is no game folder is passed over for the next source: said once for each value.
+    const own = String(settings("edgedir.gamePath") ?? "").trim();
+    if (own && own !== this.saidBadPath && !isGameFolder(own)) {
+      this.saidBadPath = own;
+      this.log(`The setting edgedir.gamePath (${own}) is not a Cyberpunk 2077 folder: no bin\x64\Cyberpunk2077.exe in it. It is passed over.`);
+      void vscode.window.showWarningMessage(`EDGEdir: the setting edgedir.gamePath is not a Cyberpunk 2077 folder (no bin\x64\Cyberpunk2077.exe in it), so it is not used: ${own}`);
+    }
     return resolveGame(settings, { redcodeGamePath: () => redcode()?.gamePath(), edgedeckGamePath: () => edgedeck()?.gamePath() }, search);
   }
 

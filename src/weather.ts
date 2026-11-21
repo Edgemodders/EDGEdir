@@ -101,7 +101,7 @@ export function weatherCues(doc: SceneDoc): { cues: WeatherCue[]; notes: { clip:
     if (!touches) cues.push({ t: clipEnd(c), reset: true, clip: c.id });
     notes.push({ clip: c.id, text: `The change to ${weatherLabel(w.state)} starts at the clip's start and is asked to take ${w.blend} s; in REDnode's test the game took a couple of seconds whatever was asked.` });
     if (!touches) notes.push({ clip: c.id, text: "At this clip's end the weather goes back to what it was before the scene, over about 10 s." });
-    if (w.blend > c.length + Near) notes.push({ clip: c.id, text: `The blend (${w.blend} s) is longer than the clip (${Math.round(c.length * 100) / 100} s): the next change starts before this one is done.` });
+    if (w.blend > c.length + Near) notes.push({ clip: c.id, text: `The blend (${w.blend} s) is longer than the clip (${Math.round(c.length * 100) / 100} s): ${touches ? "the next change starts" : "the weather starts to go back"} before this one is done.` });
   });
   for (const c of track.clips) if (c.kind === "weather" && !weatherOf(c)) notes.push({ clip: c.id, text: "Left out of the game: this clip has no weather yet." });
   return { cues, notes };

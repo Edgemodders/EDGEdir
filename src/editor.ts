@@ -183,6 +183,8 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
      * Sends the document, and whether it differs from the file on disk: the page keeps unsaved edits
      * across a window reload, and document.isDirty is not yet true when the change event comes.
      */
+    let weatherTries = 0;
+    let closed = false;
     const sendDoc = () => {
       const text = document.getText();
       try {
@@ -194,7 +196,12 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         }
         const doc = readScene(document.uri.path, text);
         // D6a: a scene with a weather track gets the game's weathers for its list, read once.
-        if (doc.tracks.some((t) => t.kind === "weather") && !this.weathers.list().length) void this.weathers.load().then((got) => got && sendDoc());
+        // A read that fails (the bridge may not be up yet) is asked again by itself, a few times.
+        if (doc.tracks.some((t) => t.kind === "weather") && !this.weathers.list().length)
+          void this.weathers.load().then((got) => {
+            if (got) sendDoc();
+            else if (!closed && weatherTries++ < 6) setTimeout(() => !closed && !this.weathers.list().length && sendDoc(), 5000);
+          });
         post({ type: "doc", doc, weathers: this.weathers.list(), dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc), stage: isSeqFile(document.uri.path) ? undefined : this.sets.stage(doc) });
       } catch (e) {
         post({ type: "invalid", text: (e as Error).message });
@@ -219,6 +226,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
       if (d.uri.toString() === document.uri.toString()) sendDoc();
     });
     panel.onDidDispose(() => {
+      closed = true;
       this.scenes.delete(panel);
       this.senders.delete(panel);
       if (this.last === panel) this.last = undefined;
