@@ -7,7 +7,7 @@ import * as crypto from "node:crypto";
 import { markOf, setMark, setPlace, type SceneDoc } from "../src/doc";
 import * as path from "node:path";
 import { forgetPin, linkPins, markAtPin, pinsOf, placeAtPin, type Pin } from "../src/pins";
-import { edit, isUnsaved, open, pinFileOf, readPinFile, rootsOf, scenes, syncPins, writePinFile, type Playable, type SceneView } from "./floor";
+import { edit, isUnsaved, open, pinFileOf, readPinFile, rootsOf, same, scenes, syncPins, writePinFile, type Playable, type SceneView } from "./floor";
 import { frameOf, markAt, placeOf, turnOf, type Frame } from "./play.mjs";
 import { Active, type CastNow, type PageMessage, type PlayNow, type Snapshot } from "./protocol";
 
@@ -171,10 +171,12 @@ export class Stage {
     }
     this.error = undefined;
     this.from = "editor";
-    this.playing = request.file;
-    if (request.file) {
+    // VS Code names a file with a small drive letter: the Desk's own spelling is used, so the window knows the row.
+    const file = request.file && (scenes(this.deps.desk).find((s) => same(s.file, request.file!))?.file ?? request.file);
+    this.playing = file;
+    if (file) {
       try {
-        this.read(request.file);
+        this.read(file);
       } catch {
         // An unsaved scene has no file yet: it plays, and the window shows the play alone.
       }

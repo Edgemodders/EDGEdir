@@ -168,9 +168,12 @@ export class Player {
       const waiting = !now0 && jumps.length > 0 && jumps[0].t > from;
       if (waiting) {
         // From the warm-up they are somewhere inside the first clip: back to its start, and held there.
+        // After a seek or a pause they are at its start already: no second jump.
         void (async () => {
-          await this.still(ctx, a, false);
-          await world.jumpWorkspot(a.id, jumps[0].jump).catch(() => false);
+          if (!jumped) {
+            await this.still(ctx, a, false);
+            await world.jumpWorkspot(a.id, jumps[0].jump).catch(() => false);
+          }
           if (run === this.run) await this.still(ctx, a, true);
         })();
       } else void this.still(ctx, a, !!now0?.hold);

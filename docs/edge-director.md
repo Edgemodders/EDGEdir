@@ -134,7 +134,7 @@ Left out of DR1, against the plan:
 | One change to the file | `edit` in `director/floor.ts` | Reads the file, applies one of EDGEdir's own edits (`setMark`, `setPlace`), writes it whole through a temp file. An edit's refusal is shown in its own words |
 | The unsaved rule | `writeUnsaved` in `src/play.ts`, `tellUnsaved` in `src/extension.ts`; `unsavedIn`, `isUnsaved` in `director/floor.ts` | EDGEdir writes the scenes it has unsaved into the play folder (`editor.json`), at each change and every 3 s while there are any; a list older than 10 s counts as empty. The Director plays such a scene and refuses to change it |
 | Adjust | `director/stage.ts` (`moveToV`, `nudge`, `mark`, `here`, `front`), the window's **Adjust** section | Move to V; Left, Right, Forward, Back by 10 cm; Turn by 15 degrees; **The Scene Is Here** and **In Front of V**. After each change the people in the game are put where the scene now has them |
-| In VS Code | Nothing new | The scene editor is a text editor underneath, and VS Code reads a file again when it changes on disk and the tab has nothing unsaved. **Unverified:** that the editor shows it at once, and that Undo takes it back |
+| In VS Code | Nothing new | The scene editor is a text editor underneath, and VS Code reads a file again when it changes on disk and the tab has nothing unsaved. In DR2's round by script (2026-11-21) the editor showed it with no click, the tab not unsaved, and Undo took it back |
 
 How DR2 differs from the plan:
 

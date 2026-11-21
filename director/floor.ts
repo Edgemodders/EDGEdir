@@ -170,7 +170,8 @@ export function unsavedIn(playDir: string, now = Date.now(), within = 10000): st
   }
 }
 
-const same = (a: string, b: string) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+/** Whether two paths name one file: Windows gives a drive's letter in either case. */
+export const same = (a: string, b: string) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
 
 /** Whether VS Code has unsaved changes to this scene's file. */
 export const isUnsaved = (file: string, playDir: string, now = Date.now()) => unsavedIn(playDir, now).some((f) => same(f, file));

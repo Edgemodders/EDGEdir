@@ -12,14 +12,14 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-20 | Pass, 87 tests |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-20 | Pass, 88 tests |
 | [The owner's tests, A to H](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to H in the game | D1 to D5, DR1 to DR3, D6a | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
-| [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | | Not run yet (0.0.28, EDGE Director 0.5.0) |
-| [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | | Not run yet (0.0.26, EDGE Director 0.4.0) |
-| [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | | Not run yet (0.0.27) |
-| [DR2 Adjust](#dr2-adjust) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR2 | | Not run yet (0.0.25, EDGE Director 0.3.0) |
-| [DR1 The Director's window](#dr1-the-directors-window) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR1 | | Not run yet (0.0.24, EDGE Director 0.2.0) |
-| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes. Step 3 changed in 0.0.24 (no copy into the game's folder): not run |
+| [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | 2026-11-21 | By script: round 1, 8 of 11 (0.0.29): steps 3, 4 and 6 found no In the game lines on a weather clip. Fixed in 0.0.30, not run |
+| [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29, EDGE Director 0.6.0) |
+| [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29). One change from its notes in 0.0.30, not run |
+| [DR2 Adjust](#dr2-adjust) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR2 | 2026-11-21 | By script: round 1, 12 of 12 (0.0.29, EDGE Director 0.6.0). Step 10's words changed in EDGE Director 0.6.1 |
+| [DR1 The Director's window](#dr1-the-directors-window) | Hand, in a browser and in VS Code, with a stand-in for the game; no game | DR1 | 2026-11-21 | By script: round 1, 12 of 13 (0.0.29, EDGE Director 0.6.0): step 12 missed the In the game tag. Fixed in EDGE Director 0.6.1, not run |
+| [D5d Play in game, in VS Code](#d5d-play-in-game-in-vs-code) | Hand, in VS Code, with a stand-in for the player; no game | D5d, D5c | 2026-11-17 | By script: round 1, 13 of 13 (0.0.22); round 2, the fix of 0.0.23 passes. Step 3 as changed in 0.0.24: on 2026-11-21 the "in the game's folder, not running" case passed; the "no Director" case (Open the Download) was not met |
 | [D5a Sets](#d5a-sets) | Hand, in VS Code, with the game's files, REDbridge 0.14.0 and an EDGE Library | D5a | 2026-11-17 | By script: round 1, 11 of 14 (0.0.18: steps 2, 7 and 9 each missed one expectation); round 2, those and step 11 pass on 0.0.19. Every step has passed |
 | [D5b The cue sheet](#d5b-the-cue-sheet) | Hand, in VS Code, with the game's files and REDbridge 0.14.0 | D5b | 2026-11-17 | By script: 10 of 10 pass (0.0.16); the two changes of 0.0.18 from its notes pass too |
 | [D1 Timeline](#d1-timeline) | Hand, in VS Code | D1 | 2026-11-16 | By script: round 1, 22 of 22 (0.0.2); round 2, the three steps new in 0.0.3 pass (0.0.6). Step 23 is a known limit of VS Code's, not a fault |
@@ -50,11 +50,11 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
 - **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): not run yet. Nothing of EDGEdir has run in the game at all.
-- **DR2 Adjust**, 12 steps with a stand-in for the game: not run yet.
-- **DR3 Pins**, 10 steps with a stand-in for the game: not run yet. The owner's is Test G.
-- **D6a Weather**, 11 steps in VS Code and with the stand-in: not run yet.
-- **DR3 Pins in the editor**, 10 steps in VS Code: not run yet. The owner's is step D3 of Test D.
-- **DR1 The Director's window**, 13 steps with a stand-in for the game: not run yet. With it, D5d's changed step 3 (EDGEdir 0.0.24 asks for EDGE Director's download and copies nothing).
+- **DR2 Adjust** passed its round by script (12 of 12, 2026-11-21). The box's words changed in EDGE Director 0.6.1 (the scene plays as it was last saved).
+- **DR3 Pins** passed its round by script (10 of 10, 2026-11-21). The owner's is Test G.
+- **D6a Weather**: round 1 by script, 8 of 11 (2026-11-21). **Open: a rerun of steps 3, 4, 6 and 11 on 0.0.30**, which shows In the game on a weather clip.
+- **DR3 Pins in the editor** passed its round by script (10 of 10, 2026-11-21). Open: step 10 again on 0.0.30 (the scene's place names its gone pin). The owner's is step D3 of Test D.
+- **DR1 The Director's window**: round 1 by script, 12 of 13 (2026-11-21). **Open: a rerun of steps 6 and 12 on EDGE Director 0.6.1**, and D5d's step 3 in its "no Director" case (the message with Open the Download), which the round could not meet: the game's folder has EDGE Director now, and `edgedir.gamePath` set to an empty scratch folder was not the folder looked in.
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -650,7 +650,7 @@ EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18). The window and its steps w
 | 4 | Look at **Cast** while it plays | Each actor with the clip they play now, which changes at each clip's start, and a distance in metres |
 | 5 | Press down on the ruler at about two thirds and let go | The time goes there and runs on. The stand-in prints one `jump` for each actor to that moment's clip, and no `spawn` |
 | 6 | Click **Start Again** | The time starts from 0. A `jump` for each actor to their first clip; no `spawn` |
-| 7 | Switch **Loop** on and wait for the end; then switch it off and wait again | At the end the scene starts again by itself. With Loop off, the line says the scene has ended and the cast holds its last clips until Stop, and the playhead stays at the end |
+| 7 | Switch **Loop** on and wait for the end; then switch it off and wait again | At the end the scene starts again by itself. With Loop off, the line says the scene has ended and the cast holds its last pose until Stop, and the playhead stays at the end |
 | 8 | Click an actor's row; click it again; click **Go There** on the other | The row and the actor's lane are lit, and the stand-in prints a `pin` with the actor's name; again, an `unpin`. Go There prints a `teleport` 1.8 m in front of that actor, and the distances change |
 | 9 | Click **Stop** | The line reads Stopped: the cast is removed. A `remove` for each actor. Cast says nobody is in the game |
 | 10 | Press down on the ruler at a third, then click **Play** | The play starts there: the `use` of each actor names that moment's clip, and the time starts from that moment |
@@ -660,7 +660,17 @@ EDGEdir 0.0.24 with EDGE Director 0.2.0 (2026-11-18). The window and its steps w
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1 to 6, 8 and 9 once by script in a browser against a hand-made scratch Desk, and they showed what is written here; that was not a round |
+| 1 | 2026-11-21 | 1 to 13 | **12 of 13; step 12 missed one expectation.** Run by the EDGEweb session by script at the owner's request, on 0.0.29 at `355bd66` with the stand-in at EDGE Director 0.6.0 (a trial EDGEkit 1.143.1 window, scratch Desk, cache, Library and `%APPDATA%`, REDbridge 0.14.0, the real game folder read only; the Director's page in a headless Edge with the stand-in's `--kit`, real pointer events, judged from the page, `edgeDirector.state()` and the stand-in's output; nobody watched it live). The scene: Judy with three clips end to end, Panam with two and a gap before each; the stand-in printed a hold in each gap and at Panam's wait before her first clip. In step 12 the strip showed VS Code's saved change after 1.3 s, and the play from VS Code ran in both; the scene's row had no In the game tag |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 12: the scene's row in Scenes had no In the game tag for a play from VS Code. VS Code names the file with a small drive letter and the Desk's list with a capital, and the two were compared as text | Fixed in EDGE Director 0.6.1: a play from VS Code takes the Desk's own spelling of the file. Not run |
+| Start Again and the loop's start printed a waiting actor's first jump twice | Fixed in EDGE Director 0.6.1: after a seek the actor is at the clip's start already and is only held. Not run |
+| Step 10: for a moment the clock showed about 0.3 s before the chosen moment | Left: the play starts a short lead after the cast is ready, and the clock counts up to it |
+| Step 7: the line says the cast holds its last pose; the step said last clips | The step's text follows the line now |
+| Step 1: without the stand-in's `--kit`, Loop's switch fires no change in a plain browser | Left: run the stand-in with `--kit` for this test |
 
 ## DR2 Adjust
 
@@ -679,13 +689,19 @@ EDGEdir 0.0.25 with EDGE Director 0.3.0 (2026-11-18). Adjust with no game, as [D
 | 7 | Click **The Scene Is Here** | No `move`. The header reads "at" and three numbers, and **In Front of V** shows. In VS Code the file has `"anchor": { "mode": "world", ... }` |
 | 8 | Click **Stop**, then **Move to V** | It works with nobody in the game: the numbers change, no `move` is printed |
 | 9 | Click **In Front of V** | The header reads "in front of V" again and the button goes |
-| 10 | In VS Code move a clip and do not save | Within about 4 s the page shows a yellow box about unsaved changes in VS Code; Adjust's buttons and The Scene Is Here are off. **Play** plays, and the stand-in's `write` has the moved clip's scene. Clicking an Adjust button does nothing |
+| 10 | In VS Code move a clip and do not save | Within about 4 s the page shows a yellow box about unsaved changes in VS Code; Adjust's buttons and The Scene Is Here are off. **Play** plays the scene as it was last saved (the box says so; the moved clip is not in it). Clicking an Adjust button does nothing |
 | 11 | Save in VS Code | Within about 4 s the box goes and the buttons are on |
 | 12 | Open the scene on a set and click the directed person's name on the strip | Adjust says the actor is placed by the set, with no buttons. The header has no The Scene Is Here |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1, 2 (the page's side), 4 to 9 once by script in a browser, and they showed what is written here; that was not a round. Nothing of it has run with VS Code |
+| 1 | 2026-11-21 | 1 to 12 | **Pass, 12 of 12.** Run by the EDGEweb session by script at the owner's request, on 0.0.29 at `355bd66` with the stand-in at EDGE Director 0.6.0 (a trial EDGEkit 1.143.1 window, scratch Desk, cache, Library and `%APPDATA%`, REDbridge 0.14.0, the real game folder read only; the Director's page in a headless Edge with the stand-in's `--kit`, real pointer events, judged from the page, `edgeDirector.state()` and the stand-in's output; nobody watched it live). VS Code showed an Adjust change in the open scene with no click (under 100 ms at the first look), the tab not unsaved, and Ctrl+Z took it back: this supersedes "unverified" for both. The yellow box came 0.87 s after an unsaved change and went 0.76 s after the save |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 10: with unsaved changes in VS Code, Play in the window plays the saved file, not VS Code's version; the step read as if the unsaved version played | As meant: the window reads the file. The box now says "It plays here as it was last saved" (EDGE Director 0.6.1), and the step's text follows. Not run |
 
 ## DR3 Pins
 
@@ -708,7 +724,7 @@ EDGEdir 0.0.26 with EDGE Director 0.4.0 (2026-11-18). The Director's pins with n
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet. While building (2026-11-18) Claude ran steps 1 to 3, 5 (with nothing playing) and 9 once by script in a browser, and they showed what is written here; that was not a round |
+| 1 | 2026-11-21 | 1 to 10 | **Pass, 10 of 10.** Run by the EDGEweb session by script at the owner's request, on 0.0.29 at `355bd66` with the stand-in at EDGE Director 0.6.0 (a trial EDGEkit 1.143.1 window, scratch Desk, cache, Library and `%APPDATA%`, REDbridge 0.14.0, the real game folder read only; the Director's page in a headless Edge with the stand-in's `--kit`, real pointer events, judged from the page, `edgeDirector.state()` and the stand-in's output; nobody watched it live). Run twice from a reset scene (the first run clicked a wrong button). In step 7 the mark followed the pin file 1.3 s after it changed, with no click |
 
 ## DR3 Pins in the editor
 
@@ -727,11 +743,17 @@ EDGEdir 0.0.27 (2026-11-18). Pins in VS Code: the inspector's Pins section, a pi
 | 7 | Set At pin to the second pin again and save. In a text editor move that pin 2 m in `Talk.pins.json` and save | Within about 3 s the post and the body move 2 m with no click; the status bar says the scene follows its pins; the tab is unsaved |
 | 8 | Ctrl+Z | The body and the post go back |
 | 9 | Click **Remove Pins** | The Pins section says no pins. The bodies stay where they are, the posts go, and At pin is gone from the track |
-| 10 | Ctrl+Z, then **Choose Pins...** and pick the file from the game | The scene has that file's one pin; the actor's At pin shows the old pin as gone and keeps its place |
+| 10 | Ctrl+Z, then **Choose Pins...** and pick the file from the game | The scene has that file's one pin; the actor's At pin shows the old pin as gone and keeps its place. A scene whose place was at a pin that is gone reads "The pin <name> (gone)" in The scene's place |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet. While building (2026-11-18) Claude ran the page's side of steps 1 and 3 to 6 once by script in a plain browser (`tools/page-harness.mjs`), judged by the page's state; that was not a round. Choose Pins, the watch and Undo have not run |
+| 1 | 2026-11-21 | 1 to 10 | **Pass, 10 of 10.** Run by the EDGEweb session by script at the owner's request, on 0.0.29 at `355bd66` with the stand-in at EDGE Director 0.6.0 (a trial EDGEkit 1.143.1 window, scratch Desk, cache, Library and `%APPDATA%`, REDbridge 0.14.0, the real game folder read only; the Director's page in a headless Edge with the stand-in's `--kit`, real pointer events, judged from the page, `edgeDirector.state()` and the stand-in's output; nobody watched it live), steps 4, 5 and 7 by sight too. The pins folder was a scratch `%APPDATA%\@rednode\overlay\pins`, not the owner's. In step 7 the inspector followed the pin file 0.44 s after it changed |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 10: after another pin file was chosen, The scene's place read "In front of V" though the scene kept its place in the world: the gone pin had no entry in the list | Fixed in 0.0.30: it reads "The pin <name> (gone)". The step's text has it. Not run |
 
 ## D6a Weather
 
@@ -751,8 +773,16 @@ EDGEdir 0.0.28 with EDGE Director 0.5.0 (2026-11-18). The weather track in VS Co
 | 8 | Play again and click **Stop in Game** at about 4 s | A `weather-back` with the `remove` |
 | 9 | Mute the Weather track and play | No `weather` is printed |
 | 10 | Unmute it. Make a new scene with only a Weather track and one Rain clip, and click **Play in Game** | It plays: no `write` and no `spawn`, a `weather`, and at the clip's end `weather-back` and "The scene has ended" |
-| 11 | In the stand-in's page (http://127.0.0.1:4173/) open the first scene | The strip has the Weather lane with Rain and Sunny on its clips, lit |
+| 11 | In the stand-in's page (http://127.0.0.1:4173/) open the first scene | The strip has the Weather lane with Rain and Sunny on its clips, lit. The lane's name says in its tooltip that each clip holds its weather in the game |
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | | Not run yet. While building (2026-11-18) Claude saw step 5's line, tint and state once by script in a plain browser (`tools/page-harness.mjs`); that was not a round |
+| 1 | 2026-11-21 | 1 to 11 | **8 of 11; steps 3, 4 and 6 each missed the inspector's In the game lines.** Run by the EDGEweb session by script at the owner's request, on 0.0.29 at `355bd66` with the stand-in at EDGE Director 0.6.0 (a trial EDGEkit 1.143.1 window, scratch Desk, cache, Library and `%APPDATA%`, REDbridge 0.14.0, the real game folder read only; the Director's page in a headless Edge with the stand-in's `--kit`, real pointer events, judged from the page, `edgeDirector.state()` and the stand-in's output; nobody watched it live), step 5 by sight too. The list had the game's 15 weathers at once. In the stand-in the weather was set at each clip's start and given back at the last clip's end, at Stop, and not at all with the track muted; a scene with only weather played with no write and no spawn |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Steps 3, 4 and 6: a weather clip's inspector had no In the game heading and none of its lines (the change and its blend, going back at the end, a blend longer than the clip). The lines were in Play in Game's question and in the Director's window | Fixed in 0.0.30: the inspector shows In the game for a weather clip as for an actor's. Not run |
+| Step 11: the weather lane's name in the Director's window had the tooltip "weather tracks do not play in the game yet" | Fixed in EDGE Director 0.6.1: it says each clip holds its weather in the game. Not run |
+| Step 2: the text box of before the list was not seen | Left: the game had been read earlier in that window, so the list was there at once |

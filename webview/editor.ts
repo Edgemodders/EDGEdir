@@ -735,7 +735,8 @@ function drawInspector() {
       );
     } else if (track.kind === "actor" && play && bareJoin(track, clip)) box.append(note("No transition leads into this clip: the preview cuts here. The game will blend it briefly by itself."));
     // D5b: what the game will not play as the preview shows it. The cut at a bare join is said above.
-    if (track.kind === "actor") {
+    // D6a: a weather clip says what the game does with it.
+    if (track.kind === "actor" || track.kind === "weather") {
       // In a sequence's own tab every clip would say the same thing (it plays on an actor, in a scene): left out there.
       const said = notesFor(cuesOf(d).notes, track, clip).filter((n) => n.kind !== "cut" && !(seqMode && n.kind === "standIn"));
       if (said.length) {
@@ -867,11 +868,13 @@ function drawInspector() {
         box.append(f);
         const place = placePin(d) ?? "";
         const world = (d.anchor as { mode: string }).mode === "world";
+        // A place that follows a pin the chosen pins no longer have: it keeps its numbers, and says so.
+        const placeGone = !!place && !pins.pins.some((p) => p.title === place);
         if (!d.set)
           box.append(
             field(
               "The scene's place",
-              choice("f-placepin", place || (world ? "\u0000place" : ""), [["", "In front of V"], ...(world && !place ? [["\u0000place", "A place in the world", true] as [string, string, boolean]] : []), ...pins.pins.map((p): [string, string] => [p.title, `The pin ${p.title}`])], (v) =>
+              choice("f-placepin", placeGone ? "\u0000place" : place || (world ? "\u0000place" : ""), [["", "In front of V"], ...(world && (!place || placeGone) ? [["\u0000place", placeGone ? `The pin ${place} (gone)` : "A place in the world", true] as [string, string, boolean]] : []), ...pins.pins.map((p): [string, string] => [p.title, `The pin ${p.title}`])], (v) =>
                 change((x) => (v ? placeAtPin(x, v) : setPlace(x, undefined))),
               ),
             ),
