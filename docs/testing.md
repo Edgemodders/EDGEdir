@@ -52,9 +52,9 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): not run yet. Nothing of EDGEdir has run in the game at all.
 - **DR2 Adjust** passed its round by script (12 of 12, 2026-11-21). The box's words changed in EDGE Director 0.6.1 (the scene plays as it was last saved).
 - **DR3 Pins** passed its round by script (10 of 10, 2026-11-21). The owner's is Test G.
-- **D6a Weather**: round 1 by script, 8 of 11 (2026-11-21). **Open: a rerun of steps 3, 4, 6 and 11 on 0.0.30**, which shows In the game on a weather clip.
+- **D6a Weather**: round 1 by script, 8 of 11 (2026-11-21). Step 11's fix passed its rerun. **Open: a rerun of steps 3, 4 and 6 on 0.0.30**, which shows In the game on a weather clip.
 - **DR3 Pins in the editor** passed its round by script (10 of 10, 2026-11-21). Open: step 10 again on 0.0.30 (the scene's place names its gone pin). The owner's is step D3 of Test D.
-- **DR1 The Director's window**: round 1 by script, 12 of 13 (2026-11-21). **Open: a rerun of steps 6 and 12 on EDGE Director 0.6.1**, and D5d's step 3 in its "no Director" case (the message with Open the Download), which the round could not meet: the game's folder has EDGE Director now, and `edgedir.gamePath` set to an empty scratch folder was not the folder looked in.
+- **DR1 The Director's window**: round 1 by script, 12 of 13 (2026-11-21). Step 6's fix passed its rerun. **Open: a rerun of step 12 on EDGE Director 0.6.1** (it needs a VS Code window, which waits until the owner is out of the game), and D5d's step 3 in its "no Director" case (the message with Open the Download), which the round could not meet: the game's folder has EDGE Director now, and `edgedir.gamePath` set to an empty scratch folder was not the folder looked in.
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -667,7 +667,7 @@ What round 1 found, and what was done:
 | Found | Done |
 |---|---|
 | Step 12: the scene's row in Scenes had no In the game tag for a play from VS Code. VS Code names the file with a small drive letter and the Desk's list with a capital, and the two were compared as text | Fixed in EDGE Director 0.6.1: a play from VS Code takes the Desk's own spelling of the file. Not run |
-| Start Again and the loop's start printed a waiting actor's first jump twice | Fixed in EDGE Director 0.6.1: after a seek the actor is at the clip's start already and is only held. Not run |
+| Start Again and the loop's start printed a waiting actor's first jump twice | Fixed in EDGE Director 0.6.1: after a seek the actor is at the clip's start already and is only held. Passed by script on 2026-11-21 (EDGEweb session, stand-in 0.6.1): one jump, then hold, at Start Again and at the loop's start |
 | Step 10: for a moment the clock showed about 0.3 s before the chosen moment | Left: the play starts a short lead after the cast is ready, and the clock counts up to it |
 | Step 7: the line says the cast holds its last pose; the step said last clips | The step's text follows the line now |
 | Step 1: without the stand-in's `--kit`, Loop's switch fires no change in a plain browser | Left: run the stand-in with `--kit` for this test |
@@ -784,5 +784,5 @@ What round 1 found, and what was done:
 | Found | Done |
 |---|---|
 | Steps 3, 4 and 6: a weather clip's inspector had no In the game heading and none of its lines (the change and its blend, going back at the end, a blend longer than the clip). The lines were in Play in Game's question and in the Director's window | Fixed in 0.0.30: the inspector shows In the game for a weather clip as for an actor's. Not run |
-| Step 11: the weather lane's name in the Director's window had the tooltip "weather tracks do not play in the game yet" | Fixed in EDGE Director 0.6.1: it says each clip holds its weather in the game. Not run |
+| Step 11: the weather lane's name in the Director's window had the tooltip "weather tracks do not play in the game yet" | Fixed in EDGE Director 0.6.1: it says each clip holds its weather in the game. Passed by script on 2026-11-21 (EDGEweb session, stand-in 0.6.1) |
 | Step 2: the text box of before the list was not seen | Left: the game had been read earlier in that window, so the list was there at once |
