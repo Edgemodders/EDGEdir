@@ -12,8 +12,9 @@ Last updated 2026-11-17.
 
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
-| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-20 | Pass, 88 tests |
-| [The owner's tests, A to H](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to H in the game | D1 to D5, DR1 to DR3, D6a | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
+| [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-26 | Pass, 97 tests |
+| [D6b Audio](#d6b-audio) | Hand, in VS Code, and a stand-in for the game | D6b | | Not run yet (0.0.33, EDGE Director 0.7.0) |
+| [The owner's tests, A to I](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to I in the game | D1 to D5, DR1 to DR3, D6a, D6b | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
 | [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | 2026-11-21 | By script: round 1, 8 of 11 (0.0.29); the fixes of 0.0.30 passed their rerun. 0.0.31's small changes and 0.0.32's fixes passed by script, but for the game path warning's text, read in the log only |
 | [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29, EDGE Director 0.6.0) |
 | [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29); round 2, 10 of 10 with 0.0.30's change |
@@ -52,6 +53,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): not run yet. Nothing of EDGEdir has run in the game at all.
 - **DR1, DR2, DR3 Pins, DR3 Pins in the editor and D6a Weather** have each passed by script (2026-11-21): their rounds on 0.0.29, and the fixes of 0.0.30 with EDGE Director 0.6.1 in a rerun. D5d's step 3 passed in both its cases; Open the Download itself was not pressed.
 - **0.0.31's three small changes** ran by script on 2026-11-25: the last weather clip's sentence passes; the warning for an `edgedir.gamePath` that is no game folder passes with its path misprinted; the weather list coming by itself missed. 0.0.32's fix for the list passed its rerun. Open: the corrected warning's text has been read in the log only, not in the warning itself.
+- **D6b Audio** (0.0.33 with EDGE Director 0.7.0, 2026-11-26): its round by script (14 steps) has not run, and the owner's Test I (9 steps, in the game) has not run.
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -69,6 +71,7 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 | [F](#test-f-edge-director-in-the-game-adjust) | EDGE Director in the game: adjust a scene | As E | 15 minutes | Not run yet |
 | [G](#test-g-edge-director-in-the-game-pins) | EDGE Director in the game: pins | As E | 10 minutes | Not run yet |
 | [H](#test-h-weather) | Weather: in the editor, then in the game | As E, with REDnode 0.67.2 or later | 10 minutes | Not run yet |
+| [I](#test-i-sound) | Sound: in the editor, then in the game | As E, with EDGE Director 0.7.0, and a sound file of your own (a spoken line is best) | 15 minutes | Not run yet |
 
 Tests A to D are the spot tests S1 to S12 and S15, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
 
@@ -127,7 +130,7 @@ Tests A to D are the spot tests S1 to S12 and S15, one short test for each major
 
 EDGEdir 0.0.29 with EDGE Director 0.6.0. The in-game test of D5c, D5d and DR1, run with EDGE Director's window. It answers D5's questions G1 to G7. Say what you see at each step; the Director's own record of the play is `%LOCALAPPDATA%\EDGEdir\play\state.json` (each jump's lateness in ms is under `late`).
 
-**Before Tests E to H:** REDnode 0.67.2 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.6.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
+**Before Tests E to I:** REDnode 0.67.2 or later with REDbridge and Codeware. EDGE Director in the game: in the EDGEdir folder run `npm run build`, then `npm run director-zip -- --draft`, and install `dist/EDGE-Director-0.6.0-draft.zip` with EDGEdeck or Vortex. The game running with a save loaded, V standing somewhere open, outside combat. On the Desk, the scene of Test C, saved: two actors (two different people of the game, not V), each with two animation clips joined by a transition, and one of them with a sequence block; the first actor at Right -1 and the second at Right 1, both Turn 180.
 
 | Step | Do | Expect, and say |
 |---|---|---|
@@ -222,6 +225,26 @@ EDGEdir 0.0.28 with EDGE Director 0.5.0. D6a, in the editor and then in the game
 |---|---|---|
 | 1 | | Not run yet |
 
+### Test I: Sound
+
+EDGEdir 0.0.33 with EDGE Director 0.7.0. D6b, in the editor and then in the game. Use the scene of Test C, and a sound file of your own a few seconds long (WAV, OGG, MP3 or FLAC; a spoken line shows the timing best).
+
+| Step | Do | Expect, and say |
+|---|---|---|
+| I1 | In VS Code open the scene, **Add Track**, Audio. Select the new track and click **Add Sound File**; pick your file | A clip as long as the file lands at the playhead, with the file's waveform drawn in it. The file is now in an `audio` folder beside the scene's file |
+| I2 | Put the playhead before the clip and press Space | The sound is heard when the playhead reaches the clip, in time with the actors. Say whether it starts on time |
+| I3 | Drag the clip's start edge to the right by about a second, and play again | The waveform loses its first second, and the sound starts a second into the file |
+| I4 | Select the clip, set **Fade out (s)** to 1 and **Follows** to Dialogue volume, and play | The sound dies away over its last second |
+| I5 | Click **Add Game Sound** and pick a sound (with EDGEwave installed it is a list to search; else type a name such as `ui_menu_onpress`). Click **Hear** | A second clip, hatched, that says it is silent here. With EDGEwave, Hear plays one recording |
+| I6 | Save. In the game, in EDGE Director, open the scene | The strip has the Audio lane with both clips, lit |
+| I7 | Press **Play** | Your file is heard at its clip, from the point you trimmed it to, and fades out. Say whether it is in time with the actors, and whether the game's Dialogue volume slider changes it. Say whether the game sound is heard at its clip |
+| I8 | While the file plays press **Pause**, then **Resume** | The sound stops with the actors and goes on from where the scene stands. Say how clean the join is |
+| I9 | Play again and press **Stop** while the file plays; then drag the playhead into the file's clip | Stop fades the sound out. From the playhead the sound starts part way in |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
 ## Type check, build and unit tests
 
 ```powershell
@@ -233,6 +256,8 @@ npm test
 The **Check** workflow runs the same on every push to `main`. The tests are pure: no VS Code and no game. The scaffold's 3 tests check that the activity bar container has its icon, and that the views the extension registers are the ones package.json declares, each with welcome text. D1.1's 16 tests (`test/doc.test.ts`) check the scene document: reading and writing it, the messages for a file that is not a scene, that fields of later phases survive an edit, and every edit's rules (tracks, add, move, trim, split, paste, the no-overlap rule and its exception for transitions, locked tracks, snap). D1.6's 4 tests (`test/desk.test.ts`) check the Desk's folders in a temporary folder: a new scene's item shape, names, the list, and rename. D4b's 6 tests (`test/seq.test.ts`) check a sequence's file, the block on a lane (as long as its clips, not trimmed or split, unpacked), the pose through a block, a linked block taking the sequence as it is now, what Save as Sequence takes, and the Desk's sequence items. D4a's 6 tests (`test/transition.test.ts`) check a transition's method and ease, where Add Transition puts one, which clips it joins, the pose under a Blend and an Inertial one, and what it says about the game. D3's 7 tests (`test/preview.test.ts`) check the pose under the playhead (a clip's own time, loops, a gap, a clip passed over), the marks, and the preview's files with a stand-in bridge: exported once, found again, V's base body, a failure not kept.
 
 D5c and D5d's 5 tests (`test/play.test.ts`) check the player's steps against a stand-in world (where the cast stands in front of V and on a set; write, spawn, start and jumps on time; one swap; nothing written twice; Stop; a failure that leaves nobody), and the folder EDGEdir reaches it through, with a developer's copy of the Director into a made-up game folder.
+
+D6b's 9 tests (`test/sound.test.ts`) check a sound clip's rules (a file's clip as long as the file, a game sound's length, volume, fades and the slider it follows), trim and split at the file's ends, the cues and their notes, a file kept once in the scene's `audio` folder and found from the scene's file, the Director's copy into its data folder, a Desk scene's sounds as the Director reads them, and the player against a stand-in for REDnode's audio (each sound at its cue and stopped at its clip's end, a play from a moment, Pause, Resume, a new moment and Stop, a missing file and a sound that fails).
 
 D6a's 3 tests (`test/weather.test.ts`) check a weather clip's state and blend and the one weather track, the cues (a state at each clip's start, the weather given back where no clip follows, the notes, a scene with weather alone), and the player (states set on time, given back at a clip's end and at Stop, the state of the moment a play starts from, a weather the game refuses).
 
@@ -790,3 +815,30 @@ What round 1 found, and what was done:
 | That run: an `edgedir.bridgePath` with no REDbridge in it is passed over for REDcode's in the same silent way | Left, for the owner's word: the same warning could be said there |
 | That run: EDGEdir's log lines carry UTC times, REDbridge's lines beside them local time | Left |
 | The rig of both runs of 2026-11-25, as EDGEweb corrected it afterwards: EDGEkit 1.143.1's built-in REDcode 0.10.13 was running in those windows (its built-in extensions are not switched off by `--disable-extensions`), though this checkout's REDcode was left out. The results stand: what the page showed and when | Noted. No run of EDGEdir without REDcode beside it has been made on that rig |
+
+## D6b Audio
+
+EDGEdir 0.0.33 with EDGE Director 0.7.0 (2026-11-26). The audio track in VS Code, and the calls the Director would make, with the stand-in (`node dist/director-standin.mjs`). The stand-in prints `sound` with the copied file's name and its settings, `sound-stop` with the fade, and `game-sound` and `game-sound-stop` with the name.
+
+**Before you start:** F5 (**Run EDGEdir**). A saved scene on the Desk with one actor of the game with a clip 10 s long. Two sound files of a few seconds, one a WAV (any made-up tone will do) and one an MP3 or OGG. The stand-in running on the same `LOCALAPPDATA`. In the page's developer tools, `edgedirSound.state()` says which files are read, and what play started.
+
+| Step | Do | Expect |
+|---|---|---|
+| 1 | **Add Track**, Audio, and select the track | The toolbar has **Add Sound File** and **Add Game Sound**, and no Add Clip; the inspector has the same two buttons and a note that sounds are heard flat in the game |
+| 2 | Put the playhead at 2 s and click **Add Sound File**; pick the WAV | A clip at 2 s as long as the file, selected, named for the file, with its waveform. The file is in `audio` beside the scene's file. The inspector has **File** (`data-state` "found"), its length, **Volume** 1, **Fade in (s)**, **Fade out (s)**, **Follows**, and under **In the game** that it is heard flat, as if at V. `edgedirSound.state().loaded` has the file |
+| 3 | Add the same file again at 12 s; then the MP3 or OGG at 20 s | The `audio` folder has the WAV once, and the second file. Each clip has a waveform (say if the MP3 or OGG has none: **File** then says why) |
+| 4 | Drag the first clip's start edge 1 s to the right; then drag it left as far as it goes | The clip starts 1 s later and is 1 s shorter, the waveform loses its start, and the inspector says it plays from 1 s of the file. Dragged left it stops where the file starts. The end edge stops at the file's end the same way |
+| 5 | Set **Volume** to 0.5, then to 3; **Fade in (s)** to 99 | 0.5 is taken and the waveform is lower. 3 and 99 are refused with a message, and the box goes back |
+| 6 | Put the playhead at 1 s and press Space; stop after the clip. Then put it inside the clip and press Space | The sound is heard when the playhead reaches the clip; started inside, it is heard from that point of the file (`edgedirSound.state().started` has the file with its offset). Dragging the playhead makes no sound |
+| 7 | Select the first clip, put the playhead inside it and press **S** | Two clips; the second plays the file from where the first ends. Undo puts it back |
+| 8 | Click **Add Game Sound**. With EDGEwave: type a word and pick a sound. Without: type `ui_menu_onpress` | A hatched clip whose second line says "game sound, silent here", with the length the list gave or 2 s. The inspector has **Game sound**, **Hear**, **Change Game Sound...**, and under **In the game** that it is not heard in the preview's play and that the game does not say when it does not know the name |
+| 9 | Click **Hear** | With EDGEwave one recording plays; without, a message says Hear needs EDGEwave |
+| 10 | Click **Play in Game**, **Play Anyway** | The question lists the sounds' notes. The stand-in prints, with the actor's calls: `sound` with the WAV's copy and `"start"`, `"end"`, `"volume"`, `"fadeIn"` and `"category"` at the clip's start, `game-sound` at its clip's start and `game-sound-stop` at its end, and a `sound-stop` at each file's end |
+| 11 | Play again and click **Stop in Game** while a sound plays | `sound-stop` with `"fadeOut":300`, with the `remove` |
+| 12 | Mute the Audio track and play | No `sound` and no `game-sound` is printed |
+| 13 | Unmute it. In Explorer rename the WAV in the `audio` folder; close the scene and open it again | The WAV's clips have no waveform; **File** has `data-state` "missing" and a note that the file is not in the scene's folder. **Play in Game**: a warning says the file is not in the scene's folder and is left out of the play, and the other sounds are printed. Rename the file back after |
+| 14 | In the stand-in's page (http://127.0.0.1:4173/) open the scene and press **Play**, then drag the playhead into a file's clip | The strip has the Audio lane with the sounds' names on its clips, lit; its name's tooltip says each clip is a sound heard in the game. After the drag: a `sound-stop`, then `sound` with a later `"start"` |
+
+| Round | Date | Steps | Result |
+|---|---|---|---|
+| 1 | | 1 to 14 | Not run yet |

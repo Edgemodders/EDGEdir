@@ -4,12 +4,13 @@
 // EDGEdir in VS Code reaches it through a folder in the player's own Windows profile (inbox.mjs):
 // only the player's own programs can write it, and no port is opened. When REDnode has the editor
 // channel's service call (REDnode #48), EDGEdir calls service.mjs instead.
-import { api, channel, game, world } from "rednode";
+import { api, audio, channel, game, pkg, world } from "rednode";
 import * as fs from "node:fs";
 import { deskDir } from "../src/desk";
 import { playDir, put, watchInbox } from "./inbox.mjs";
 import { Player } from "./play.mjs";
 import type { PageMessage, PlayNow } from "./protocol";
+import { fetchSound } from "./sounds";
 import { Stage, type PlayerLike } from "./stage";
 
 declare const __VERSION__: string;
@@ -28,6 +29,10 @@ const trial = new Map<string, number>();
 const player = new Player({
   world,
   player: whereV,
+  // D6b: a scene's sounds. A file is copied into the package's data folder, the one place outside
+  // the package REDnode plays from; a game sound is posted on V.
+  audio,
+  soundFile: async (from: string) => fetchSound(from, pkg.dataDir),
   // Time stops for one person, or runs again: the game's own slow motion for a single character.
   // (Unverified in the game on a person in a workspot.)
   freeze: async (id: unknown, on: boolean) => {

@@ -48,7 +48,9 @@ import { fromOf, type Stage } from "../src/set";
 import { frameOf as placeFrame, markAtPin, markFrom, markPin, pinsOf, placeAtPin, placePin, unlinkPins } from "../src/pins";
 import { joinOf, transitionNote } from "../src/pose";
 import { DefaultBlend, setWeather, weatherLabel, weatherOf } from "../src/weather";
+import { Categories, CategoryNames, MaxVolume, setSound, soundLabel, soundOf } from "../src/sound";
 import { mountPreview } from "./preview";
+import { mountSound } from "./sound";
 
 interface ViewState {
   scratch?: { base: string; doc: string };
@@ -76,6 +78,8 @@ let links: Record<string, string> = {};
 let stage: Stage | undefined;
 /** D6a: the game's weather presets, when the host has read them. */
 let weathers: string[] = [];
+/** D6b: where each of the scene's sound files is fetched from; a file that is not in the scene's folder has no entry. */
+let soundUrls: Record<string, string> = {};
 let playing = false;
 let playFrom = 0;
 let lastTick = 0;
@@ -106,6 +110,9 @@ function keepView() {
 const preview = mountPreview($("stage"), $("previewNote"), send);
 $("frame").addEventListener("click", () => preview.frame());
 (window as unknown as { edgedirPreview: unknown }).edgedirPreview = preview;
+// The scene's sound files (D6b): their waveforms on the lanes, and heard when the preview plays.
+const sound = mountSound();
+(window as unknown as { edgedirSound: unknown }).edgedirSound = sound;
 
 // ---- messages from the host ----------------------------------------------------------------------
 
@@ -151,6 +158,14 @@ window.addEventListener("message", (e) => {
   }
   if (m.type === "got") return preview.got(m);
   if (m.type === "game") return onGame(m);
+  if (m.type === "measure") {
+    // The host asks how long a sound file is, for a clip it is about to add.
+    sound.measure(String(m.url)).then(
+      (seconds) => send({ type: "measured", key: m.key, seconds }),
+      (e) => send({ type: "measured", key: m.key, error: e instanceof Error ? e.message : String(e) }),
+    );
+    return;
+  }
   if (m.type !== "doc") return;
   const text = JSON.stringify(m.doc);
   if (firstDoc) {
@@ -171,7 +186,13 @@ window.addEventListener("message", (e) => {
   $("invalid").hidden = true;
   $("work").hidden = false;
   const before = doc;
-  const mode = `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}|${weathers.length}`;
+  const mode = `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}|${weathers.length}|${Object.keys(soundUrls).join("|")}`;
+  soundUrls = (m.sounds as Record<string, string> | undefined) ?? {};
+  // A file that has been read shows its waveform, and one that could not be read says why.
+  sound.sync(soundUrls, () => {
+    draw();
+    drawInspector();
+  });
   seqMode = !!m.sequence;
   links = (m.links as Record<string, string> | undefined) ?? {};
   stage = m.stage as Stage | undefined;
@@ -182,7 +203,9 @@ window.addEventListener("message", (e) => {
   sel = new Set([...sel].filter((id) => findClip(doc!, id)));
   if (!findTrack(doc, selTrack)) selTrack = doc.tracks[0]?.id ?? "";
   if (!fitted && sceneLength(doc) > 0) fit();
-  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}|${weathers.length}`) render();
+  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}|${weathers.length}|${Object.keys(soundUrls).join("|")}`) render();
+  // A change that came from outside the page while it plays (undo, the host's Add Sound) is heard from here on.
+  if (playing && before && JSON.stringify(before) !== text) sound.play(doc, playhead);
   applyPendingSelect();
 });
 
@@ -202,6 +225,7 @@ function commit(next: SceneDoc) {
   if (next === doc) return;
   doc = next;
   send({ type: "edit", doc });
+  if (playing) sound.play(doc, playhead);
   render();
 }
 
@@ -291,7 +315,7 @@ const laneTop = (i: number) => Ruler + i * Lane;
 /** The colour of a clip that does not fit its actor's rig. */
 const Unfit = "#ff5a5a";
 
-const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (weatherOf(c) ? weatherLabel(weatherOf(c)!.state) : undefined) ?? (c.kind === "sequence" ? `▸ ${seqOf(c)?.name || "sequence"}` : c.kind === "transition" ? "transition" : c.kind);
+const clipLabel = (c: Clip) => c.name ?? (c.anim as { name?: string } | undefined)?.name ?? (weatherOf(c) ? weatherLabel(weatherOf(c)!.state) : undefined) ?? soundLabel(c) ?? (c.kind === "sequence" ? `▸ ${seqOf(c)?.name || "sequence"}` : c.kind === "transition" ? "transition" : c.kind);
 
 /** A clip's box in the lane: a transition is a thin band along the top, over the join, clear of the clips' names. */
 function box(c: Clip, lane: number) {
@@ -374,6 +398,32 @@ function draw() {
           }
           g.stroke();
         }
+        // D6b: a sound file's clip shows the part of the file it plays, as a waveform; a game sound is hatched lightly, since the preview's play does not sound it.
+        const snd = soundOf(c);
+        if (snd?.file && b.w > 4) {
+          const bars = Math.max(1, Math.floor(b.w / 2));
+          const peaks = sound.peaks(snd.file, snd.in, snd.in + c.length, bars);
+          if (peaks) {
+            const mid = b.y + b.h / 2;
+            const half = b.h / 2 - 2;
+            g.globalAlpha = (t.mute ? 0.35 : 1) * 0.55;
+            g.fillStyle = paint;
+            peaks.forEach((v, n) => {
+              const hgt = Math.max(1, v * half * Math.min(1, snd.volume));
+              g.fillRect(b.x + n * 2, mid - hgt, 1, hgt * 2);
+            });
+            g.globalAlpha = t.mute ? 0.35 : 1;
+          }
+        } else if (snd?.event) {
+          g.globalAlpha *= 0.3;
+          g.beginPath();
+          for (let hx = b.x - b.h; hx < b.x + b.w; hx += 10) {
+            g.moveTo(hx, b.y + b.h);
+            g.lineTo(hx + b.h, b.y);
+          }
+          g.stroke();
+          g.globalAlpha = t.mute ? 0.35 : 1;
+        }
         const p = playOf(c);
         if (p && p.loops > 1) {
           // A tick where each loop starts again.
@@ -403,7 +453,7 @@ function draw() {
         g.fillText(clipLabel(c), Math.max(b.x, 0) + 6, b.y + 11);
         g.fillStyle = k.dim;
         g.font = `10px ${k.font}`;
-        g.fillText(`${c.length.toFixed(2)} s`, Math.max(b.x, 0) + 6, b.y + 22);
+        g.fillText(`${c.length.toFixed(2)} s${soundOf(c)?.event ? "  ·  game sound, silent here" : ""}`, Math.max(b.x, 0) + 6, b.y + 22);
         g.restore();
       }
       g.globalAlpha = 1;
@@ -685,6 +735,45 @@ function drawInspector() {
       if (!w) box.append(note("No weather yet: the clip does nothing in the game until it has one."));
       else box.append(note("The clip's length is how long the weather is held. The preview names it and tints the view; it draws no rain or fog."));
     }
+    // D6b: an audio clip is a sound file kept with the scene, or one of the game's sounds by name.
+    if (clip.kind === "audio") {
+      const s = soundOf(clip);
+      const ask = (what: "file" | "event") => () => vscode.postMessage({ type: "sound", do: what, track: track.id, at: clip.start });
+      if (!s)
+        box.append(
+          note("No sound yet: the clip does nothing until it has one. Add a sound file or a game sound to the track; this empty clip can then be deleted."),
+          action("Add Sound File...", "A WAV, OGG, MP3 or FLAC, copied into the scene's folder, as a new clip", ask("file")),
+          action("Add Game Sound...", "One of the game's own sounds, by its name, as a new clip", ask("event")),
+        );
+      else if (s.file) {
+        const found = s.file in soundUrls;
+        const why = sound.failed(s.file);
+        const f = fact("File", s.file, s.file);
+        f.id = "f-soundfile";
+        f.dataset.state = !found ? "missing" : why ? "unread" : "found";
+        box.append(f);
+        if (s.seconds) box.append(fact("Its length", `${Number(s.seconds.toFixed(3))} s`), fact("Plays", `${Number(s.in.toFixed(3))} to ${Number((s.in + clip.length).toFixed(3))} s of it`));
+        const fade = (id: string, key: "fadeIn" | "fadeOut") => numberInput(id, s[key], 0.1, (v) => change((x) => setSound(x, clip.id, { [key]: v })));
+        box.append(
+          field("Volume", numberInput("f-volume", s.volume, 0.1, (v) => change((x) => setSound(x, clip.id, { volume: v })))),
+          field("Fade in (s)", fade("f-fadein", "fadeIn")),
+          field("Fade out (s)", fade("f-fadeout", "fadeOut")),
+          field("Follows", choice("f-category", s.category, Categories.map((c): [string, string] => [c, `${CategoryNames[c]} volume`]), (v) => change((x) => setSound(x, clip.id, { category: v })))),
+        );
+        if (!found) box.append(note(`The file is not in the scene's folder (${s.file}): the clip is silent here and left out of the game. Put the file back, or delete the clip and add the sound again.`));
+        else if (why) box.append(note(`The file could not be read here: ${why}. It is silent in the preview.`));
+        else box.append(note(`Drag an edge to play less of the file: the clip stops at the file's ends. Volume is from 0 to ${MaxVolume}; 1 is as recorded. The preview plays it with the playhead; dragging the playhead is silent.`));
+      } else {
+        const e = fact("Game sound", s.event ?? "", s.event);
+        e.id = "f-soundevent";
+        box.append(
+          e,
+          action("Hear", "Play one recording of this sound in VS Code, through EDGEwave", () => vscode.postMessage({ type: "sound", do: "hear", event: s.event })),
+          action("Change Game Sound...", "Pick another of the game's sounds for this clip", () => vscode.postMessage({ type: "sound", do: "pick", clip: clip.id })),
+          note("The clip's length is yours to set: the sound is posted at its start and stopped at its end. It is silent when the preview plays."),
+        );
+      }
+    }
     const seq = seqOf(clip);
     if (clip.kind === "sequence" && seq) {
       const state = links[clip.id] ?? "linked";
@@ -736,7 +825,8 @@ function drawInspector() {
     } else if (track.kind === "actor" && play && bareJoin(track, clip)) box.append(note("No transition leads into this clip: the preview cuts here. The game will blend it briefly by itself."));
     // D5b: what the game will not play as the preview shows it. The cut at a bare join is said above.
     // D6a: a weather clip says what the game does with it.
-    if (track.kind === "actor" || track.kind === "weather") {
+    // D6b: so does a sound clip.
+    if (track.kind === "actor" || track.kind === "weather" || track.kind === "audio") {
       // In a sequence's own tab every clip would say the same thing (it plays on an actor, in a scene): left out there.
       const said = notesFor(cuesOf(d).notes, track, clip).filter((n) => n.kind !== "cut" && !(seqMode && n.kind === "standIn"));
       if (said.length) {
@@ -829,6 +919,13 @@ function drawInspector() {
         }),
       );
       if (track.kind === "ai") box.append(note("What an AI track does is not decided yet. It holds named blocks for now."));
+      // D6b: an audio track takes sound files and the game's own sounds.
+      if (track.kind === "audio")
+        box.append(
+          note("Sounds go here at the playhead: a sound file, copied into the scene's folder, or one of the game's own sounds by name. In the game every sound is heard flat, as if at V."),
+          action("Add Sound File...", "A WAV, OGG, MP3 or FLAC, copied into the scene's folder, as a new clip at the playhead", () => vscode.postMessage({ type: "sound", do: "file", track: track.id, at: playhead })),
+          action("Add Game Sound...", "One of the game's own sounds, by its name, as a new clip at the playhead", () => vscode.postMessage({ type: "sound", do: "event", track: track.id, at: playhead })),
+        );
     }
     box.append(
       heading(seqMode ? "The file" : "Scene"),
@@ -934,6 +1031,10 @@ function render() {
   const one = sel.size === 1 ? findClip(doc, [...sel][0]) : undefined;
   $<HTMLButtonElement>("addClip").disabled = !track;
   $("addTransition").hidden = track?.kind !== "actor";
+  // D6b: on an audio track the two ways to add a sound stand in for Add Clip, which would make an empty one.
+  $("addSound").hidden = track?.kind !== "audio";
+  $("addGameSound").hidden = track?.kind !== "audio";
+  $("addClip").hidden = track?.kind === "audio";
   $<HTMLButtonElement>("split").disabled = !one || one.clip.kind === "transition" || one.clip.kind === "sequence";
   $("addTrack").hidden = seqMode;
   $("gamePlay").hidden = seqMode;
@@ -1120,23 +1221,31 @@ canvas.addEventListener("dblclick", (ev) => {
   const block = h.clip && seqOf(h.clip);
   if (block) return vscode.postMessage({ type: "openSeq", id: block.id });
   if (h.clip) return $<HTMLInputElement>("f-name")?.select();
+  // D6b: on an audio lane, a sound file is asked for.
+  if (h.track.kind === "audio") return send({ type: "sound", do: "file", track: h.track.id, at: Math.max(0, timeAt(px)) });
   // An empty place in a lane: a new clip there, a second long.
   newClip(h.track.id, timeAt(px));
 });
 
 function setPlayhead(t: number) {
   playhead = Math.max(0, doc ? toFrame(doc, t) : t);
+  // A key that moves the playhead while the preview plays: the sounds go on from there. A drag is silent until it ends.
+  if (playing && doc && !drag) sound.play(doc, playhead);
   draw();
 }
 
 function scrub(ev: MouseEvent) {
   drag = { kind: "scrub", base: doc! };
+  // Scrubbing is silent; play that was on is heard again from where the playhead is let go.
+  if (playing) sound.stop();
   const move = (e: MouseEvent) => {
     const t = timeAt(at(e).px);
     setPlayhead(snapOn && !e.altKey ? snap(doc!, t, clipEdges(doc!), 6 * spp) : t);
   };
   move(ev);
-  during(move, () => {});
+  during(move, () => {
+    if (playing && doc) sound.play(doc, playhead);
+  });
 }
 
 /** Follows the mouse until it is let go, then commits the drag's preview. */
@@ -1238,6 +1347,8 @@ function newClip(trackId: string, at: number, kind?: "transition") {
 }
 
 $("addClip").addEventListener("click", () => selTrack && newClip(selTrack, playhead));
+$("addSound").addEventListener("click", () => selTrack && send({ type: "sound", do: "file", track: selTrack, at: playhead }));
+$("addGameSound").addEventListener("click", () => selTrack && send({ type: "sound", do: "event", track: selTrack, at: playhead }));
 $("saveSeq").addEventListener("click", () => sel.size && vscode.postMessage({ type: "saveSeq", clips: [...sel] }));
 $("addTransition").addEventListener("click", () => {
   if (!selTrack) return;
@@ -1324,10 +1435,13 @@ function tick(now: number) {
   playhead += (now - lastTick) / 1000;
   lastTick = now;
   if (playhead >= end) {
-    if (looping && end > 0) playhead = 0;
-    else {
+    if (looping && end > 0) {
+      playhead = 0;
+      sound.play(doc, 0);
+    } else {
       playhead = end;
       playing = false;
+      sound.stop();
       render();
       return;
     }
@@ -1350,6 +1464,7 @@ function play() {
   playFrom = playhead;
   playing = true;
   lastTick = performance.now();
+  sound.play(doc, playhead);
   render();
   requestAnimationFrame(tick);
 }
@@ -1357,6 +1472,7 @@ function play() {
 function stopPlay(back = false) {
   const was = playing;
   playing = false;
+  sound.stop();
   if (back) playhead = was ? playFrom : 0;
   if (doc) {
     playhead = toFrame(doc, playhead);
@@ -1371,6 +1487,7 @@ function toEdge(dir: -1 | 1) {
   const next = dir > 0 ? edges.find((e) => e > playhead + 1e-6) : [...edges].reverse().find((e) => e < playhead - 1e-6);
   if (next === undefined) return;
   playhead = next;
+  if (playing) sound.play(doc, playhead);
   if (x(playhead) > width() - 10 || x(playhead) < 0) {
     viewStart = playhead - (width() / 2) * spp;
     clampView();

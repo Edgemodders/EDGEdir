@@ -3,6 +3,7 @@
 // not match. No VS Code, no page, no files, nothing read from the game. docs/d5-play-in-game.md.
 import { clipEnd, markOf, playOf, sceneLength, transitionOf, unfit, type Clip, type Mark, type SceneDoc, type Track } from "./doc";
 import { flat, joinOf } from "./pose";
+import { soundCues, type Category } from "./sound";
 import { weatherCues, weatherTrack } from "./weather";
 
 /** One entry of an actor's workspot: a game animation, looping, named for its clip. */
@@ -50,12 +51,18 @@ export interface CueSheet {
   ends?: { t: number; track: string }[];
   /** D6a: the weather to hold from a moment, or to give back (`reset`). Absent when the scene has none. */
   weather?: { t: number; state?: string; blend?: number; reset?: true }[];
+  /**
+   * D6b: the sounds, each from `t` to `end`. A `file` is named from the scene's folder (the request
+   * says where each is on this PC) and starts `in` seconds into itself; an `event` is one of the
+   * game's sounds by name. Absent when the scene has none.
+   */
+  sounds?: { t: number; end: number; file?: string; event?: string; in?: number; volume?: number; fadeIn?: number; fadeOut?: number; category?: Category }[];
 }
 
-/** Whether a cue sheet has anything for the game: somebody to play, or a weather to hold. */
-export const playable = (sheet: CueSheet): boolean => sheet.cast.length > 0 || (sheet.weather?.length ?? 0) > 0;
+/** Whether a cue sheet has anything for the game: somebody to play, a weather to hold, or a sound. */
+export const playable = (sheet: CueSheet): boolean => sheet.cast.length > 0 || (sheet.weather?.length ?? 0) > 0 || (sheet.sounds?.length ?? 0) > 0;
 
-export type GameNoteKind = "in" | "speed" | "made" | "transition" | "cut" | "player" | "noActor" | "noRig" | "standIn" | "weather";
+export type GameNoteKind = "in" | "speed" | "made" | "transition" | "cut" | "player" | "noActor" | "noRig" | "standIn" | "weather" | "sound";
 
 /** One thing the game will not play as the preview shows it. */
 export interface GameNote {
@@ -148,6 +155,10 @@ export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
   const sheet: CueSheet = { cues: 1, scene: doc.name, length: sceneLength(doc), anchor: doc.anchor, cast, timeline };
   if (ends.length) sheet.ends = ends;
   if (weather.cues.length) sheet.weather = weather.cues.map(({ clip: _clip, ...cue }) => cue);
+  // D6b: the audio tracks.
+  const sounds = soundCues(doc);
+  for (const n of sounds.notes) notes.push({ kind: "sound", track: n.track, clip: n.clip, text: n.text });
+  if (sounds.cues.length) sheet.sounds = sounds.cues.map(({ clip: _clip, track: _track, ...cue }) => cue);
   return { sheet, notes };
 }
 

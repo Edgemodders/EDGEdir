@@ -55,13 +55,16 @@ ${body}
     getState: () => state, setState: (s) => { state = s; },
     postMessage: (m) => {
       window.harness.messages.push(m.type);
-      if (m.type === "ready") toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage, weathers: window.harness.weathers });
+      if (m.type === "ready") toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage, weathers: window.harness.weathers, sounds: window.harness.sounds });
       // A set (D5a): window.harness.stage = {...}, then window.harness.resend().
       // The game's weathers (D6a): window.harness.weathers = ["WeatherPresets.Rain", ...], then resend(). Any message: window.harness.toPage({...}).
-      window.harness.resend = () => toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage, weathers: window.harness.weathers });
+      window.harness.resend = () => toPage({ type: "doc", doc: window.harness.doc, dirty: false, stage: window.harness.stage, weathers: window.harness.weathers, sounds: window.harness.sounds });
       window.harness.toPage = toPage;
+      // Sound files (D6b): window.harness.sounds = { "audio/line.wav": "<an address this page can fetch>" }, then resend().
+      // What the page asks about sounds is kept whole in window.harness.asked; a measured answer is kept there too.
+      if (m.type === "sound" || m.type === "measured") (window.harness.asked ??= []).push(m);
       if (m.type === "want") toPage({ type: "got", key: m.key, ...(files[m.key] ?? { error: "the harness has no file for it (run tools/preview-sample.ts)" }) });
-      if (m.type === "edit") { window.harness.doc = m.doc; window.harness.edits++; toPage({ type: "doc", doc: m.doc, dirty: true, stage: window.harness.stage, weathers: window.harness.weathers }); }
+      if (m.type === "edit") { window.harness.doc = m.doc; window.harness.edits++; toPage({ type: "doc", doc: m.doc, dirty: true, stage: window.harness.stage, weathers: window.harness.weathers, sounds: window.harness.sounds }); }
     },
   });
   window.harness.invalid = (text) => toPage({ type: "invalid", text });

@@ -6,6 +6,8 @@
 // Times are seconds. Fields this version does not know are kept as they are, so a file written by a
 // later EDGEdir is not damaged by an edit here.
 
+import { fitSound } from "./sound";
+
 export const Extension = ".edgedir";
 
 /** The document version this build writes. */
@@ -803,7 +805,7 @@ export function trimClip(doc: SceneDoc, clipId: string, edge: "start" | "end", t
       const to = Math.min(p.anim.seconds, p.in + (stop - clip.start) * p.speed);
       next = withPlay(clip, { ...p, out: to });
     }
-  }
+  } else if (clip.kind === "audio") next = fitSound(next, clip, start - clip.start); // D6b: a file's clip stops at the file's ends.
   return changeTrack(doc, f.track.id, (t) => ({ ...t, clips: sorted(t.clips.map((c) => (c.id === clip.id ? next : c))) }));
 }
 
@@ -827,6 +829,10 @@ export function splitClip(doc: SceneDoc, clipId: string, time: number): { doc: S
     const mid = p.in + (at - clip.start) * p.speed;
     first = withPlay(clip, { ...p, out: mid });
     second = { ...withPlay(clip, { ...p, in: mid }), id, start: at };
+  } else if (clip.kind === "audio") {
+    // D6b: a file's clip is cut in the file too, and each part keeps the fade at its own outer end.
+    first = fitSound(first, clip, 0, "fadeOut");
+    second = fitSound(second, clip, at - clip.start, "fadeIn");
   }
   const next = changeTrack(doc, f.track.id, (t) => ({ ...t, clips: sorted([...t.clips.filter((c) => c.id !== clip.id), first, second]) }));
   return { doc: next, id };

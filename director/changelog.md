@@ -8,6 +8,8 @@ Kept as EDGEdir's own changelog is: a line under **Unreleased** with each change
 
 **New**
 
+- Sound: a scene's audio tracks are heard in the game. A sound file plays at its clip's start, from the point the clip starts in the file, with the clip's volume and fades, and follows the game's sound effects, dialogue or music volume. One of the game's own sounds is posted at its clip's start and stopped at its end. Every sound is heard flat, as if at V. Pause, Stop and a new moment stop the sounds; Resume and the new moment start them again from where the scene stands. Not yet tested in the game.
+
 - EDGE Director: a window in the game for EDGEdir's scenes. It lists the scenes on EDGEdir's Desk; open one to see its tracks and clips on a strip, with what the game will not play as the preview shows.
 - Play, Stop and Start Again in the game, with VS Code open or closed. Drag the playhead on the strip to start from any moment, or to send the cast there while the scene plays. Loop plays the scene again at its end.
 - Cast: each actor in the game with the clip they play and how far they are from V. **Go There** puts V in front of an actor; choosing an actor marks them in the world with a pin.

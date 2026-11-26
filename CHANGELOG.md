@@ -19,10 +19,13 @@ New: Transitions (Blend, Inertial) and sequences, stored runs of clips you can r
 New: Sets: a scene can play on an EDGEbuilder scene, with its props and people
 New: Play in Game, and EDGE Director, an app in the game that opens, plays and adjusts your scenes there
 New: Pins name places in the world for a scene and its actors; a weather track changes the weather
+New: Audio tracks: sound files with a waveform, and the game's own sounds, heard in the preview and the game
 Needs: REDnode 0.67.2 or later with REDbridge and Codeware, and EDGE Director's zip, for playing in the game
 -->
 
 **New**
+
+- Audio: an audio track holds sounds. **Add Sound File** takes a WAV, OGG, MP3 or FLAC and copies it into the scene's own folder, so the scene keeps its sounds; the clip shows the file's waveform, and dragging an edge plays less of the file. A clip has a volume, a fade in and a fade out, and follows the game's sound effects, dialogue or music volume. **Add Game Sound** takes one of the game's own sounds by name, from EDGEwave's list when EDGEwave is installed, with **Hear** to play one recording. The preview plays sound files with the playhead; a game sound is silent there. In the game, through EDGE Director 0.7.0, every sound is heard flat, as if at V. Not yet tested in the game.
 
 - EDGE Director, EDGEdir's app in the game: a window that lists the Desk's scenes and plays one in the game, with Play, Stop, Start Again, a playhead to drag, Loop, and each actor with Go There. It also adjusts a scene where it stands: move an actor's mark to V or by small steps, and keep the scene at a spot in the world; the scene open in VS Code follows. Pins name places in the world: drop one where V stands, and an actor's mark or the scene's place follows it. It works with VS Code open or closed. Its own changelog: https://github.com/Edgemodders/EDGEdir/blob/main/director/changelog.md. Not yet tested in the game.
 - Weather: a clip on the weather track holds one of the game's weathers for as long as it lasts. Pick it in the clip's inspector (the list is read from your game), with the seconds the change should take. The 3D preview names the weather under the playhead and tints the view. In the game the weather changes at the clip's start and goes back after. A scene has one weather track. Needs REDnode 0.67.2 or later in the game. Not yet tested in the game.

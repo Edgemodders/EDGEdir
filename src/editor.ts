@@ -4,7 +4,10 @@
 // The pattern is EDGEwave's (src/editor.ts at f39a787), copied, without its audio.
 import type { Stage } from "./set";
 import * as fs from "node:fs";
+import * as path from "node:path";
 import * as vscode from "vscode";
+import { soundFiles, SoundFolder } from "./sound";
+import { soundPath } from "./soundFiles";
 import type { PreviewFile } from "./core/preview";
 import type { SceneDoc } from "./doc";
 import { isSeqFile, readScene, writeScene } from "./seq";
@@ -41,7 +44,14 @@ type FromPage =
   /** Play in game, and Stop in game (D5d). */
   | { type: "game"; do: "play" | "stop" }
   /** The scene's pins (DR3): choose a pin file. */
-  | { type: "pins"; do: "choose" };
+  | { type: "pins"; do: "choose" }
+  /** D6b: add a sound file or a game sound to an audio track at a time, choose a clip's game sound, or hear one. */
+  | { type: "sound"; do: "file"; track: string; at: number }
+  | { type: "sound"; do: "event"; track: string; at: number }
+  | { type: "sound"; do: "pick"; clip: string }
+  | { type: "sound"; do: "hear"; event: string }
+  /** The page's answer to `measure`: how long a sound file is, or why it could not be read. */
+  | { type: "measured"; key: string; seconds?: number; error?: string };
 
 /** A scene open in the editor, with where its page's cursor is. */
 /** What the editor asks of the Desk's sequences (D4b). */
@@ -73,6 +83,21 @@ export interface WeatherHost {
   list(): string[];
   /** Reads them from the game's files, once. True when the list changed. */
   load(): Promise<boolean>;
+}
+
+/** What the editor asks about a scene's sounds (D6b). */
+export interface SoundHost {
+  /**
+   * Asks for a sound file, copies it into the scene's folder and puts it on an audio track as a
+   * clip. `measure` asks the page how long a file is: the page reads sound files, the host does not.
+   */
+  addFile(document: vscode.TextDocument, track: string, at: number, measure: (file: string) => Promise<number>): Promise<void>;
+  /** Asks for one of the game's sounds and puts it on an audio track as a clip. */
+  addEvent(document: vscode.TextDocument, track: string, at: number): Promise<void>;
+  /** Asks for another game sound for a clip that has one. */
+  pickEvent(document: vscode.TextDocument, clip: string): Promise<void>;
+  /** Plays one recording of a game sound, through EDGEwave. */
+  hear(event: string): Promise<void>;
 }
 
 /** What the editor asks about a scene's pins, named places from a pin file (DR3). */
@@ -148,6 +173,7 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly plays: PlayHost,
     private readonly pins: PinsHost,
     private readonly weathers: WeatherHost,
+    private readonly sounds: SoundHost,
   ) {}
 
   /** Every scene and sequence open in an editor. */
@@ -166,8 +192,11 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
     const webview = panel.webview;
     const dist = vscode.Uri.joinPath(this.context.extensionUri, "dist");
     const media = vscode.Uri.joinPath(this.context.extensionUri, "media");
-    // The page reads the extension's own dist and media, and the preview's folder on the PC. Nothing else.
-    webview.options = { enableScripts: true, localResourceRoots: [dist, media, vscode.Uri.file(this.preview.root)] };
+    // The page reads the extension's own dist and media, the preview's folder on the PC, and the
+    // scene's own audio folder (D6b: its sound files, for the waveform and the preview's play). Nothing else.
+    const onDisk = document.uri.scheme === "file";
+    const audioDir = onDisk ? vscode.Uri.file(path.join(path.dirname(document.uri.fsPath), SoundFolder)) : undefined;
+    webview.options = { enableScripts: true, localResourceRoots: [dist, media, vscode.Uri.file(this.preview.root), ...(audioDir ? [audioDir] : [])] };
     webview.html = this.html(webview, dist, media);
 
     const post = (m: unknown) => void webview.postMessage(m);
@@ -202,7 +231,14 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
             if (got) sendDoc();
             else if (!closed && weatherTries++ < 6) setTimeout(() => !closed && !this.weathers.list().length && sendDoc(), 5000);
           });
-        post({ type: "doc", doc, weathers: this.weathers.list(), dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc), stage: isSeqFile(document.uri.path) ? undefined : this.sets.stage(doc) });
+        // D6b: where the page fetches each of the scene's sound files that is in its audio folder.
+        const sounds: Record<string, string> = {};
+        if (onDisk)
+          for (const file of soundFiles(doc)) {
+            const full = file.startsWith(`${SoundFolder}/`) ? soundPath(document.uri.fsPath, file) : undefined;
+            if (full) sounds[file] = webview.asWebviewUri(vscode.Uri.file(full)).toString();
+          }
+        post({ type: "doc", doc, sounds, weathers: this.weathers.list(), dirty: text !== onDisk, sequence: isSeqFile(document.uri.path), links: this.sequences.states(doc), stage: isSeqFile(document.uri.path) ? undefined : this.sets.stage(doc) });
       } catch (e) {
         post({ type: "invalid", text: (e as Error).message });
       }
@@ -221,6 +257,19 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
       watched = file;
       if (file) fs.watchFile(file, { interval: 1500 }, onPins);
     };
+    // D6b: the page says how long a sound file is. An answer that does not come in 20 s is given up.
+    const measuring = new Map<string, { done: (seconds: number) => void; fail: (e: Error) => void }>();
+    let measureN = 0;
+    const measure = (file: string) =>
+      new Promise<number>((done, fail) => {
+        const key = `m${++measureN}`;
+        const timer = setTimeout(() => {
+          measuring.delete(key);
+          fail(new Error("the scene's page did not read the file"));
+        }, 20000);
+        measuring.set(key, { done: (s) => (clearTimeout(timer), done(s)), fail: (e) => (clearTimeout(timer), fail(e)) });
+        post({ type: "measure", key, url: webview.asWebviewUri(vscode.Uri.file(file)).toString() });
+      });
     // Saved: the page's unsaved copy is the saved one now.
     const saved = vscode.workspace.onDidSaveTextDocument((d) => {
       if (d.uri.toString() === document.uri.toString()) sendDoc();
@@ -255,6 +304,18 @@ export class SceneEditorProvider implements vscode.CustomTextEditorProvider {
         case "pins":
           await this.pins.choose(document);
           return watchPins();
+        case "sound":
+          if (m.do === "file") return this.sounds.addFile(document, m.track, m.at, measure);
+          if (m.do === "event") return this.sounds.addEvent(document, m.track, m.at);
+          if (m.do === "pick") return this.sounds.pickEvent(document, m.clip);
+          return this.sounds.hear(m.event);
+        case "measured": {
+          const waiting = measuring.get(m.key);
+          measuring.delete(m.key);
+          if (typeof m.seconds === "number" && m.seconds > 0) waiting?.done(m.seconds);
+          else waiting?.fail(new Error(m.error ?? "the file could not be read as sound"));
+          return;
+        }
         case "game":
           return m.do === "play" ? this.plays.play(document, (news) => post({ type: "game", ...news })) : this.plays.stop();
         case "edit": {
@@ -346,6 +407,8 @@ export const PageBody = `<header>
   <span class="sep"></span>
   <button id="addTrack" title="Add a track to the scene">Add Track</button>
   <button id="addClip" title="Add a clip to the selected track at the playhead (or double-click a lane)">Add Clip</button>
+  <button id="addSound" title="Add a sound file to the selected audio track at the playhead: a WAV, OGG, MP3 or FLAC, copied into the scene's folder" hidden>Add Sound File</button>
+  <button id="addGameSound" title="Add one of the game's own sounds to the selected audio track at the playhead, by its name" hidden>Add Game Sound</button>
   <button id="addTransition" title="Add a transition to the selected actor track, at the start of the clip nearest the playhead" hidden>Add Transition</button>
   <button id="split" title="Cut the selected clip in two at the playhead (S)">Split</button>
   <button id="saveSeq" title="Save the selected clips, with the transitions between them, as a sequence on the Desk" hidden>Save as Sequence</button>

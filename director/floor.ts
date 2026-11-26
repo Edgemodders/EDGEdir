@@ -10,7 +10,8 @@ import { weatherLabel, weatherOf } from "../src/weather";
 import { deskDir, Kind, listDesk } from "../src/desk";
 import { clipEnd, markOf, sceneLength, type Clip, type Mark, type SceneDoc } from "../src/doc";
 import { follow, formatPins, linkPins, markPin, parsePins, PinsEnding, pinsOf, placePin, usedPins, type Pin, type PinsLink } from "../src/pins";
-import { stageFor, type PlayStage } from "../src/play";
+import { soundsFor, stageFor, type PlayStage } from "../src/play";
+import { soundLabel, soundOf } from "../src/sound";
 import { readScene, writeScene } from "../src/seq";
 import { fromOf, setOf } from "../src/set";
 import { fileOf } from "../src/setFiles";
@@ -80,6 +81,8 @@ export interface Playable {
   file: string;
   sheet: CueSheet;
   stage?: PlayStage;
+  /** D6b: where each of the sheet's sound files is on this PC. */
+  sounds?: Record<string, string>;
 }
 
 /** Where sets are looked for: the Library's root, and the folder of the project VS Code has open. */
@@ -118,9 +121,9 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     name: t.name,
     kind: t.kind,
     ...(t.actor?.name ? { who: t.actor.name } : {}),
-    cast: cast.has(t.id) || (t.kind === "weather" && !t.mute && t.clips.some((c) => weatherOf(c))),
+    cast: cast.has(t.id) || (t.kind === "weather" && !t.mute && t.clips.some((c) => weatherOf(c))) || (t.kind === "audio" && !t.mute && t.clips.some((c) => soundOf(c))),
     ...(t.kind === "actor" && t.actor ? { mark: markOf(doc, t.id), ...(doc.set && fromOf(t) ? { placed: true } : {}), ...(markPin(t) ? { pin: markPin(t) } : {}) } : {}),
-    clips: t.clips.map((c) => ({ id: c.id, kind: c.kind, start: c.start, end: clipEnd(c), label: String(weatherOf(c) ? (c.name ?? weatherLabel(weatherOf(c)!.state)) : label(c)), played: (c.kind !== "transition" && jumps.has(`${t.id} ${c.start}`)) || c.kind === "sequence" || (!!weatherOf(c) && !t.mute) })),
+    clips: t.clips.map((c) => ({ id: c.id, kind: c.kind, start: c.start, end: clipEnd(c), label: String(weatherOf(c) ? (c.name ?? weatherLabel(weatherOf(c)!.state)) : (c.name ?? soundLabel(c) ?? label(c))), played: (c.kind !== "transition" && jumps.has(`${t.id} ${c.start}`)) || c.kind === "sequence" || (!!weatherOf(c) && !t.mute) || (!!soundOf(c) && !t.mute) })),
   }));
   const view: SceneView = { file, name: doc.name, length: Math.max(sheet.length, sceneLength(doc)), tracks, notes: notes.map((n) => n.text) };
   const anchor = doc.anchor as { mode: string; at?: [number, number, number]; yaw?: number };
@@ -141,7 +144,10 @@ export function viewOf(file: string, doc: SceneDoc, roots: Roots): { view: Scene
     else view.why = `The scene's set "${link.name}" was not found, so the scene cannot play on it. Open the scene in VS Code and choose the set again, or remove it.`;
   }
   if (!playable(sheet)) view.why = notes.find((n) => !n.clip)?.text ?? "Nothing to play in the game: no actor track has a clip the game can play.";
-  return view.why ? { view } : { view, play: { file, sheet, ...(stage ? { stage } : {}) } };
+  // D6b: the scene's sound files, from its own folder. One that is not there is said, and the rest play.
+  const heard = soundsFor(file, sheet);
+  for (const f of heard.missing) view.notes.push(`The sound file "${f}" is not in the scene's folder: it is left out.`);
+  return view.why ? { view } : { view, play: { file, sheet, ...(stage ? { stage } : {}), ...(Object.keys(heard.sounds).length ? { sounds: heard.sounds } : {}) } };
 }
 
 /** Reads a scene's file. Throws with words fit to show when it is gone or is not a scene. */

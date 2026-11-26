@@ -4,7 +4,7 @@ title: D6 Audio, camera, weather
 
 # <span class="y">D6</span> Audio, camera, weather
 
-**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. D6a Weather is built (EDGEdir 0.0.28, EDGE Director 0.5.0): not run in VS Code or in the game. D6b Audio and D6c Camera are not built. See [What is built](#what-is-built).**
+**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. D6a Weather is built (EDGEdir 0.0.28, EDGE Director 0.5.0): passed by script in VS Code, not run in the game. D6b Audio is built (EDGEdir 0.0.33, EDGE Director 0.7.0, 2026-11-26): not run in VS Code or in the game. D6c Camera is not built. See [What is built](#what-is-built).**
 
 D6 is the sixth phase of the [design](design.html). Audio, camera and weather tracks get real clips, show in the preview, and play in the game through the player D5 built. A mod a player installs is D7.
 
@@ -110,6 +110,36 @@ How it differs from the plan:
 
 Unverified until the game: everything in the game, as for all of the Director. That a `WeatherPresets` record's path is taken as REDnode's docs say; what the game does when a second state is set while the first is still blending.
 
+**D6b Audio, EDGEdir 0.0.33 with EDGE Director 0.7.0 (2026-11-26). Not run in VS Code or in the game; its hand test ([Tests](testing.html), "D6b Audio") has not run, and the owner's is Test I.** The page's side was looked at in a plain browser with `tools/page-harness.mjs` and a made-up tone (the file read and measured, its waveform drawn, the inspector, play from a moment), and the player's side against the stand-in.
+
+| Part | Where | What it does |
+|---|---|---|
+| The clip | `src/sound.ts` (`soundOf`, `addSoundClip`, `addEventClip`, `setSound`) | `"sound": { "file": "audio/<name>.wav", "seconds": 3.2, "in", "volume", "fadeIn", "fadeOut", "category" }` or `"sound": { "event": "<name>" }` on a clip of an audio track. `seconds` is the whole file's length, copied in so the lane knows the file's ends. Volume is 0 to 2; the category is `sfx`, `dialogue` or `music` (REDnode's names for the game's three sliders). What is as recorded is left out of the text |
+| Trim and split | `fitSound` in `src/sound.ts`, called by `trimClip` and `splitClip` in `src/doc.ts` | A start edge dragged in moves the point the clip starts in the file; both edges stop at the file's ends. A split cuts the file too, and each part keeps the fade at its own outer end. A game sound's clip is as long as it is dragged |
+| The scene's files | `src/soundFiles.ts` (`keepSound`, `soundPath`) | A file added is copied into `audio` beside the scene's file: on the Desk that is inside the scene's own item folder, which Rename and Delete take whole (A1). The same file added again is used as it is; another file of the same name gets a number. A name that climbs out of the scene's folder is not played |
+| Adding | The `SoundHost` in `src/editor.ts`, built in `src/extension.ts`; page messages `sound` and `measured` | **Add Sound File** and **Add Game Sound** in the toolbar and the track's inspector, and a double-click on an audio lane. The host copies the file and asks the page how long it is (`measure`); the page reads sound, the host does not. A game sound is picked from EDGEwave's `soundEvents` as the modder types, with the list's length for one that does not loop; without EDGEwave it is typed. **Hear** plays one recording through EDGEwave's `playEvent` |
+| The lane | `webview/sound.ts`, `webview/editor.ts` | A file's clip shows the part of the file it plays as a waveform, read once in the page (`window.edgedirSound.state()` says what is read, for scripted rounds). A game sound's clip is hatched and says it is silent here |
+| The preview | `webview/sound.ts` (`play`, `stop`) | Play sounds every file's clip with the playhead, through the browser's audio, from the right point of the file, with the volume and the fades. Dragging the playhead is silent; a key that moves it, a loop and an edit during play start the sounds again from there |
+| The cues | `soundCues` in `src/sound.ts`; `sheet.sounds` and `playable` in `src/cues.ts` | Each clip with a sound, on a track that is not muted, from `t` to `end`. Notes of kind `sound`: a file is heard flat and follows a slider, and falls behind after a game menu; a game sound is not heard in the preview's play and the game does not say when it does not know the name; a clip with no sound. A scene with sounds and nobody has something to play |
+| Where the files go | `soundsFor` in `src/play.ts`; `request.sounds`; `fetchSound` in `director/sounds.ts` | The request names each file by where it is on this PC. The Director copies it into its own data folder (`pkg.dataDir\sounds`), named for where it came from, and again only when the file changed |
+| The player | `director/play.mjs` (`sound`, `hush`, in `begin`, `pause` and `clear`) | A file plays through `audio.play` at its cue, from its start point, to its end point, with its volume, fade in and category; its fade out is a `stop({ fadeOut })` before the clip's end. A game sound is `audio.event` at the clip's start and `stop()` at its end. A play from a moment starts a sound part way in. Pause, Stop and a new moment stop the sounds; Resume and the new moment start them again. A file that is gone or a sound that fails is said in the play's notes, and the play goes on |
+| In the Director | `director/floor.ts`, `director/page/main.ts` | The strip shows an audio lane's clips with the file's or the sound's name, lit as played; a file that is not in the scene's folder is said in the notes |
+| The stand-in | `director/standin.ts` | Prints `sound` with the file and its settings, `sound-stop`, `game-sound` and `game-sound-stop`; it copies a file into `standin-data` in the play folder |
+
+How D6b differs from the plan:
+
+| Plan | Built |
+|---|---|
+| The category is effects, dialogue or music | The same three, written `sfx`, `dialogue`, `music` as REDnode names them |
+| EDGEdir puts the scene's files beside the request, in `%LOCALAPPDATA%\EDGEdir\play\audio\` | No second copy: the request names each file where it is, in the scene's folder, and the Director copies it from there into its data folder. The Director can then play a scene's sounds with VS Code closed, from the Desk |
+| A game sound "has no length EDGEdir can know" | EDGEwave's list gives a length for a sound that does not loop: the clip gets it when the sound is picked there. It is still the modder's to change |
+| EDGE Director 0.3.0 with sounds | 0.7.0: the Director's numbers moved on with DR1 to DR3 |
+| The lane says a game sound is not heard in the preview's play | The clip is hatched and its second line reads "game sound, silent here"; the inspector says it too |
+
+Not built in D6b: the start point as a number in the inspector (drag the start edge), a sound file dropped onto a lane, tidying files no clip uses any more out of the `audio` folder (Undo may want them back), and copying a scene's sounds with it to a project or the Library (D7).
+
+Unverified until the hand test: that the page fetches and reads a file from the scene's `audio` folder inside VS Code (`localResourceRoots`, `connect-src`), that VS Code's page decodes MP3 and FLAC as a browser does, and EDGEwave's picker and Hear. Unverified until the game: everything in the game; that a file's fade out and its end land as asked; what `audio.event` does for a name that needs a place or a switch the game sets first.
+
 ## Tests
 
 | Test | Kind | Covers |
@@ -125,7 +155,7 @@ Unverified until the game: everything in the game, as for all of the Director. T
 |---|---|---|
 | REDnode #46 | The weather's calls | Done: passed in the game on 2026-11-18, with giving back in 0.67.2. Nothing more is needed for D6a |
 | REDnode | The camera given back by the host when a package is ended, if the spike shows V is left without a view | To file after the spike, if needed |
-| EDGEwave | A mix rendered to a file through its API, and a sound's length | To file if question A3 is yes |
+| EDGEwave | A mix rendered to a file through its API | For a later phase (A3). A sound's length came with `soundEvents` already |
 | REDnode | Sound on an entity or at a place | Already in the design's list, after D6 |
 
 ## Left out of D6

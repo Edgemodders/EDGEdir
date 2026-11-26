@@ -16,6 +16,7 @@ import { deskDir } from "../src/desk";
 import { playDir, put, watchInbox } from "./inbox.mjs";
 import { Player } from "./play.mjs";
 import type { PageMessage, PlayNow, Snapshot } from "./protocol";
+import { fetchSound } from "./sounds";
 import { Stage, type PlayerLike } from "./stage";
 
 declare const __VERSION__: string;
@@ -59,6 +60,12 @@ let stage: Stage | undefined;
 const player = new Player({
   world,
   player: async () => v,
+  // D6b: the sounds are printed, not heard. A file is still copied, into the play folder, as the real one copies it into its data folder.
+  audio: {
+    play: (file: string, o: unknown) => call("sound", [path.basename(file), o], { stop: (so?: { fadeOut?: number }) => call("sound-stop", [path.basename(file), so], undefined, 1) }, 5),
+    event: (name: string) => call("game-sound", [name], { stop: () => call("game-sound-stop", [name], undefined, 1) }, 5),
+  },
+  soundFile: async (from: string) => fetchSound(from, path.join(playDir(), "standin-data")),
   freeze: (id: Id, on: boolean) => call(on ? "hold" : "release", [id.hash], undefined, 5),
   report: (state: PlayNow) => {
     put(playDir(), "state.json", { ...state, version });

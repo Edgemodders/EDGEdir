@@ -73,7 +73,7 @@ export function sceneFor(stage, sheet) {
 /** What is wrong with a request, in words; undefined when it can be played. */
 export function refusal(sheet) {
   if (!sheet || sheet.cues !== 1) return "This is not a cue sheet this player knows (cues: 1). Update EDGEdir or its player.";
-  if (!Array.isArray(sheet.cast) || (!sheet.cast.length && !sheet.weather?.length)) return "The scene has nobody to play: no actor track has a clip the game can play.";
+  if (!Array.isArray(sheet.cast) || (!sheet.cast.length && !sheet.weather?.length && !sheet.sounds?.length)) return "The scene has nobody to play: no actor track has a clip the game can play.";
   for (const m of sheet.cast) {
     if (!m.record || !m.rig || !m.clips?.length) return `"${m.name ?? m.track}" has no character, rig or clips.`;
   }
@@ -88,6 +88,8 @@ const Abandoned = Symbol("abandoned");
  *   deps.player   async () => ({ x, y, z, fx, fy }): V's place and the way V faces, or null
  *   deps.report   (state) => void, called with every change
  *   deps.freeze   optional: async (id, on) stops time for one person, or lets it run again
+ *   deps.audio    optional: REDnode's `audio` (play, event), for the scene's sounds (D6b)
+ *   deps.soundFile optional: async (path) puts a sound file where REDnode may play it, and answers that path
  *   deps.warmMs   how long the cast is given after its first play, for the T pose to pass (1500)
  *   deps.leadMs   from the last step to the scene's start (300)
  */
@@ -119,6 +121,8 @@ export class Player {
     if (!ctx) return;
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
     const { world } = this.deps;
+    // D6b: Stop fades every sound out.
+    await this.hush(ctx, 300);
     for (const a of ctx.cast.splice(0)) await world.remove(a.id).catch(() => false);
     // D6a: a weather the scene holds is given back. REDnode does the same when the package is ended.
     if (ctx.held) {
@@ -227,6 +231,16 @@ export class Player {
       if (cue.t <= from) continue;
       ctx.timers.push(setTimeout(() => void hold(cue), Math.max(0, t0 + (cue.t - from) * 1000 - now())));
     }
+    // D6b: the sounds. What was heard before this moment's start is stopped; a sound the moment is
+    // inside starts part way in, with the scene; the later ones start on timers.
+    void this.hush(ctx, 50);
+    const token = ctx.soundRun;
+    for (const cue of sheet.sounds ?? []) {
+      if (cue.end <= from) continue;
+      const offset = Math.max(0, from - cue.t);
+      const due = t0 + Math.max(0, cue.t - from) * 1000;
+      ctx.timers.push(setTimeout(() => void this.sound(ctx, run, token, cue, offset), Math.max(0, due - now())));
+    }
     // The end: the cast holds its last clips, looping, until Stop. A looping play starts again.
     const nobody = !sheet.cast.length;
     ctx.timers.push(
@@ -238,6 +252,62 @@ export class Player {
     );
     // startedAt is when the scene's time 0 was, or would have been: the time now is always now - startedAt.
     this.set({ state: "playing", text: "Playing", startedAt: t0 - from * 1000, pausedAt: undefined, loop: ctx.loop, late: [] });
+  }
+
+  /** Stops every sound the scene has started, fading out over `fadeMs`. A sound still being started is stopped when it arrives. */
+  async hush(ctx, fadeMs = 0) {
+    ctx.soundRun = (ctx.soundRun ?? 0) + 1;
+    const playing = (ctx.sounds ?? []).splice(0);
+    await Promise.all(playing.map((s) => Promise.resolve().then(() => s.stop(fadeMs)).catch(() => undefined)));
+  }
+
+  /**
+   * Plays one sound cue, `offset` seconds into its clip, and stops it at the clip's end. A file
+   * plays through REDnode's own engine, flat; a game sound is posted on V. One that cannot be
+   * played is said in the play's notes, and the play goes on.
+   */
+  async sound(ctx, run, token, cue, offset) {
+    const { audio } = this.deps;
+    const stale = () => run !== this.run || token !== ctx.soundRun;
+    if (stale()) return;
+    const lasts = cue.end - cue.t - offset;
+    const what = cue.file ?? cue.event;
+    try {
+      if (!audio) throw new Error("this EDGE Director has no sound");
+      let handle;
+      let fade = 0;
+      if (cue.file) {
+        const file = ctx.files?.[cue.file];
+        // A file that did not come with the scene was said when the play began.
+        if (!file) return;
+        fade = Math.min(cue.fadeOut ?? 0, lasts);
+        const start = (cue.in ?? 0) + offset;
+        const s = await audio.play(file, {
+          start,
+          end: (cue.in ?? 0) + (cue.end - cue.t),
+          volume: cue.volume ?? 1,
+          // A sound started part way in has had some or all of its fade in.
+          fadeIn: Math.round(Math.max(0, (cue.fadeIn ?? 0) - offset) * 1000),
+          category: cue.category ?? "sfx",
+        });
+        handle = { stop: (ms) => s.stop({ fadeOut: ms }) };
+      } else {
+        const e = await audio.event(cue.event);
+        handle = { stop: () => e.stop() };
+      }
+      if (stale()) return void Promise.resolve().then(() => handle.stop(0)).catch(() => undefined);
+      (ctx.sounds ??= []).push(handle);
+      ctx.timers.push(
+        setTimeout(() => {
+          const i = ctx.sounds.indexOf(handle);
+          if (i < 0) return;
+          ctx.sounds.splice(i, 1);
+          void Promise.resolve().then(() => handle.stop(Math.round(fade * 1000))).catch(() => undefined);
+        }, Math.max(0, (lasts - fade) * 1000)),
+      );
+    } catch (e) {
+      if (!stale()) this.set({ notes: [...(this.st.notes ?? []), `The sound "${what}" was not played: ${e.message}`] });
+    }
   }
 
   /** Stops time for one actor, or lets it run again: they hold the pose they are in. Nothing happens without `deps.freeze`. */
@@ -258,6 +328,8 @@ export class Player {
     if (!ctx?.sheet || this.st.state !== "playing") return false;
     const at = Math.min(Math.max(0, (this.deps.now() - this.st.startedAt) / 1000), ctx.sheet.length);
     for (const t of ctx.timers.splice(0)) clearTimeout(t);
+    // D6b: the sounds stop; Resume starts each again from where the scene stands.
+    void this.hush(ctx, 100);
     // Everybody at the same moment, not one after another.
     await Promise.all(ctx.cast.map((a) => this.still(ctx, a, true)));
     if (ctx !== this.ctx) return false;
@@ -392,6 +464,23 @@ export class Player {
         this.set({ state: "warming", text: "Starting the cast" });
         await step(new Promise((done) => setTimeout(done, this.deps.warmMs)));
       }
+
+      // D6b: each sound file is put where REDnode may play it. One that is missing is said, and the rest play.
+      ctx.files = {};
+      const files = [...new Set((sheet.sounds ?? []).map((s) => s.file).filter(Boolean))];
+      const lost = [];
+      for (const f of files) {
+        try {
+          const from = request.sounds?.[f];
+          if (!from) throw new Error("it is not in the scene's folder");
+          if (!this.deps.soundFile) throw new Error("this EDGE Director has no sound");
+          ctx.files[f] = await this.deps.soundFile(from);
+        } catch (e) {
+          lost.push(`The sound file "${f}" is left out: ${e.message}`);
+        }
+        if (run !== this.run) throw Abandoned;
+      }
+      if (lost.length) this.set({ notes: [...(this.st.notes ?? []), ...lost] });
 
       // 4. Play: one timer for each cue, all from one start time.
       ctx.sheet = sheet;

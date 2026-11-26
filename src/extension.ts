@@ -10,15 +10,17 @@ import { deskDir, deskSequence, fileName, listDesk, newScene, newSequence, renam
 import { DeskView, type DeskItem } from "./deskView";
 import { pickActor } from "./actorPicker";
 import { AnimationsView, type AnimItem } from "./animationsView";
-import { addAnimClip, addSeqClip, EditError, findTrack, newDoc, refreshSeqs, linkState, replaceWithSeq, runOf, seqOf, setActor, unfit, type Actor, type SceneDoc, type SeqRef } from "./doc";
+import { addEventClip, addSoundClip, setSound, SoundEndings, soundOf } from "./sound";
+import { keepSound, soundPath } from "./soundFiles";
+import { addAnimClip, addSeqClip, EditError, findClip, findTrack, newDoc, refreshSeqs, linkState, replaceWithSeq, runOf, seqOf, setActor, unfit, type Actor, type SceneDoc, type SeqRef } from "./doc";
 import { rigName } from "./core/entity";
 import { isSeqFile, newSeq } from "./seq";
 import { makeApi, type EDGEdirApi } from "./api";
-import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PinsHost, type PlayHost, type WeatherHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
+import { applyEdit, sceneIn, SceneEditorProvider, ViewType, type PinsHost, type PlayHost, type SoundHost, type WeatherHost, type PlayNews, type SequenceHost, type SetHost } from "./editor";
 import { findPinFiles, pinFileOf, pinPathFor, readPinFile } from "../director/floor";
 import { linkPins, PinsEnding, pinsOf } from "./pins";
 import { cuesOf, playable } from "./cues";
-import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, stageFor, writeRoots, writeUnsaved } from "./play";
+import { alive, appsDir, DirectorDownload, DirectorVersion, install, installState, lineOf, older, PlayerId, playerVersion, readState, request, soundsFor, stageFor, writeRoots, writeUnsaved } from "./play";
 import { Game } from "./game";
 import { castLabel } from "./core/cast";
 import { libraryRoot } from "./core/made";
@@ -414,7 +416,11 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         telling?.({ text: "Another scene plays in the game now", bad: false, active: false });
         over();
         tell({ text: "Sent to the game", bad: false, active: true });
-        follow(request({ do: "play", file: document.uri.fsPath, sheet, stage }), tell);
+        // D6b: the scene's sound files are named to the Director by where they are on this PC.
+        const heard = soundsFor(document.uri.fsPath, sheet);
+        // One that is not in the scene's folder is said, and the rest of the scene plays.
+        if (heard.missing.length) warn(`${heard.missing.length === 1 ? `the sound file "${heard.missing[0]}" is` : `${heard.missing.length} sound files (${heard.missing.join(", ")}) are`} not in the scene's folder, and left out of the play.`);
+        follow(request({ do: "play", file: document.uri.fsPath, sheet, stage, ...(Object.keys(heard.sounds).length ? { sounds: heard.sounds } : {}) }), tell);
       } catch (e) {
         fail("Play in Game", e);
       }
@@ -460,6 +466,140 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         // Asked again with the next scene: the bridge may be there then.
         weatherAsked = false;
         return false;
+      }
+    },
+  };
+
+  // ---- Audio (D6b): sound files kept with the scene, and the game's own sounds by name ----
+  /** EDGEwave's API, when EDGEwave is installed: the game's sound events, and one played in VS Code. */
+  interface WaveApi {
+    apiVersion: number;
+    soundEvents(o: { query?: string; limit?: number }): Promise<{ name: string; loops?: boolean; min?: number; max?: number; music?: boolean }[]>;
+    playEvent(o: { name: string; show?: boolean }): Promise<{ ok: boolean; reason?: string }>;
+  }
+  const wave = async (): Promise<WaveApi | undefined> => {
+    const ext = vscode.extensions.getExtension<WaveApi>("edgemodders.edgewave");
+    if (!ext) return undefined;
+    try {
+      const api = ext.isActive ? ext.exports : await ext.activate();
+      return api?.apiVersion === 1 ? api : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  /** Asks for a game sound: EDGEwave's list as the modder types, or a typed name without EDGEwave. */
+  const askEvent = async (now = ""): Promise<{ name: string; seconds?: number } | undefined> => {
+    const api = await wave();
+    if (!api)
+      return vscode.window
+        .showInputBox({ title: "Game sound", prompt: "The name of one of the game's sound events. With EDGEwave installed, this is a list to search.", value: now, validateInput: (v) => (/\s/.test(v.trim()) ? "A game sound's name has no spaces" : undefined) })
+        .then((v) => (v?.trim() ? { name: v.trim() } : undefined));
+    type Row = vscode.QuickPickItem & { event?: { name: string; seconds?: number } };
+    return new Promise((done) => {
+      const pick = vscode.window.createQuickPick<Row>();
+      pick.title = "Game sound";
+      pick.placeholder = "Words of a sound event's name, such as door open or ui menu";
+      pick.value = now;
+      pick.matchOnDescription = true;
+      let asked = 0;
+      const search = async () => {
+        const mine = ++asked;
+        const query = pick.value.trim();
+        pick.busy = true;
+        let rows: Row[] = [];
+        try {
+          const found = await api.soundEvents({ query, limit: 80 });
+          rows = found.map((e) => {
+            const seconds = !e.loops && typeof e.max === "number" && e.max > 0 ? e.max : undefined;
+            return { label: e.name, description: [e.music ? "music" : "", e.loops ? "loops" : seconds ? `${Number(seconds.toFixed(2))} s` : ""].filter(Boolean).join(" · "), event: { name: e.name, seconds }, alwaysShow: true };
+          });
+        } catch (e) {
+          rows = [{ label: "EDGEwave could not list the game's sounds", description: (e as Error).message, alwaysShow: true }];
+        }
+        if (mine !== asked) return;
+        // A name the list does not have can still be used as typed: the game may know it.
+        if (query && !/\s/.test(query) && !rows.some((r) => r.event?.name === query)) rows.push({ label: query, description: "as typed", event: { name: query }, alwaysShow: true });
+        pick.items = rows;
+        pick.busy = false;
+      };
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      pick.onDidChangeValue(() => {
+        clearTimeout(timer);
+        timer = setTimeout(() => void search(), 200);
+      });
+      let chosen: Row["event"];
+      pick.onDidAccept(() => {
+        chosen = pick.selectedItems[0]?.event;
+        if (chosen) pick.hide();
+      });
+      pick.onDidHide(() => {
+        clearTimeout(timer);
+        pick.dispose();
+        done(chosen);
+      });
+      pick.show();
+      void search();
+    });
+  };
+  const sounds: SoundHost = {
+    async addFile(document, track, at, measure) {
+      try {
+        if (document.uri.scheme !== "file") return warn("save the scene first: a sound file is kept in a folder beside the scene's file.");
+        const picked = await vscode.window.showOpenDialog({ title: "Add a sound file to the scene", canSelectMany: false, openLabel: "Add Sound", filters: { "Sound files": [...SoundEndings] } });
+        if (!picked?.[0]) return;
+        const file = keepSound(picked[0].fsPath, document.uri.fsPath);
+        let seconds: number;
+        try {
+          seconds = await measure(soundPath(document.uri.fsPath, file) ?? picked[0].fsPath);
+        } catch (e) {
+          return warn(`${path.basename(picked[0].fsPath)} was not added: ${(e as Error).message}.`);
+        }
+        let id = "";
+        await applyEdit(document, (d) => {
+          const made = addSoundClip(d, track, { file, seconds }, at);
+          id = made.id;
+          return made.doc;
+        });
+        if (id) scenes.select(document, id);
+      } catch (e) {
+        if (e instanceof EditError) return warn(`${e.message}.`);
+        fail("Add Sound File", e);
+      }
+    },
+    async addEvent(document, track, at) {
+      try {
+        const event = await askEvent();
+        if (!event) return;
+        let id = "";
+        await applyEdit(document, (d) => {
+          const made = addEventClip(d, track, event.name, at, event.seconds);
+          id = made.id;
+          return made.doc;
+        });
+        if (id) scenes.select(document, id);
+      } catch (e) {
+        if (e instanceof EditError) return warn(`${e.message}.`);
+        fail("Add Game Sound", e);
+      }
+    },
+    async pickEvent(document, clip) {
+      try {
+        const found = findClip(sceneIn(document), clip);
+        const event = await askEvent(found ? (soundOf(found.clip)?.event ?? "") : "");
+        if (event) await applyEdit(document, (d) => setSound(d, clip, { event: event.name }));
+      } catch (e) {
+        if (e instanceof EditError) return warn(`${e.message}.`);
+        fail("Game Sound", e);
+      }
+    },
+    async hear(event) {
+      try {
+        const api = await wave();
+        if (!api) return warn("Hear needs EDGEwave: it plays the game's sounds in VS Code. Install EDGEwave, or listen in the game with Play in Game.");
+        const r = await api.playEvent({ name: event, show: false });
+        if (!r.ok) warn(`"${event}" was not played: ${r.reason ?? "EDGEwave gave no reason"}`);
+      } catch (e) {
+        fail("Hear", e);
       }
     },
   };
@@ -532,6 +672,7 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
     plays,
     pins,
     weathers,
+    sounds,
   );
   /** The scene in front as a document, or undefined when its text is not a scene just now. */
   const frontDoc = (): SceneDoc | undefined => {

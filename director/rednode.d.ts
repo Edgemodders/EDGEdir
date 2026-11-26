@@ -24,5 +24,13 @@ declare module "rednode" {
     pin(options: { at: unknown; title: string; text?: string }): Promise<number>;
     unpin(id: number): Promise<unknown>;
   };
+  export const audio: {
+    /** Plays a WAV, OGG, MP3 or FLAC from the package's folder or its data folder. `start` and `end` are seconds into the file; `fadeIn` is milliseconds. */
+    play(sound: string, options?: { start?: number; end?: number; volume?: number; fadeIn?: number; category?: "sfx" | "dialogue" | "music" }): Promise<{ stop(options?: { fadeOut?: number }): Promise<void> }>;
+    /** Posts one of the game's sound events, on V. Experimental in REDnode. */
+    event(name: string, options?: { on?: "player" | "none" }): Promise<{ stop(): Promise<void> }>;
+  };
+  /** The package: `dataDir` is its own folder for files it makes while it runs. */
+  export const pkg: { readonly dataDir: string };
   export const channel: { post(data: unknown): void; on<T = unknown>(handler: (data: T) => void): () => void };
 }

@@ -13,6 +13,7 @@ import manifest from "../director/rednode-app.json";
 import type { CueSheet } from "./cues";
 import type { SceneDoc } from "./doc";
 import { fromOf, setOf } from "./set";
+import { soundPath } from "./soundFiles";
 
 export const PlayerId = "edge-director";
 
@@ -59,6 +60,25 @@ export interface PlayRequest {
   file?: string;
   sheet?: CueSheet;
   stage?: PlayStage;
+  /** D6b: where each of the sheet's sound files is on this PC, by the name the sheet has it under. */
+  sounds?: Record<string, string>;
+}
+
+/**
+ * Where a scene's sound files are on this PC: each of the sheet's files, looked for from the
+ * scene's own folder. `missing` are the ones that are not there.
+ */
+export function soundsFor(sceneFile: string, sheet: CueSheet): { sounds: Record<string, string>; missing: string[] } {
+  const sounds: Record<string, string> = {};
+  const missing: string[] = [];
+  for (const s of sheet.sounds ?? []) {
+    if (!s.file || s.file in sounds || missing.includes(s.file)) continue;
+    // A file is the scene's own: a name that climbs out of the scene's folder is not played.
+    const full = soundPath(sceneFile, s.file);
+    if (full) sounds[s.file] = full;
+    else missing.push(s.file);
+  }
+  return { sounds, missing };
 }
 
 const readJson = (file: string): unknown => {

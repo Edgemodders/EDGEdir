@@ -93,7 +93,7 @@ function drawScene(s: Snapshot) {
       const lane = el("div", `lane${t.cast ? " cast" : ""}${s.chosen === t.id ? " on" : ""}`);
       lane.dataset.track = t.id;
       const name = el("div", "lane-name", t.who ?? t.name);
-      name.title = t.mark ? "Choose this actor: Adjust works on them, and a pin marks them in the game" : t.kind === "actor" ? "No actor is chosen for this track yet" : t.kind === "weather" ? "The weather track: each clip holds its weather in the game" : `${t.kind} tracks do not play in the game yet`;
+      name.title = t.mark ? "Choose this actor: Adjust works on them, and a pin marks them in the game" : t.kind === "actor" ? "No actor is chosen for this track yet" : t.kind === "weather" ? "The weather track: each clip holds its weather in the game" : t.kind === "audio" ? "An audio track: each clip is a sound heard in the game" : `${t.kind} tracks do not play in the game yet`;
       if (t.mark) name.addEventListener("click", () => post({ type: "choose", track: s.chosen === t.id ? undefined : t.id }));
       const clips = el("div", "lane-clips");
       for (const c of t.clips) {

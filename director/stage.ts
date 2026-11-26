@@ -265,7 +265,7 @@ export class Stage {
           this.from = "director";
           this.playing = play.file;
           this.publish();
-          await player.play({ id: crypto.randomBytes(8).toString("hex"), sheet: play.sheet, stage: play.stage, from: m.from ?? 0, loop: !!m.loop });
+          await player.play({ id: crypto.randomBytes(8).toString("hex"), sheet: play.sheet, stage: play.stage, sounds: play.sounds, from: m.from ?? 0, loop: !!m.loop });
           await this.mark();
           await this.measure();
           break;
