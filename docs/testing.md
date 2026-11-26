@@ -13,7 +13,7 @@ Last updated 2026-11-17.
 | Test | Kind | Phase | Last run | Result |
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-26 | Pass, 97 tests |
-| [D6b Audio](#d6b-audio) | Hand, in VS Code, and a stand-in for the game | D6b | | Not run yet (0.0.33, EDGE Director 0.7.0) |
+| [D6b Audio](#d6b-audio) | Hand, in VS Code, and a stand-in for the game | D6b | 2026-11-26 | By script: round 1, 14 of 14 (0.0.33, EDGE Director 0.7.0); nobody listened. Four small fixes from its notes in 0.0.34 with EDGE Director 0.7.1, not run |
 | [The owner's tests, A to I](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to I in the game | D1 to D5, DR1 to DR3, D6a, D6b | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
 | [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | 2026-11-21 | By script: round 1, 8 of 11 (0.0.29); the fixes of 0.0.30 passed their rerun. 0.0.31's small changes and 0.0.32's fixes passed by script, but for the game path warning's text, read in the log only |
 | [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29, EDGE Director 0.6.0) |
@@ -53,7 +53,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): not run yet. Nothing of EDGEdir has run in the game at all.
 - **DR1, DR2, DR3 Pins, DR3 Pins in the editor and D6a Weather** have each passed by script (2026-11-21): their rounds on 0.0.29, and the fixes of 0.0.30 with EDGE Director 0.6.1 in a rerun. D5d's step 3 passed in both its cases; Open the Download itself was not pressed.
 - **0.0.31's three small changes** ran by script on 2026-11-25: the last weather clip's sentence passes; the warning for an `edgedir.gamePath` that is no game folder passes with its path misprinted; the weather list coming by itself missed. 0.0.32's fix for the list passed its rerun. Open: the corrected warning's text has been read in the log only, not in the warning itself.
-- **D6b Audio** (0.0.33 with EDGE Director 0.7.0, 2026-11-26): its round by script (14 steps) has not run, and the owner's Test I (9 steps, in the game) has not run.
+- **D6b Audio** passed its round by script on 2026-11-26 (14 of 14 on 0.0.33; nobody listened, so that sound is heard is the owner's to say). The four small fixes of 0.0.34 with EDGE Director 0.7.1 from its notes are not run. The owner's Test I (9 steps, in the editor and the game) has not run.
 - **The owner's Tests A to D** (the spot tests S1 to S12): none run yet.
 - The fix of 0.0.8 (a change the inspector refuses puts its box back) passed in D3's round.
 
@@ -825,7 +825,7 @@ EDGEdir 0.0.33 with EDGE Director 0.7.0 (2026-11-26). The audio track in VS Code
 | Step | Do | Expect |
 |---|---|---|
 | 1 | **Add Track**, Audio, and select the track | The toolbar has **Add Sound File** and **Add Game Sound**, and no Add Clip; the inspector has the same two buttons and a note that sounds are heard flat in the game |
-| 2 | Put the playhead at 2 s and click **Add Sound File**; pick the WAV | A clip at 2 s as long as the file, selected, named for the file, with its waveform. The file is in `audio` beside the scene's file. The inspector has **File** (`data-state` "found"), its length, **Volume** 1, **Fade in (s)**, **Fade out (s)**, **Follows**, and under **In the game** that it is heard flat, as if at V. `edgedirSound.state().loaded` has the file |
+| 2 | Put the playhead at 2 s and click **Add Sound File**; pick the WAV | A clip at 2 s as long as the file, selected, labelled with the file's name on the lane (its Name box is empty), with its waveform. The file is in `audio` beside the scene's file. The inspector has **File** (`data-state` "found"), its length, **Volume** 1, **Fade in (s)**, **Fade out (s)**, **Follows**, and under **In the game** that it is heard flat, as if at V. `edgedirSound.state().loaded` has the file |
 | 3 | Add the same file again at 12 s; then the MP3 or OGG at 20 s | The `audio` folder has the WAV once, and the second file. Each clip has a waveform (say if the MP3 or OGG has none: **File** then says why) |
 | 4 | Drag the first clip's start edge 1 s to the right; then drag it left as far as it goes | The clip starts 1 s later and is 1 s shorter, the waveform loses its start, and the inspector says it plays from 1 s of the file. Dragged left it stops where the file starts. The end edge stops at the file's end the same way |
 | 5 | Set **Volume** to 0.5, then to 3; **Fade in (s)** to 99 | 0.5 is taken and the waveform is lower. 3 and 99 are refused with a message, and the box goes back |
@@ -841,4 +841,14 @@ EDGEdir 0.0.33 with EDGE Director 0.7.0 (2026-11-26). The audio track in VS Code
 
 | Round | Date | Steps | Result |
 |---|---|---|---|
-| 1 | | 1 to 14 | Not run yet |
+| 1 | 2026-11-26 | 1 to 14 | **14 of 14, with four small findings.** Run by the EDGEweb session by script, on 0.0.33 at `61074f9` with the stand-in at EDGE Director 0.7.0 (a trial EDGEkit 1.143.1 on a scratch profile, real mouse and key events; window A with no EDGEwave and no REDcode, window B with both; a scene with one actor and three clips to 10.9 s; a 3 s WAV tone and a 2.892 s OGG; the Director's page in a headless Edge). Nobody watched and nobody listened: screenshots timed out, so the lane was read from the canvas's pixels, and whether sound came out of the speakers is **not checked**. The page read the WAV and the OGG from the scene's `audio` folder inside VS Code (step 2, 3: `loaded` has both, `failed` is empty, the clips' pixels vary as a waveform); MP3 and FLAC were not tried. Step 8 passed in both windows (an input box without EDGEwave; with it a list, where a picked sound of 1.42 s gave a clip 1.4 s long). Step 9: without EDGEwave the message; with it, Hear gave no refusal in 8 s, and **that a recording played is not confirmed**; Hear on a name the game does not have was answered with EDGEwave's reason. Not read: the words "game sound, silent here" on the clip (canvas text) |
+
+What round 1 found, and what was done:
+
+| Found | Done |
+|---|---|
+| Step 4: after the start edge was dragged right (to 2.8667, a snap to another clip's edge) and then far left, the clip started at 1.9997, not 2: the start point was kept to a thousandth of a second, the lane's times finer | Fixed in 0.0.34: the start point is kept as fine as the lane's times, and a unit test drags in and out again. Not run |
+| Numbers went to the Director unrounded (`"end":2.8919999999999995`, `"start":1.1999999999999993`), and so did `edgedirSound.state().started` | Fixed in EDGE Director 0.7.1 and 0.0.34: rounded to a tenth of a millisecond. Not run |
+| Step 13: with a file missing, the Play Anyway question still listed the notes of that file's clips, though they are left out of the play | Fixed in 0.0.34: their notes are left out of the question; the warning says the file is left out. Not run |
+| Step 14: the stand-in's page logged one 404 at load | Probably the browser's own request for an icon: the stand-in answers it with nothing since 0.7.1. Not run, and the address was not caught |
+| Step 2: the clip's Name box is empty | As meant: the lane labels the clip with the file's name until it is given a name of its own. The step's words changed |

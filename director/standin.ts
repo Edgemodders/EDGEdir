@@ -146,6 +146,8 @@ if (port) {
       }
       if (kit && url === "/rednode-ui.js") return void res.writeHead(200, { "Content-Type": types[".js"] }).end(fs.readFileSync(kit));
       if (url === "/rednode-stub.js") return void res.writeHead(200, { "Content-Type": types[".js"] }).end(Stub);
+      // A browser asks for an icon by itself: there is none, and that is no fault.
+      if (url === "/favicon.ico") return void res.writeHead(204).end();
       const name = url === "/" ? "index.html" : path.basename(url);
       const file = path.join(pageDir, name);
       if (!types[path.extname(name)] || !fs.existsSync(file)) return void res.writeHead(404).end();

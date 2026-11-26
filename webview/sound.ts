@@ -149,7 +149,7 @@ export function mountSound(): PageSound {
         source.connect(gain).connect(a.destination);
         source.start(at, (cue.in ?? 0) + offset, lasts);
         playing.push({ source, gain });
-        started.push({ file: cue.file, at: Math.max(cue.t, from), offset: (cue.in ?? 0) + offset, lasts });
+        started.push({ file: cue.file, at: Math.max(cue.t, from), offset: Math.round(((cue.in ?? 0) + offset) * 1e4) / 1e4, lasts: Math.round(lasts * 1e4) / 1e4 });
       }
     },
     stop,

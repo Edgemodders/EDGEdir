@@ -84,6 +84,10 @@ test("trimming a file's clip moves its start point and stops at the file's ends;
   d = trimClip(d, a.id, "start", 0.5);
   c = d.tracks[0].clips[0];
   assert.deepEqual([c.start, c.length, soundOf(c)!.in], [2, 4, 0]);
+  // In to a time off the millisecond and out again: the clip is back where it was, to the frame.
+  d = trimClip(trimClip(d, a.id, "start", 2.866667), a.id, "start", 0);
+  c = d.tracks[0].clips[0];
+  assert.deepEqual([c.start, c.length, soundOf(c)!.in], [2, 4, 0]);
   // The end edge in, then out past the file's end.
   d = trimClip(d, a.id, "end", 4);
   assert.equal(d.tracks[0].clips[0].length, 2);

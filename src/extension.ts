@@ -390,7 +390,14 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
       try {
         if (isSeqFile(document.uri.path)) return warn("a sequence plays in the game on an actor, in a scene.");
         const doc = sceneIn(document);
-        const { sheet, notes } = cuesOf(doc);
+        const { sheet, notes: every } = cuesOf(doc);
+        // D6b: a clip whose file is not in the scene's folder is left out of the play, and said by itself
+        // below: what the game does with it is not in the question.
+        const heard = soundsFor(document.uri.fsPath, sheet);
+        const notes = every.filter((n) => {
+          const file = n.kind === "sound" && n.clip ? soundOf(findClip(doc, n.clip)?.clip ?? ({} as never))?.file : undefined;
+          return !file || !heard.missing.includes(file);
+        });
         if (!playable(sheet)) return warn(`nothing to play in the game. ${notes.find((n) => !n.clip)?.text ?? "No actor track has a clip the game can play."}`);
         const list = notes.map((n) => n.text).join("\n");
         if (notes.length && agreed.get(document.uri.toString()) !== list) {
@@ -417,7 +424,6 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
         over();
         tell({ text: "Sent to the game", bad: false, active: true });
         // D6b: the scene's sound files are named to the Director by where they are on this PC.
-        const heard = soundsFor(document.uri.fsPath, sheet);
         // One that is not in the scene's folder is said, and the rest of the scene plays.
         if (heard.missing.length) warn(`${heard.missing.length === 1 ? `the sound file "${heard.missing[0]}" is` : `${heard.missing.length} sound files (${heard.missing.join(", ")}) are`} not in the scene's folder, and left out of the play.`);
         follow(request({ do: "play", file: document.uri.fsPath, sheet, stage, ...(Object.keys(heard.sounds).length ? { sounds: heard.sounds } : {}) }), tell);

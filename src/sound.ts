@@ -77,7 +77,8 @@ export function soundLabel(clip: Clip): string | undefined {
 function written(s: Sound): Record<string, unknown> {
   const out: Record<string, unknown> = s.file ? { file: s.file } : { event: s.event };
   if (s.file && s.seconds) out.seconds = round(s.seconds);
-  if (s.file && s.in > Eps) out.in = round(s.in);
+  // As fine as the lane's own times, so an edge dragged in and out again comes back to where it was.
+  if (s.file && s.in > Eps) out.in = Math.round(s.in * 1e6) / 1e6;
   if (Math.abs(s.volume - 1) > Eps) out.volume = round(s.volume);
   if (s.fadeIn > Eps) out.fadeIn = round(s.fadeIn);
   if (s.fadeOut > Eps) out.fadeOut = round(s.fadeOut);

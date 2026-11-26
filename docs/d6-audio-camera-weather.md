@@ -4,7 +4,7 @@ title: D6 Audio, camera, weather
 
 # <span class="y">D6</span> Audio, camera, weather
 
-**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. D6a Weather is built (EDGEdir 0.0.28, EDGE Director 0.5.0): passed by script in VS Code, not run in the game. D6b Audio is built (EDGEdir 0.0.33, EDGE Director 0.7.0, 2026-11-26): not run in VS Code or in the game. D6c Camera is not built. See [What is built](#what-is-built).**
+**Status: agreed by the owner on 2026-11-18, all seven questions as recommended. D6a Weather is built (EDGEdir 0.0.28, EDGE Director 0.5.0): passed by script in VS Code, not run in the game. D6b Audio is built (EDGEdir 0.0.33, EDGE Director 0.7.0, 2026-11-26): passed by script in VS Code the same day (nobody listened), not run in the game. D6c Camera is not built. See [What is built](#what-is-built).**
 
 D6 is the sixth phase of the [design](design.html). Audio, camera and weather tracks get real clips, show in the preview, and play in the game through the player D5 built. A mod a player installs is D7.
 
@@ -138,7 +138,7 @@ How D6b differs from the plan:
 
 Not built in D6b: the start point as a number in the inspector (drag the start edge), a sound file dropped onto a lane, tidying files no clip uses any more out of the `audio` folder (Undo may want them back), and copying a scene's sounds with it to a project or the Library (D7).
 
-Unverified until the hand test: that the page fetches and reads a file from the scene's `audio` folder inside VS Code (`localResourceRoots`, `connect-src`), that VS Code's page decodes MP3 and FLAC as a browser does, and EDGEwave's picker and Hear. Unverified until the game: everything in the game; that a file's fade out and its end land as asked; what `audio.event` does for a name that needs a place or a switch the game sets first.
+The round by script of 2026-11-26 showed that the page reads a WAV and an OGG from the scene's `audio` folder inside VS Code, and EDGEwave's picker. Still unverified: MP3 and FLAC there, that Hear plays a recording, and that sound comes out of the speakers in the preview (nobody listened). Unverified until the game: everything in the game; that a file's fade out and its end land as asked; what `audio.event` does for a name that needs a place or a switch the game sets first.
 
 ## Tests
 

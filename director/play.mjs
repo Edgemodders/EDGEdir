@@ -281,10 +281,11 @@ export class Player {
         // A file that did not come with the scene was said when the play began.
         if (!file) return;
         fade = Math.min(cue.fadeOut ?? 0, lasts);
-        const start = (cue.in ?? 0) + offset;
+        const tidy = (n) => Math.round(n * 1e4) / 1e4;
+        const start = tidy((cue.in ?? 0) + offset);
         const s = await audio.play(file, {
           start,
-          end: (cue.in ?? 0) + (cue.end - cue.t),
+          end: tidy((cue.in ?? 0) + (cue.end - cue.t)),
           volume: cue.volume ?? 1,
           // A sound started part way in has had some or all of its fade in.
           fadeIn: Math.round(Math.max(0, (cue.fadeIn ?? 0) - offset) * 1000),
