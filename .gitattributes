@@ -1,0 +1,4 @@
+# Text files are LF in the repository and in the working tree, on every PC.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
