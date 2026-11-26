@@ -453,6 +453,8 @@ export function activate(context: vscode.ExtensionContext): EDGEdirApi {
           .map((item) => item.path)
           .filter((p): p is string => typeof p === "string" && p.startsWith("WeatherPresets."))
           .sort((a, b) => a.localeCompare(b));
+        // An empty answer (the game's records not loaded yet) is asked for again too.
+        if (!weatherList.length) weatherAsked = false;
         return weatherList.length > 0;
       } catch {
         // Asked again with the next scene: the bridge may be there then.

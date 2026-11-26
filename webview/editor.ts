@@ -171,7 +171,7 @@ window.addEventListener("message", (e) => {
   $("invalid").hidden = true;
   $("work").hidden = false;
   const before = doc;
-  const mode = `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}`;
+  const mode = `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}|${weathers.length}`;
   seqMode = !!m.sequence;
   links = (m.links as Record<string, string> | undefined) ?? {};
   stage = m.stage as Stage | undefined;
@@ -182,7 +182,7 @@ window.addEventListener("message", (e) => {
   sel = new Set([...sel].filter((id) => findClip(doc!, id)));
   if (!findTrack(doc, selTrack)) selTrack = doc.tracks[0]?.id ?? "";
   if (!fitted && sceneLength(doc) > 0) fit();
-  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}`) render();
+  if (!before || JSON.stringify(before) !== text || mode !== `${seqMode}|${JSON.stringify(links)}|${JSON.stringify(stage)}|${weathers.length}`) render();
   applyPendingSelect();
 });
 

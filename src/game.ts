@@ -91,8 +91,8 @@ export class Game {
     const own = String(settings("edgedir.gamePath") ?? "").trim();
     if (own && own !== this.saidBadPath && !isGameFolder(own)) {
       this.saidBadPath = own;
-      this.log(`The setting edgedir.gamePath (${own}) is not a Cyberpunk 2077 folder: no bin\x64\Cyberpunk2077.exe in it. It is passed over.`);
-      void vscode.window.showWarningMessage(`EDGEdir: the setting edgedir.gamePath is not a Cyberpunk 2077 folder (no bin\x64\Cyberpunk2077.exe in it), so it is not used: ${own}`);
+      this.log(`The setting edgedir.gamePath (${own}) is not a Cyberpunk 2077 folder: no bin\\x64\\Cyberpunk2077.exe in it. It is passed over.`);
+      void vscode.window.showWarningMessage(`EDGEdir: the setting edgedir.gamePath is not a Cyberpunk 2077 folder (no bin\\x64\\Cyberpunk2077.exe in it), so it is not used: ${own}`);
     }
     return resolveGame(settings, { redcodeGamePath: () => redcode()?.gamePath(), edgedeckGamePath: () => edgedeck()?.gamePath() }, search);
   }
