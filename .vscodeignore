@@ -18,6 +18,7 @@ dist/nexus/**
 dist/director/**
 dist/director-standin.mjs
 director/**
+spikes/**
 node_modules/**
 esbuild.mjs
 tsconfig.json
