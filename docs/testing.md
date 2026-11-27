@@ -14,7 +14,7 @@ Last updated 2026-11-17.
 |---|---|---|---|---|
 | [Type check, build and unit tests](#type-check-build-and-unit-tests) | Automated, also on GitHub (Check) | Scaffold, D1, D2 | 2026-11-26 | Pass, 97 tests |
 | [D6b Audio](#d6b-audio) | Hand, in VS Code, and a stand-in for the game | D6b | 2026-11-26 | By script: round 1, 14 of 14 (0.0.33, EDGE Director 0.7.0); nobody listened. Round 2: its four small fixes pass on 0.0.34 with EDGE Director 0.7.1 |
-| [The owner's tests, A to I](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to I in the game | D1 to D5, DR1 to DR3, D6a, D6b | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
+| [The owner's tests, A to J](#the-owners-tests) | By hand, the owner: A to D in VS Code, E to I in the game, J the camera spike in the game | D1 to D5, DR1 to DR3, D6a, D6b | 2026-11-20 | Test E partly run: E1, E2, E3 and E5 pass, in the game for the first time. The rest not run |
 | [D6a Weather](#d6a-weather) | Hand, in VS Code with the game's files, and a stand-in for the game | D6a | 2026-11-21 | By script: round 1, 8 of 11 (0.0.29); the fixes of 0.0.30 passed their rerun. 0.0.31's small changes and 0.0.32's fixes passed by script; the game path warning's own text was read on 2026-11-26 |
 | [DR3 Pins](#dr3-pins) | Hand, in a browser, with a stand-in for the game; no game | DR3, part 1 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29, EDGE Director 0.6.0) |
 | [DR3 Pins in the editor](#dr3-pins-in-the-editor) | Hand, in VS Code; no game | DR3, part 2 | 2026-11-21 | By script: round 1, 10 of 10 (0.0.29); round 2, 10 of 10 with 0.0.30's change |
@@ -72,6 +72,7 @@ What the owner tests by hand, in lettered sections: **Test A**, **Test B** and s
 | [G](#test-g-edge-director-in-the-game-pins) | EDGE Director in the game: pins | As E | 10 minutes | Not run yet |
 | [H](#test-h-weather) | Weather: in the editor, then in the game | As E, with REDnode 0.67.2 or later | 10 minutes | Not run yet |
 | [I](#test-i-sound) | Sound: in the editor, then in the game | As E, with EDGE Director 0.7.0, and a sound file of your own (a spoken line is best) | 15 minutes | Not run yet |
+| [J](#test-j-the-camera-spike) | The camera spike, before D6c Camera is built: cuts, the lens, V during a shot, the scene tier. Needs none of the tests before it | The game with REDnode 0.70.0 or later, and the spike package copied in | 15 minutes | Not run yet |
 
 Tests A to D are the spot tests S1 to S12 and S15, one short test for each major feature; each names the full test it is drawn from, which has the detail. S13 and S14 (play in game, EDGE Director) are Test E now.
 
@@ -169,6 +170,8 @@ What round 1 found, and what was done:
 
 EDGEdir 0.0.26 with EDGE Director 0.4.0. The in-game test of DR2. Go on from Test E, with its scene open in EDGE Director's window, and the same scene open and saved in VS Code beside the game.
 
+**Known before the first run (REDnode's scene spike, 2026-11-27):** `world.move` moves nobody who is playing a workspot. So in F2, F3 and F10 expect the actor to stay where they are while the scene plays; the numbers and the scene's file still change, and the next Play has them. F7 (moved while stopped) is not touched by this. The player is to be changed to stop, move and play again once REDnode has tried that route.
+
 | Step | Do | Expect, and say |
 |---|---|---|
 | F1 | Press **Play**. Click the first actor's name at the left of the strip | Their lane's name is lit, a pin with their name is over them in the world, and **Adjust** shows their name with Right, Forward and Turn |
@@ -240,6 +243,28 @@ EDGEdir 0.0.33 with EDGE Director 0.7.0. D6b, in the editor and then in the game
 | I7 | Press **Play** | Your file is heard at its clip, from the point you trimmed it to, and fades out. Say whether it is in time with the actors, and whether the game's Dialogue volume slider changes it. Say whether the game sound is heard at its clip |
 | I8 | While the file plays press **Pause**, then **Resume** | The sound stops with the actors and goes on from where the scene stands. Say how clean the join is |
 | I9 | Play again and press **Stop** while the file plays; then drag the playhead into the file's clip | Stop fades the sound out. From the playhead the sound starts part way in |
+
+| Round | Date | Result |
+|---|---|---|
+| 1 | | Not run yet |
+
+### Test J: The camera spike
+
+EDGEdir camera spike 0.1.0 (`spikes/camera-spike`, a small REDnode package of its own; not EDGE Director, and not part of a release). It comes before D6c Camera is built, and answers what the plan asks: does the view cut cleanly, what does the lens do at a cut, what can V do during a shot, and what is V's view when the package is ended with its camera on. It does not need Tests E to I first. Needs REDnode 0.70.0 or later. Claude copies the package into the game when you ask; then open **EDGEdir camera spike (D6c)** from REDnode's list. Load a save on open ground, with room around V. Each button writes what it did to the window's log; the answers wanted are what you see.
+
+| Step | Do | Say |
+|---|---|---|
+| J1 | **Make the cameras**, then **Cut to camera A** | Whether the view cuts at once to a camera 4 m in front of V looking back at V; whether V is in the picture, and has a head; whether the HUD stays |
+| J2 | **Back to V** | Whether V's own view is back at once and the right way up |
+| J3 | **Cut to camera A**, then **Move A to V's right**, then **Move A in front, tilted down** | Whether each move is a clean jump in one frame or a slide; whether the tilt looks down |
+| J4 | **Cut to camera B** | Whether the view cuts from A to B (3 m ahead and 3 m to V's right) with no frame of V's own view between |
+| J5 | **Cut to camera A**, then **A: lens 25**, **A: lens 80**, **A: lens 50** | Whether the lens jumps or eases, and over how long |
+| J6 | **Back to V, then cut to A with lens 25**; then **From B, cut to A with lens 80**. Turn the toggle off and press both again | Whether the lens is right from the cut's first frame or drifts, with the lens set before the camera goes on, and after |
+| J7 | **Cut to camera A**, press **Watch 10 s**, and try to walk, turn, shoot and open the menu | What V can do, and what the view does meanwhile |
+| J8 | Still on camera A: **Scene tier 3**, **Watch 10 s** and try to walk; the same with **Scene tier 4** and **5**; then **Tier back** | At which tier V can no longer walk or look, what happens to the HUD and to the view, and whether **Tier back** gives everything back |
+| J9 | **Back to V**, then **To A over 2 s**, **To B over 2 s**, **Back to V over 2 s** | Whether a blend time moves the view between the two over 2 s, or cuts, or does something else |
+| J10 | **Cut to camera A**, then turn the package off in REDnode's Mod Manager | What the view is with the package gone. If V has no view: turn the package on, press **Back to V**; if that fails, load the save, and say so |
+| J11 | **Remove everything** | The cameras are gone, the view is V's, the tier is as before |
 
 | Round | Date | Result |
 |---|---|---|

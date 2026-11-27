@@ -1,0 +1,13 @@
+{
+  "id": "edgedir-camera-spike",
+  "name": "EDGEdir camera spike (D6c)",
+  "version": "0.1.0",
+  "author": "Edgemodders",
+  "description": "A spike for EDGEdir's camera track (D6c): spawns a bare entity with a camera component, cuts the view to it and back to V, moves and turns it while it is on, sets its field of view, tries a second camera and a blend time, and raises V's scene tier. Every call and its time go to the log; what the view does is for the player to say. Not part of EDGEdir's release.",
+  "main": "mod.mjs",
+  "open": false,
+  "requires": {
+    "rednode": ">=0.70.0",
+    "codeware": ">=1.14"
+  }
+}
