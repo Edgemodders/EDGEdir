@@ -171,7 +171,7 @@ export class AnimationsView implements vscode.TreeDataProvider<AnimItem> {
         const project = this.game.project();
         const t = new vscode.TreeItem(item.source === "project" ? "Project" : "Library", list.length ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
         t.description = item.source === "project" ? `${project?.name ?? ""}${list.length ? `, ${list.length}` : ": no made animations"}` : String(list.length);
-        t.tooltip = item.source === "project" ? "Animations made in EDGEfab and put into the open REDcode project with Add to Project" : "Animations made in EDGEfab and kept in the EDGE Library";
+        t.tooltip = item.source === "project" ? "Animations made in REDcode in the open REDcode project" : "Made animations kept in the EDGE Library";
         t.iconPath = new vscode.ThemeIcon(item.source === "project" ? "project" : "library");
         return t;
       }
@@ -180,7 +180,7 @@ export class AnimationsView implements vscode.TreeDataProvider<AnimItem> {
         const t = new vscode.TreeItem(a.title);
         t.description = [`${a.seconds.toFixed(2)} s`, a.rig ? rigName(a.rig) : "", a.loop ? "loops" : "", a.rootMotion ? "moves" : "", a.file ? "" : "its file is missing"].filter(Boolean).join(" · ");
         t.tooltip = new vscode.MarkdownString(
-          [`**${a.title}**${a.name !== a.title ? ` (${a.name})` : ""}`, `Made in EDGEfab, ${a.source === "project" ? "in the open project" : "in the Library"}`, `${a.seconds.toFixed(3)} s at ${Math.round(a.fps)} frames a second`, `Rig: ${a.rig ? rigName(a.rig) : "not given"}`, `\`${a.where}\``, "It plays in the game once REDbridge can import animation frames."].join("\n\n"),
+          [`**${a.title}**${a.name !== a.title ? ` (${a.name})` : ""}`, `A made animation, ${a.source === "project" ? "in the open project" : "in the Library"}`, `${a.seconds.toFixed(3)} s at ${Math.round(a.fps)} frames a second`, `Rig: ${a.rig ? rigName(a.rig) : "not given"}`, `\`${a.where}\``, "EDGEdir does not play made animations in the game yet."].join("\n\n"),
         );
         t.iconPath = new vscode.ThemeIcon(a.file ? "wand" : "warning");
         t.contextValue = "animClip";

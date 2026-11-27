@@ -50,7 +50,7 @@ Every hand test (D1, D2, D3) has passed a round run by script in another session
 - **D5b The cue sheet** passed its round by script (10 of 10), and the two changes of 0.0.18 from its notes passed with D5a's round.
 - **D5a Sets** passed: its three misses of round 1 were fixed in 0.0.19 and passed their rerun. 0.0.20's small change from the rerun's notes (the Sets view is read again when a scene is saved) passed with D5d's round. One thing seen once is open: a message about unsaved changes put back with no window reload (D5a's round 2).
 - **D5d Play in game, in VS Code** passed its round by script (13 of 13, with a stand-in for the player). The fix of 0.0.23 from its notes (a tab whose scene's play was taken over by another scene says so) passed its rerun. The copy of the player into the game's folder has not run: the round chose Cancel there.
-- **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): not run yet. Nothing of EDGEdir has run in the game at all.
+- **The owner's Tests E to H**, in the game with EDGE Director's window (E: 14 steps, play; F: 10 steps, adjust; G: 8 steps, pins; H: 8 steps, weather): Test E was partly run on 2026-11-20 (E1, E2, E3 and E5 pass, EDGEdir's first run in the game); the rest of E, and F to H, are not run yet.
 - **DR1, DR2, DR3 Pins, DR3 Pins in the editor and D6a Weather** have each passed by script (2026-11-21): their rounds on 0.0.29, and the fixes of 0.0.30 with EDGE Director 0.6.1 in a rerun. D5d's step 3 passed in both its cases; Open the Download itself was not pressed.
 - **0.0.31's three small changes** ran by script on 2026-11-25: the last weather clip's sentence passes; the warning for an `edgedir.gamePath` that is no game folder passes with its path misprinted; the weather list coming by itself missed. 0.0.32's fix for the list passed its rerun. Open: the corrected warning's text has been read in the log only, not in the warning itself.
 - **D6b Audio** passed its round by script on 2026-11-26 (14 of 14 on 0.0.33; nobody listened, so that sound is heard is the owner's to say). The four small fixes of 0.0.34 with EDGE Director 0.7.1 from its notes passed their rerun the same day. The owner's Test I (9 steps, in the editor and the game) has not run.
@@ -304,9 +304,9 @@ What round 1 found, and what was done:
 
 | Found | Done |
 |---|---|
-| Step 22: with the Desk on a `subst` drive, Delete failed ("Failed to move ... to the recycle bin") and the scene stayed. On its real `C:` path the step passed | Fixed in 0.0.3: Delete asks again, then deletes for good. Step 22a. Not run yet |
+| Step 22: with the Desk on a `subst` drive, Delete failed ("Failed to move ... to the recycle bin") and the scene stayed. On its real `C:` path the step passed | Fixed in 0.0.3: Delete asks again, then deletes for good. Step 22a. Passed in round 2 |
 | Step 21: opened with File, Open File the copy opens in the scene editor. Passed on the command line at launch it opened as JSON text and was not under Recent. Unverified whether that is only because an extension loaded by a development path loads late | Open. Step 23 checks it with an installed build |
-| Step 4: the inspector's Start kept its old value during a drag | Fixed in 0.0.3: Start, Length and Frames follow the drag. Not run yet |
+| Step 4: the inspector's Start kept its old value during a drag | Fixed in 0.0.3: Start, Length and Frames follow the drag. Passed in round 2 |
 | With the editor at half width the toolbar wraps to two rows | Left as it is |
 
 | Round | Date | Steps | Result |
@@ -319,7 +319,7 @@ What round 2 found, and what was done:
 | Found | Done |
 |---|---|
 | Step 23, with an installed build: a `.edgedir` file given on the command line when the editor starts cold opens as JSON text and is not under Recent. With File, Open File, and with the editor already running, it opens in the scene editor | **A known limit, left.** VS Code opens a file named at start before it has read the extensions' editors. EDGEwave found the same with `.edgewave` files (its docs/release.md). Opened from the Desk, the Explorer, Quick Open or File, Open File, a scene gets its editor. A double-click in File Explorer with the editor closed was not tried |
-| Step 22a: the scene's tab is closed before the second question, so after Cancel the scene was on the Desk with its tab gone | Fixed in 0.0.7: a scene kept after all opens again. Not run yet |
+| Step 22a: the scene's tab is closed before the second question, so after Cancel the scene was on the Desk with its tab gone | Fixed in 0.0.7: a scene kept after all opens again. Passed in round 3 |
 
 ## D2 Cast, part 1
 
@@ -356,7 +356,7 @@ What round 1 found, and what was done:
 |---|---|
 | A broken copy of REDbridge on the test rig: the view said the game could not be read, with Show Log and Try Again, and worked after the path was put right | Nothing: the failed state works |
 | Typing `judy` in the picker also listed a row named just "V" (photo mode's copy of Judy), and the list began with rows named `!OBSOLETE` and `[No Data]` | Fixed in 0.0.7: such rows are listed by their record's own name. It takes effect when the game is read again (**Read the Game Again**). Passed round 2 |
-| Step 15, on a track other than V's in a scene that has V: the picker was empty while its line said V can still be chosen | Fixed in 0.0.7: a message says there is nobody to choose just now, and the line no longer offers V when V is taken. Not run yet |
+| Step 15, on a track other than V's in a scene that has V: the picker was empty while its line said V can still be chosen | Fixed in 0.0.7: a message says there is nobody to choose just now, and the line no longer offers V when V is taken. Passed in round 2 |
 | After the editor was stopped by force, a reopened scene showed the unsaved dot though its text matched the file | Seen once, after a forced stop. Not looked into |
 | Clear the Search shows the Game group closed again, not as it was opened | Left as it is |
 
@@ -395,10 +395,10 @@ What round 1 found, and what was done:
 
 | Found | Done |
 |---|---|
-| Step 17: closed 40 s into the first read, nothing was on disk and the next start began from 0 (the first save came at 2,000 files) | Fixed in 0.0.7: what is read is saved at every 500 files. Not run yet |
+| Step 17: closed 40 s into the first read, nothing was on disk and the next start began from 0 (the first save came at 2,000 files) | Fixed in 0.0.7: what is read is saved at every 500 files. Passed in round 2 |
 | The status bar counts "of 14,028 files" while the view says 14,016 | Left: REDbridge counts 12 files that are in two archives twice; the view counts each path once |
-| Step 5: the new clip was not selected, so the inspector still showed the track | Fixed in 0.0.7: Add to Track selects the new clip. Not run yet |
-| Step 10: a looping clip's end edge rounded down, so a drag to just under two loops gave one | Fixed in 0.0.7: it goes to the nearest whole loop there is room for. Unit tested; not run yet |
+| Step 5: the new clip was not selected, so the inspector still showed the track | Fixed in 0.0.7: Add to Track selects the new clip. Passed in round 2 |
+| Step 10: a looping clip's end edge rounded down, so a drag to just under two loops gave one | Fixed in 0.0.7: it goes to the nearest whole loop there is room for. Passed in round 2 |
 | An actor's own files can hold a set made for another rig (the game's data) | Nothing: it is why the two filters together give fewer than the second alone |
 
 ## D2 Made animations, part 3
@@ -528,7 +528,7 @@ EDGEdir 0.0.15 (first built as 0.0.13, 2026-11-16). It covers D4b: sequences on 
 | Round | Date | Steps | Result |
 |---|---|---|---|
 | 1 | 2026-11-16 | 1 to 19, on 0.0.13 at `a73af0e` | **Pass, 19 of 19**, run by the EDGEweb session by script at the owner's request (real mouse and key events in a trial EDGEkit 1.140.6 window, scratch Desk and cache, REDbridge 0.14.0, the real game folder read only; judged from `edgedirPreview.state()`, the inspector, the saved file and screenshots; nobody watched it live). The Desk's sequences, the commands, a `.edgeseq` in the editor and the link's refresh all work inside VS Code. A scene opened with nothing changed on the Desk is not unsaved |
-| 2 | 2026-11-16 | The five fixes of 0.0.14, at `69281ac` | **Pass, 5 of 5**, by script in the EDGEweb session, as before. Found: after a Rename the status bar said 1 block was updated when two took the name; with the last sequence deleted the Desk kept an empty Sequences heading. Both looked at in 0.0.15 (the count now includes a block that only took a name; the Desk is read once more a moment after a Delete); not run |
+| 2 | 2026-11-16 | The five fixes of 0.0.14, at `69281ac` | **Pass, 5 of 5**, by script in the EDGEweb session, as before. Found: after a Rename the status bar said 1 block was updated when two took the name; with the last sequence deleted the Desk kept an empty Sequences heading. Both looked at in 0.0.15 (the count now includes a block that only took a name; the Desk is read once more a moment after a Delete); both passed with D5b's round on 2026-11-17 |
 
 What round 1 found, and what was done:
 
@@ -614,7 +614,7 @@ What round 2 found, and what was done:
 
 | Found | Done |
 |---|---|
-| After a scene's set was chosen and the scene saved, the Sets view did not list the scene under the set until Refresh | Changed in 0.0.20: the view is read again when a scene is saved. Not run yet |
+| After a scene's set was chosen and the scene saved, the Sets view did not list the scene under the set until Refresh | Changed in 0.0.20: the view is read again when a scene is saved. Passed with D5d's round on 2026-11-17 |
 | Once, after step 11's pick, a message said the scene's unsaved changes were put back from before the window reloaded, though the window had not reloaded. Before it the scene had been opened unsaved (a new hash), saved, closed, and opened again with the set's file renamed | **Open.** Not reproduced and not explained from the code: the page puts unsaved edits back when its kept copy differs from the saved file it was based on, and here a kept copy seems to have outlived a save and close. Nothing was lost. To watch for in later rounds |
 
 ## D5d Play in game, in VS Code
@@ -657,7 +657,7 @@ What round 1 found, and what was done:
 
 ## D5 in the game
 
-The in-game test of D5c, D5d and DR1 is the owner's [Test E](#test-e-edge-director-in-the-game-play), and DR2's is [Test F](#test-f-edge-director-in-the-game-adjust), under [The owner's tests](#the-owners-tests). Not run yet: nothing of EDGEdir has run in the game.
+The in-game test of D5c, D5d and DR1 is the owner's [Test E](#test-e-edge-director-in-the-game-play), and DR2's is [Test F](#test-f-edge-director-in-the-game-adjust), under [The owner's tests](#the-owners-tests). Test E was partly run on 2026-11-20 (E1, E2, E3 and E5 pass); Test F is not run yet.
 
 ## DR1 The Director's window
 
