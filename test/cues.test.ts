@@ -103,6 +103,10 @@ test("a made animation is left out, and the clip after it is no cut", () => {
   // Only made animations: nobody to spawn.
   const only = addAnimClip(setActor(addTrack(newDoc("S"), "actor"), "t1", ana), "t1", { id: "made-1", name: "dance", rig: W, seconds: 2 }, 0).doc;
   assert.equal(cuesOf(only).sheet.cast.length, 0);
+  // "The clip before it goes on looping" only where a clip before it plays.
+  assert.ok(!notes[0].text.includes("goes on looping"));
+  const after = addAnimClip(addAnimClip(setActor(addTrack(newDoc("S"), "actor"), "t1", ana), "t1", anim("sit", 3), 0).doc, "t1", { id: "made-1", name: "dance", rig: W, seconds: 2 }, 3).doc;
+  assert.ok(cuesOf(after).notes.find((n) => n.kind === "made")!.text.includes("goes on looping"));
 });
 
 test("a sequence block is its clips, and its notes are found by the block", () => {

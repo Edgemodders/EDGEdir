@@ -111,7 +111,7 @@ export function cuesOf(doc: SceneDoc): { sheet: CueSheet; notes: GameNote[] } {
     for (const c of anims) {
       const p = playOf(c)!;
       if (!p.anim.set) {
-        notes.push({ kind: "made", track: lane.id, clip: c.id, text: `Left out of the game: "${label(c)}" is a made animation, and a made animation cannot reach the game yet. The clip before it goes on looping.` });
+        notes.push({ kind: "made", track: lane.id, clip: c.id, text: `Left out of the game: "${label(c)}" is a made animation, and a made animation cannot reach the game yet.${played ? " The clip before it goes on looping." : ""}` });
         continue;
       }
       const name = entryName(c.id);
